@@ -64,8 +64,83 @@ public class DetailActivity extends Activity {
         }
     }
 
+    /** The locked face of a private memory (v0.46.0). */
+    private void renderLocked() {
+        LinearLayout root = new LinearLayout(this);
+        root.setOrientation(LinearLayout.VERTICAL);
+        root.setBackgroundColor(Ui.BG);
+        root.setPadding(Ui.dp(this, 24), Ui.dp(this, 32), Ui.dp(this, 24), Ui.dp(this, 24));
+        TextView h = Ui.text(this, "This memory is private", 20, Ui.TEXT, true);
+        root.addView(h);
+        TextView sub = Ui.text(this,
+            "Its words stay hidden - in lists, in Ask, everywhere - until you unlock this one item.",
+            13, Ui.DIM, false);
+        sub.setLayoutParams(Ui.matchWrap(10, this));
+        root.addView(sub);
+        Button unlock = Ui.button(this, "Unlock", Ui.ACCENT, Ui.ACCENT_DARK_TEXT);
+        unlock.setLayoutParams(Ui.matchWrap(14, this));
+        unlock.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { promptItemUnlock(); }
+        });
+        root.addView(unlock);
+        Button back = Ui.ghostButton(this, "Back");
+        back.setLayoutParams(Ui.matchWrap(10, this));
+        back.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { finish(); }
+        });
+        root.addView(back);
+        setContentView(root);
+    }
+
+    private android.os.CancellationSignal itemCancelSignal;
+
+    /** Biometric/device-credential prompt for this one item. */
+    private void promptItemUnlock() {
+        if (android.os.Build.VERSION.SDK_INT < 28) {
+            Toast.makeText(this, "This Android version cannot show the unlock prompt",
+                Toast.LENGTH_LONG).show();
+            return;
+        }
+        try {
+            android.hardware.biometrics.BiometricPrompt.Builder b =
+                new android.hardware.biometrics.BiometricPrompt.Builder(this)
+                    .setTitle("Unlock this memory")
+                    .setSubtitle("Your fingerprint or PIN");
+            if (android.os.Build.VERSION.SDK_INT >= 30) {
+                b.setAllowedAuthenticators(
+                    android.hardware.biometrics.BiometricManager.Authenticators.BIOMETRIC_STRONG
+                    | android.hardware.biometrics.BiometricManager.Authenticators.DEVICE_CREDENTIAL);
+            } else {
+                b.setDeviceCredentialAllowed(true);
+            }
+            itemCancelSignal = new android.os.CancellationSignal();
+            b.build().authenticate(itemCancelSignal, getMainExecutor(),
+                new android.hardware.biometrics.BiometricPrompt.AuthenticationCallback() {
+                    @Override public void onAuthenticationSucceeded(
+                            android.hardware.biometrics.BiometricPrompt.AuthenticationResult r) {
+                        AppLock.unlockItem(item.id);
+                        render();
+                    }
+                    @Override public void onAuthenticationError(int code, CharSequence msg) {
+                        if (code != 10 && code != 13) {
+                            Toast.makeText(DetailActivity.this,
+                                "Unlock did not go through", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
+        } catch (Exception e) {
+            Toast.makeText(this, "Unlock is not available on this phone", Toast.LENGTH_LONG).show();
+        }
+    }
+
     private void render() {
         Ui.applyChrome(this);
+        // Private memories (v0.46.0): the words stay hidden until
+        // this one item is unlocked.
+        if (Privacy.isPrivate(item) && !AppLock.isItemUnlocked(item.id)) {
+            renderLocked();
+            return;
+        }
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackgroundColor(Ui.BG);
@@ -191,6 +266,51 @@ public class DetailActivity extends Activity {
             TextView mv = Ui.text(this, item.extracted, 13, Ui.DIM, false);
             mv.setLayoutParams(Ui.matchWrap(4, this));
             bodyCol.addView(mv);
+        }
+
+        // Tap-the-facts (v0.44.0): numbers, emails, links, addresses
+        // and tracking codes inside the words become actions.
+        {
+            String allWords = (item.body != null ? item.body : "") + "\n"
+                + (item.extracted != null ? item.extracted : "");
+            java.util.List<Facts.Fact> foundFacts = Facts.find(allWords);
+            if (!foundFacts.isEmpty()) {
+                TextView fh = Ui.sectionLabel(this, "Facts in this memory");
+                fh.setLayoutParams(Ui.matchWrap(16, this));
+                bodyCol.addView(fh);
+                TextView fhint = Ui.text(this, "Tap to use one, long-press to copy it.", 11, Ui.DIM, false);
+                bodyCol.addView(fhint);
+                for (final Facts.Fact fact : foundFacts) {
+                    Button fb = Ui.ghostButton(this, fact.label);
+                    fb.setLayoutParams(Ui.matchWrap(6, this));
+                    fb.setOnClickListener(new View.OnClickListener() {
+                        @Override public void onClick(View v) {
+                            try {
+                                Intent i = new Intent(Intent.ACTION_VIEW,
+                                    android.net.Uri.parse(fact.uri));
+                                if (fact.kind == Facts.PHONE) i.setAction(Intent.ACTION_DIAL);
+                                startActivity(i);
+                            } catch (Exception e) {
+                                Toast.makeText(DetailActivity.this,
+                                    "No app can open that", Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    });
+                    fb.setOnLongClickListener(new View.OnLongClickListener() {
+                        @Override public boolean onLongClick(View v) {
+                            android.content.ClipboardManager cm = (android.content.ClipboardManager)
+                                getSystemService(CLIPBOARD_SERVICE);
+                            if (cm != null) {
+                                cm.setPrimaryClip(android.content.ClipData.newPlainText("fact", fact.value));
+                                Toast.makeText(DetailActivity.this, "Copied: " + fact.value,
+                                    Toast.LENGTH_SHORT).show();
+                            }
+                            return true;
+                        }
+                    });
+                    bodyCol.addView(fb);
+                }
+            }
         }
 
         // (Re)read machine text on demand.
@@ -320,6 +440,22 @@ public class DetailActivity extends Activity {
         });
         root.addView(linkBtn);
 
+        // Meeting recap (v0.38.0): decided / to do / key dates /
+        // money, at the top of the meeting's page.
+        if ("Meetings".equals(item.category)) {
+            String rtext = (item.extracted != null && !item.extracted.isEmpty())
+                ? item.extracted : (item.body != null ? item.body : "");
+            String recap = Recap.recapText(rtext);
+            if (recap != null) {
+                LinearLayout rCard = Ui.card(this);
+                rCard.addView(Ui.sectionLabel(this, "Meeting recap"));
+                TextView rt = Ui.text(this, recap, 13, Ui.TEXT, false);
+                rt.setLayoutParams(Ui.matchWrap(4, this));
+                rCard.addView(rt);
+                root.addView(rCard);
+            }
+        }
+
         // Find action items (v0.29.0): pull the commitments out of a
         // meeting's words and file them as their own memories.
         if ("Meetings".equals(item.category)) {
@@ -350,6 +486,57 @@ public class DetailActivity extends Activity {
                 @Override public void onClick(View v) { addToCalendar(); }
             });
             root.addView(calBtn);
+        }
+
+        // Private toggle (v0.46.0): hide this memory's words until
+        // the item itself is unlocked.
+        {
+            Button privBtn = Ui.ghostButton(this,
+                Privacy.isPrivate(item) ? "Make public" : "Make private");
+            privBtn.setLayoutParams(Ui.matchWrap(8, this));
+            privBtn.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    item.isPrivate = Privacy.isPrivate(item) ? 0 : 1;
+                    db.update(item);
+                    if (item.isPrivate == 1) AppLock.unlockItem(item.id); // keep viewing this session
+                    Toast.makeText(DetailActivity.this,
+                        item.isPrivate == 1
+                            ? "Private - hidden until you unlock this item"
+                            : "Public again",
+                        Toast.LENGTH_LONG).show();
+                    render();
+                }
+            });
+            root.addView(privBtn);
+        }
+
+        // Snooze (v0.41.0): push the due date out a day or a week.
+        if (item.reminderAt > 0 && item.handledAt == 0) {
+            Button snzBtn = Ui.ghostButton(this, "Snooze reminder");
+            snzBtn.setLayoutParams(Ui.matchWrap(8, this));
+            snzBtn.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    String[] labels = new String[Snooze.CHOICES.length];
+                    for (int i = 0; i < labels.length; i++) {
+                        labels[i] = Snooze.choiceLabel(Snooze.CHOICES[i]);
+                    }
+                    new android.app.AlertDialog.Builder(DetailActivity.this)
+                        .setTitle("Snooze this reminder")
+                        .setItems(labels, new android.content.DialogInterface.OnClickListener() {
+                            @Override public void onClick(android.content.DialogInterface d, int which) {
+                                item.reminderAt = Snooze.snoozedUntil(item.reminderAt, Snooze.CHOICES[which]);
+                                db.update(item);
+                                Toast.makeText(DetailActivity.this,
+                                    "Snoozed to " + Extract.formatDate(item.reminderAt),
+                                    Toast.LENGTH_SHORT).show();
+                                render();
+                            }
+                        })
+                        .setNegativeButton("Cancel", null)
+                        .show();
+                }
+            });
+            root.addView(snzBtn);
         }
 
         Button back = Ui.iconButton(this, "Back", R.drawable.ic_back, Ui.PANEL_HI, Ui.DIM);

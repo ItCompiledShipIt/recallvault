@@ -275,6 +275,8 @@ public final class FileIngest {
                 am.append(f.amounts.get(i));
             }
             it.amounts = am.toString();
+            // Receipt mode (v0.42.0): ingested scans file as expenses too.
+            if (fm.startsWith("image/")) Receipts.refine(it, machine, false);
             db.insert(it);
             return 1;
         } catch (Exception e) {

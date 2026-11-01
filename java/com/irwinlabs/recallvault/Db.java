@@ -13,7 +13,7 @@ import java.util.List;
 public class Db extends SQLiteOpenHelper {
 
     private static final String NAME = "recallvault.db";
-    private static final int VERSION = 9;
+    private static final int VERSION = 10;
 
     public Db(Context ctx) {
         super(ctx.getApplicationContext(), NAME, null, VERSION);
@@ -41,7 +41,8 @@ public class Db extends SQLiteOpenHelper {
             + "pages TEXT NOT NULL DEFAULT '',"
             + "links TEXT NOT NULL DEFAULT '',"
             + "deleted_at INTEGER NOT NULL DEFAULT 0,"
-            + "expiry_at INTEGER NOT NULL DEFAULT 0)");
+            + "expiry_at INTEGER NOT NULL DEFAULT 0,"
+            + "is_private INTEGER NOT NULL DEFAULT 0)");
     }
 
     @Override
@@ -78,6 +79,10 @@ public class Db extends SQLiteOpenHelper {
             // v9: expiry radar - expiry_at tracked apart from due dates - v0.30.0.
             db.execSQL("ALTER TABLE items ADD COLUMN expiry_at INTEGER NOT NULL DEFAULT 0");
         }
+        if (oldV < 10) {
+            // v10: private memories - per-item display lock - v0.46.0.
+            db.execSQL("ALTER TABLE items ADD COLUMN is_private INTEGER NOT NULL DEFAULT 0");
+        }
     }
 
     private ContentValues values(Item it) {
@@ -104,6 +109,7 @@ public class Db extends SQLiteOpenHelper {
         long exp = Expiry.expiryOf(it);
         it.expiryAt = exp > 0 ? exp : 0;
         v.put("expiry_at", it.expiryAt);
+        v.put("is_private", it.isPrivate);
         return v;
     }
 
@@ -129,11 +135,12 @@ public class Db extends SQLiteOpenHelper {
         it.links = c.getString(17);
         it.deletedAt = c.getLong(18);
         it.expiryAt = c.getLong(19);
+        it.isPrivate = c.getInt(20);
         return it;
     }
 
     private static final String COLS =
-        "id,title,type,category,body,extracted,file_path,mime,created_at,reminder_at,amounts,embedding,embedding_local,embedding_image,handled_at,file_hash,pages,links,deleted_at,expiry_at";
+        "id,title,type,category,body,extracted,file_path,mime,created_at,reminder_at,amounts,embedding,embedding_local,embedding_image,handled_at,file_hash,pages,links,deleted_at,expiry_at,is_private";
 
     /**
      * One-time rewrite of every row through the encrypting values()

@@ -602,6 +602,86 @@ history of this file and the project journal.)
   v0.18.0 (the code and port from the watch's Wireless
   debugging screen, which only chris can read).
 
+## v0.38.0 - meeting recaps (Nov 1, 2026)
+
+- A meeting's page opens with a recap card (Recap.java):
+  what was decided, who owes what (with due dates), the key
+  dates, and any money mentioned. A sentence that ran as a
+  decision is never repeated as a to-do.
+
+## v0.39.0 - bills forecast (Nov 1, 2026)
+
+- "What's coming" on the Reminders tab (Forecast.java):
+  the next three months merged from real dated bills plus
+  recurrences projected from their own history (average gap,
+  usual amount). A booked bill suppresses its own projection.
+  Ask answers "what bills are coming" with month totals.
+
+## v0.40.0 - heads-up reminders (Nov 1, 2026)
+
+- One earlier nudge when a deadline first enters the lead
+  window (HeadsUp.java; default 3 days, Settings cycles
+  off/1/2/3/5/7/14). Exactly once per due date, outside the
+  due worker's own 48h window so the two never stack.
+
+## v0.41.0 - snooze (Nov 1, 2026)
+
+- Snooze a reminder 1 day or 7 days from its Reminders row,
+  its detail page, or the due notification itself
+  (SnoozeReceiver). Snoozing moves the due date, so the new
+  date earns its own fresh heads-up and due pings.
+
+## v0.42.0 - receipt mode (Nov 1, 2026)
+
+- Scanned/photo receipts file as structured expenses
+  (Receipts.java): store from the first line, total from the
+  TOTAL line (never the subtotal or the cash tendered), tax,
+  date. Ask totals spending by month or store, and Settings
+  exports expenses as CSV. (Parser/answer/CSV suite-proven;
+  the on-phone Ask tap-through proof was cut short by the
+  phone being in active use at ship time.)
+
+## v0.43.0 - people cards (Nov 1, 2026)
+
+- Name chips now open an at-a-glance card first (in
+  Entities.java): phone numbers, emails, and street
+  addresses found in the memories that mention the name,
+  plus dates and money totals. "All memories" remains one
+  tap deeper, and contact questions ("Gina's phone number")
+  return the card from Ask directly.
+
+## v0.44.0 - tap-the-facts (Nov 1, 2026)
+
+- A memory's page gains a "Facts in this memory" section
+  (Facts.java): phone numbers dial, emails compose, links
+  open, street addresses map, UPS/USPS tracking numbers
+  track. Tap uses a fact; long-press copies it.
+
+## v0.45.0 - vault checkup (Nov 1, 2026)
+
+- Settings -> Vault checkup (Checkup.java): dates named in
+  words that never became reminders, text missing from the
+  meaning index, photos whose words were never read, the
+  biggest files, and backup freshness. "Fix what's fixable"
+  sets the missed dates and re-runs the index pass.
+
+## v0.46.0 - private memories (Nov 1, 2026)
+
+- Any memory can be made private (Db v10, is_private;
+  Privacy.java). Lists show a "Private memory" placeholder,
+  Ask/watch/notifications/digest mask or skip it entirely,
+  and its own page stays locked until that one item is
+  unlocked with fingerprint/PIN. Item unlocks live for the
+  session and re-lock with the app lock.
+
+## v0.47.0 - Ask from anywhere (Nov 1, 2026)
+
+- Highlight text in any app and "Ask vault about this"
+  (AskTextActivity, PROCESS_TEXT) searches the vault for
+  the selection - app lock gates it, private memories never
+  appear. A second home-screen widget (AskWidget) goes
+  straight to a voice question on the Ask tab.
+
 ## Next queue
 
 1. Watch install + on-watch proof (v0.18.0 capture and
@@ -610,6 +690,9 @@ history of this file and the project journal.)
 2. Final app name - chris's pick.
 3. Automatic ingest scope pick (v0.27.0, shipped off) -
    whole-phone watching or watched folders; chris's call.
-   (Two full build lists are now complete: the Nov 1 "do what
-   i say" list v0.12.0-v0.26.0 plus v0.27.0, and the Nov 1
-   "all" list v0.28.0-v0.37.0.)
+4. Ask widget placement - a one-time manual add from the
+   launcher's widget picker, like the QS tile (v0.35.0).
+   (Three full build lists are now complete: the Nov 1
+   "do what i say" list v0.12.0-v0.26.0 plus v0.27.0, the
+   Nov 1 "all" list v0.28.0-v0.37.0, and the second "all"
+   list v0.38.0-v0.47.0.)

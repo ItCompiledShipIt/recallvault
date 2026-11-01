@@ -2,6 +2,7 @@
 <resources>
     <string name="app_name">RecallVault</string>
     <string name="widget_desc">What is due this week, plus one-tap voice capture</string>
+    <string name="widget_ask_desc">Ask the vault a question out loud</string>
     <string name="shortcut_voice_short">Voice note</string>
     <string name="shortcut_voice_long">Record a voice note</string>
 </resources>

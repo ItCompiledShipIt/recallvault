@@ -105,9 +105,31 @@
             <meta-data android:name="android.appwidget.provider"
                 android:resource="@xml/widget_info" />
         </receiver>
+        <receiver android:name=".AskWidget" android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider"
+                android:resource="@xml/widget_ask_info" />
+        </receiver>
+        <activity android:name=".AskTextActivity"
+            android:label="Ask vault about this"
+            android:exported="true"
+            android:theme="@android:style/Theme.Material.Light.Dialog.Alert">
+            <intent-filter>
+                <action android:name="android.intent.action.PROCESS_TEXT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
         <receiver android:name=".HandledReceiver" android:exported="false">
             <intent-filter>
                 <action android:name="com.irwinlabs.recallvault.MARK_HANDLED" />
+            </intent-filter>
+        </receiver>
+        <receiver android:name=".SnoozeReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="com.irwinlabs.recallvault.SNOOZE" />
             </intent-filter>
         </receiver>
     </application>

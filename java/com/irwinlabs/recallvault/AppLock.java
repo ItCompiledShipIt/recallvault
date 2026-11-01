@@ -61,7 +61,20 @@ public final class AppLock {
     public static boolean needsUnlock(Context ctx) {
         if (!isEnabled(ctx) || promptOpen) return false;
         if (lastUnlockAt == 0) return true;
-        return System.currentTimeMillis() - lastActiveAt > LOCK_AFTER_MS;
+        boolean stale = System.currentTimeMillis() - lastActiveAt > LOCK_AFTER_MS;
+        if (stale) unlockedItems.clear(); // items re-lock with the app (v0.46.0)
+        return stale;
+    }
+
+    // Per-item unlocks (v0.46.0): process-lifetime, like the app unlock.
+    private static final java.util.Set<Long> unlockedItems = new java.util.HashSet<Long>();
+
+    public static boolean isItemUnlocked(long id) {
+        return unlockedItems.contains(id);
+    }
+
+    public static void unlockItem(long id) {
+        unlockedItems.add(id);
     }
 
     public static void markUnlocked() {

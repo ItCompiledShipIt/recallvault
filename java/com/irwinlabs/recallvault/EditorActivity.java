@@ -244,6 +244,12 @@ public class EditorActivity extends Activity {
             am.append(f.amounts.get(i));
         }
         it.amounts = am.toString();
+        // Receipt mode (v0.42.0): a scanned/photo receipt files as a
+        // structured expense - store, total, no phantom due date.
+        if (editId <= 0 && ("SCAN".equals(type) || "PHOTO".equals(type))) {
+            boolean userTitled = !titleInput.getText().toString().trim().isEmpty();
+            Receipts.refine(it, machineText, userTitled);
+        }
         if (editId > 0 && it.id > 0) {
             it.embedding = ""; // text changed: re-embed next round
             db.update(it);

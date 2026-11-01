@@ -740,6 +740,239 @@ public class TestMain {
                 Report.answer(rv, "when is the bill due", 1793560000000L) == null);
         }
 
+        // ---------- v0.38.0: meeting recaps ----------
+        {
+            String mtg = "We decided to renew the lease for another year. "
+                + "Everyone agreed the rent stays the same. "
+                + "Gina will send the paperwork by Nov 28, 2026. "
+                + "I need to call the insurance company about the rider. "
+                + "The inspection is on Dec 3, 2026 and the deposit is $500.00.";
+            java.util.List<String> rl = Recap.lines(mtg);
+            String joined = String.join("\n", rl);
+            check("recap: decisions found", joined.contains("Decided:")
+                && joined.contains("renew the lease"));
+            check("recap: actions carried with dates", joined.contains("To do:")
+                && joined.contains("send the paperwork") && joined.contains("Nov 28, 2026"));
+            check("recap: key dates + money lines", joined.contains("Key dates:")
+                && joined.contains("Dec 3, 2026") && joined.contains("$500.00"));
+            check("recap: chit-chat gives no recap",
+                Recap.recapText("We talked about the weather and lunch plans for a while today.") == null);
+            int todoAt = joined.indexOf("To do:");
+            check("recap: a decision is not repeated as a to-do",
+                todoAt < 0 || !joined.substring(todoAt).contains("renew the lease"));
+        }
+
+        // ---------- v0.39.0: bills forecast ----------
+        {
+            long fnow = 1793560000000L; // Nov 1, 2026
+            long fday = 24L * 3600 * 1000;
+            Item fe1 = new Item();
+            fe1.title = "Electricity bill"; fe1.amounts = "$78.00";
+            fe1.reminderAt = fnow - 61 * fday; fe1.createdAt = fe1.reminderAt - fday;
+            Item fe2 = new Item();
+            fe2.title = "Electricity bill"; fe2.amounts = "$81.50";
+            fe2.reminderAt = fnow - 30 * fday; fe2.createdAt = fe2.reminderAt - fday;
+            Item fe3 = new Item();
+            fe3.title = "Electricity bill"; fe3.amounts = "$92.00";
+            fe3.reminderAt = fnow - 1 * fday; fe3.createdAt = fe3.reminderAt - fday;
+            java.util.List<Item> fv = new java.util.ArrayList<Item>(java.util.Arrays.asList(fe1, fe2, fe3));
+            java.util.List<Forecast.Entry> fc = Forecast.forecast(fv, fnow);
+            check("forecast: projects the monthly bill forward",
+                !fc.isEmpty() && fc.get(0).predicted && fc.get(0).cents == 8150);
+            long projDue = fc.get(0).dueMs;
+            check("forecast: next projection about a month out",
+                projDue > fnow + 20 * fday && projDue < fnow + 40 * fday);
+            // A real bill already booked for that slot replaces the projection.
+            Item fe4 = new Item();
+            fe4.title = "Electricity bill"; fe4.amounts = "$88.00";
+            fe4.reminderAt = projDue; fe4.createdAt = fnow;
+            fv.add(fe4);
+            java.util.List<Forecast.Entry> fc2 = Forecast.forecast(fv, fnow);
+            boolean slotReal = false, slotPredicted = false;
+            for (Forecast.Entry e : fc2) {
+                if (Math.abs(e.dueMs - projDue) <= 10 * fday) {
+                    if (e.predicted) slotPredicted = true; else slotReal = true;
+                }
+            }
+            check("forecast: real bill suppresses its projection", slotReal && !slotPredicted);
+            Ask.Summary fa = Forecast.answer(fv, "what bills are coming", fnow);
+            check("forecast: ask hook answers", fa != null && fa.text.contains("What's coming"));
+            check("forecast: ask hook ignores other questions",
+                Forecast.answer(fv, "how much do I owe", fnow) == null);
+        }
+
+        // ---------- v0.40.0: heads-up reminders ----------
+        {
+            long hnow = 1793560000000L;
+            long hday = 24L * 3600 * 1000;
+            Item h1 = new Item(); h1.id = 1; h1.reminderAt = hnow + 3 * hday; // inside lead 3, outside 48h
+            Item h2 = new Item(); h2.id = 2; h2.reminderAt = hnow + 1 * hday; // due window covers it
+            Item h3 = new Item(); h3.id = 3; h3.reminderAt = hnow + 9 * hday; // too far out
+            Item h4 = new Item(); h4.id = 4; h4.reminderAt = hnow + 3 * hday; h4.handledAt = 1; // handled
+            java.util.List<Item> hv = new java.util.ArrayList<Item>(
+                java.util.Arrays.asList(h1, h2, h3, h4));
+            java.util.List<Item> hd = HeadsUp.due(hv, hnow, 3, new java.util.HashSet<String>());
+            check("headsup: only the in-window unhandled item qualifies",
+                hd.size() == 1 && hd.get(0).id == 1);
+            java.util.Set<String> hn = new java.util.HashSet<String>();
+            hn.add(HeadsUp.key(h1));
+            check("headsup: notified items stay quiet",
+                HeadsUp.due(hv, hnow, 3, hn).isEmpty());
+            check("headsup: lead 0 disables", HeadsUp.due(hv, hnow, 0, hn).isEmpty());
+            check("headsup: lead 14 reaches the far item",
+                HeadsUp.due(hv, hnow, 14, new java.util.HashSet<String>()).size() == 2);
+            check("headsup: choice cycle wraps", HeadsUp.nextChoice(14) == 0
+                && HeadsUp.nextChoice(3) == 5);
+            check("headsup: labels", HeadsUp.label(0).equals("Off")
+                && HeadsUp.label(1).equals("1 day before")
+                && HeadsUp.label(3).equals("3 days before"));
+        }
+
+        // ---------- v0.41.0: snooze ----------
+        {
+            long due = 1793822400000L; // Nov 4, 2026 (noon PT)
+            check("snooze: +1 day moves the date exactly a day",
+                Snooze.snoozedUntil(due, 1) == due + Snooze.DAY_MS);
+            check("snooze: +7 days moves a week",
+                Snooze.snoozedUntil(due, 7) == due + 7 * Snooze.DAY_MS);
+            check("snooze: unset date stays unset", Snooze.snoozedUntil(0, 1) == 0);
+            Item si = new Item(); si.id = 9; si.reminderAt = due;
+            String before = HeadsUp.key(si);
+            si.reminderAt = Snooze.snoozedUntil(si.reminderAt, 1);
+            check("snooze: new date earns fresh notification keys",
+                !HeadsUp.key(si).equals(before));
+            check("snooze: labels", Snooze.choiceLabel(1).equals("1 day")
+                && Snooze.choiceLabel(7).equals("7 days"));
+        }
+
+        // ---------- v0.42.0: receipt mode ----------
+        {
+            String ocr = "WALMART SUPERCENTER\n123 Main St\n10/28/2026 14:32\n"
+                + "MILK 3.98\nBREAD 2.50\nSUBTOTAL 77.98\nSALES TAX 6.42\n"
+                + "TOTAL 84.40\nCASH 100.00\nCHANGE 15.60\n";
+            Receipts.Parsed rp = Receipts.parse(ocr);
+            check("receipt: parses", rp != null);
+            check("receipt: store from first line", rp.store.startsWith("WALMART"));
+            check("receipt: TOTAL line wins over cash tendered", rp.totalCents == 8440);
+            check("receipt: tax pulled", rp.taxCents == 642);
+            check("receipt: date found", rp.dateMs > 0);
+            check("receipt: prose is not a receipt", Receipts.parse("Just a note about lunch plans.") == null);
+            Item ri = new Item(); ri.type = "SCAN"; ri.reminderAt = 1793000000000L;
+            check("receipt: refine files it as an expense",
+                Receipts.refine(ri, ocr, false) && Receipts.CATEGORY.equals(ri.category)
+                    && "WALMART SUPERCENTER receipt".equals(ri.title)
+                    && "$84.40".equals(ri.amounts) && ri.reminderAt == -1);
+            long rnow = 1793560000000L; // Nov 1, 2026
+            Item r1 = new Item(); r1.title = "WALMART SUPERCENTER receipt";
+            r1.category = "Receipts"; r1.amounts = "$84.40"; r1.createdAt = rnow - 4L * 86400000;
+            Item r2 = new Item(); r2.title = "Rosauers receipt";
+            r2.category = "Receipts"; r2.amounts = "$22.10"; r2.createdAt = rnow - 2L * 86400000;
+            Item r3 = new Item(); r3.title = "WALMART SUPERCENTER receipt";
+            r3.category = "Receipts"; r3.amounts = "$30.00"; r3.createdAt = rnow - 40L * 86400000; // September
+            java.util.List<Item> rv = new java.util.ArrayList<Item>(java.util.Arrays.asList(r1, r2, r3));
+            Ask.Summary ra = Receipts.answer(rv, "how much did I spend in October", rnow);
+            check("receipt: october spending totals october only",
+                ra != null && ra.text.contains("$106.50") && ra.text.contains("October 2026"));
+            Ask.Summary rb = Receipts.answer(rv, "how much did I spend at walmart", rnow);
+            check("receipt: store-scoped spending", rb != null && rb.text.contains("$114.40"));
+            check("receipt: non-spending question ignored",
+                Receipts.answer(rv, "when is my bill due", rnow) == null);
+            String csv = Receipts.csv(rv);
+            check("receipt: csv has header + rows", csv.startsWith("date,store,total,tax")
+                && csv.contains("WALMART SUPERCENTER") && csv.contains("84.40"));
+        }
+
+        // ---------- v0.43.0: people cards ----------
+        {
+            Item g1 = new Item();
+            g1.title = "Note about Gina";
+            g1.body = "Gina's cell is 509-555-0142 and she is at 4211 W 1st St now. "
+                + "Email is gina.irwin@example.com. Insurance renews Mar 20, 2027.";
+            g1.createdAt = 1793400000000L;
+            Item g2 = new Item();
+            g2.title = "Dinner with Gina";
+            g2.body = "Gina suggested the place on Sprague Ave.";
+            g2.createdAt = 1793480000000L;
+            java.util.List<Item> gv = new java.util.ArrayList<Item>(java.util.Arrays.asList(g1, g2));
+            String card = Entities.cardText(gv, "Gina", 1793560000000L);
+            check("personcard: builds", card != null);
+            check("personcard: phone found", card.contains("509-555-0142"));
+            check("personcard: email found", card.contains("gina.irwin@example.com"));
+            check("personcard: address found", card.contains("4211 W 1st St"));
+            check("personcard: count line", card.contains("2 memories"));
+            check("personcard: unknown name gives no card",
+                Entities.cardText(gv, "Zebedee", 1793560000000L) == null);
+            Ask.Summary ga = Entities.answer(gv, "what is Gina's phone number");
+            check("personcard: contact question returns the card",
+                ga != null && ga.text.contains("at a glance") && ga.text.contains("509-555-0142"));
+        }
+
+        // ---------- v0.44.0: tap-the-facts ----------
+        {
+            String words = "Call Gina at 509-555-0142 or email gina.irwin@example.com. "
+                + "The office is at 4211 W 1st St. Details at https://example.com/info. "
+                + "UPS package 1Z884W9A0391234567 is on its way. Again: 509-555-0142.";
+            java.util.List<Facts.Fact> ff = Facts.find(words);
+            int phones = 0, emails = 0, webs = 0, addrs = 0, tracks = 0;
+            String telUri = null, geoUri = null;
+            for (Facts.Fact f : ff) {
+                if (f.kind == Facts.PHONE) { phones++; telUri = f.uri; }
+                if (f.kind == Facts.EMAIL) emails++;
+                if (f.kind == Facts.WEB) webs++;
+                if (f.kind == Facts.ADDRESS) { addrs++; geoUri = f.uri; }
+                if (f.kind == Facts.TRACKING) tracks++;
+            }
+            check("facts: one of each kind, phone deduped",
+                phones == 1 && emails == 1 && webs == 1 && addrs == 1 && tracks == 1);
+            check("facts: tel uri normalized", "tel:+15095550142".equals(telUri));
+            check("facts: geo uri carries the address", geoUri != null && geoUri.contains("4211"));
+            check("facts: plain prose has none",
+                Facts.find("We talked about lunch and the weather for a while.").isEmpty());
+        }
+
+        // ---------- v0.45.0: vault checkup ----------
+        {
+            Item c1 = new Item(); c1.id = 1; c1.reminderAt = -1;
+            c1.body = "The lease renews on Dec 3, 2026 and is due then.";
+            Item c2 = new Item(); c2.id = 2; c2.reminderAt = 1794000000000L;
+            c2.body = "The lease renews on Dec 3, 2026.";
+            Item c3 = new Item(); c3.id = 3; c3.reminderAt = -1;
+            c3.body = "Just a note about lunch.";
+            Item c4 = new Item(); c4.id = 4; c4.type = "PHOTO"; c4.filePath = "/x/p.jpg";
+            c4.extracted = ""; c4.body = "";
+            Item c5 = new Item(); c5.id = 5; c5.body = "Some words";
+            c5.embeddingLocal = "0.1,0.2";
+            java.util.List<Item> cv = new java.util.ArrayList<Item>(
+                java.util.Arrays.asList(c1, c2, c3, c4, c5));
+            java.util.List<Checkup.MissedDate> md = Checkup.missedDates(cv);
+            check("checkup: missed date found with suggestion",
+                md.size() == 1 && md.get(0).item.id == 1 && md.get(0).suggestedMs > 0);
+            check("checkup: unindexed counts text without a vector",
+                Checkup.unindexed(cv).size() == 3); // c1, c2, c3 (c5 has one, c4 has no text)
+            check("checkup: unread photo found", Checkup.unread(cv).size() == 1
+                && Checkup.unread(cv).get(0).id == 4);
+            java.util.Map<Long, Long> sizes = new java.util.HashMap<Long, Long>();
+            sizes.put(4L, 9000000L); sizes.put(1L, 1000L); sizes.put(5L, 5000000L);
+            java.util.List<Item> big = Checkup.biggest(cv, sizes);
+            check("checkup: biggest first", big.size() == 3 && big.get(0).id == 4
+                && big.get(1).id == 5);
+        }
+
+        // ---------- v0.46.0: private memories ----------
+        {
+            Item pub = new Item(); pub.id = 1; pub.title = "Grocery list";
+            Item prv = new Item(); prv.id = 2; prv.title = "Therapy notes"; prv.isPrivate = 1;
+            check("privacy: mask hides the title",
+                "Private memory".equals(Privacy.displayTitle(prv)));
+            check("privacy: public title untouched",
+                "Grocery list".equals(Privacy.displayTitle(pub)));
+            java.util.List<Item> vis = Privacy.visible(
+                new java.util.ArrayList<Item>(java.util.Arrays.asList(pub, prv)));
+            check("privacy: visible() drops private items",
+                vis.size() == 1 && vis.get(0).id == 1);
+            check("privacy: isPrivate flag", Privacy.isPrivate(prv) && !Privacy.isPrivate(pub));
+        }
+
         System.out.println("RESULT: " + pass + " pass, " + fail + " fail");
         if (fail > 0) System.exit(1);
     }

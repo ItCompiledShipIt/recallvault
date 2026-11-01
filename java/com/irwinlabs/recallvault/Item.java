@@ -48,6 +48,8 @@ public class Item {
     public long deletedAt = 0;
     /** When the thing in this memory stops being valid; 0 = none (v0.30.0). */
     public long expiryAt = 0;
+    /** Extra-private (v0.46.0): 1 = hidden until item-level unlock. */
+    public int isPrivate = 0;
 
     /** All page paths in order: filePath first, then the extra pages. */
     public java.util.List<String> pagePaths() {

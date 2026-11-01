@@ -110,7 +110,7 @@ public class WatchListenerService extends WearableListenerService {
     /** The Ask-tab pipeline, condensed to one speakable answer. */
     private String answerQuestion(String q) {
         Db db = new Db(this);
-        java.util.List<Item> all = db.all();
+        java.util.List<Item> all = Privacy.visible(db.all());
         long now = System.currentTimeMillis();
         float[] vec = null;
         try {

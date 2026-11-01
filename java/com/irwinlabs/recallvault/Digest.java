@@ -40,11 +40,11 @@ public final class Digest {
         }
         if (overdue > 0) {
             out.lines.add(overdue + (overdue == 1 ? " overdue: " : " overdue - first: ")
-                + firstOverdue.title + " (was due " + Extract.formatDate(firstOverdue.reminderAt) + ")");
+                + Privacy.displayTitle(firstOverdue) + " (was due " + Extract.formatDate(firstOverdue.reminderAt) + ")");
         }
         if (dueToday > 0) {
             out.lines.add(dueToday + (dueToday == 1 ? " due today: " : " due today - first: ")
-                + firstToday.title);
+                + Privacy.displayTitle(firstToday));
         }
         Ask.Summary week = Ask.dueDigest(items, nowMs);
         if (week != null && dueToday == 0 && overdue == 0) {
@@ -67,7 +67,7 @@ public final class Digest {
         List<Item> otd = Resurface.onThisDay(items, nowMs);
         if (!otd.isEmpty()) {
             Item it = otd.get(0);
-            out.lines.add("On this day: " + it.title + " (" + Resurface.yearsAgoLabel(it, nowMs) + ")");
+            out.lines.add("On this day: " + Privacy.displayTitle(it) + " (" + Resurface.yearsAgoLabel(it, nowMs) + ")");
         }
 
         if (out.lines.isEmpty()) return null;

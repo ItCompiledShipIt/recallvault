@@ -50,6 +50,7 @@ public class MainActivity extends Activity {
     private static final int REQ_IMPORT_DOC = 902;
     private static final int REQ_TREE = 903;
     private static final int REQ_EXPORT_PLAIN = 904;
+    private static final int REQ_EXPORT_EXPENSES = 907;
     private static final int REQ_CHECK_BACKUP = 905;
     private static final int REQ_IMPORT_FOLDER = 906;
     private static final int REQ_TREE_INGEST = 907;
@@ -60,7 +61,9 @@ public class MainActivity extends Activity {
 
     /** Quick-capture hand-off from the QS tile (v0.35.0). */
     public static final String EXTRA_QUICK_CAPTURE = "quick_capture";
+    public static final String EXTRA_ASK_VOICE = "open_ask_voice";
     private boolean pendingQuickVoice = false;
+    private boolean pendingAskVoice = false;
 
     private LinearLayout content;
     private String tab = "VAULT"; // VAULT | ASK | REMINDERS
@@ -79,6 +82,9 @@ public class MainActivity extends Activity {
         if (getIntent() != null
                 && "voice".equals(getIntent().getStringExtra(EXTRA_QUICK_CAPTURE))) {
             pendingQuickVoice = true;
+        }
+        if (getIntent() != null && getIntent().getBooleanExtra(EXTRA_ASK_VOICE, false)) {
+            pendingAskVoice = true;
         }
         buildShell();
         render();
@@ -135,6 +141,16 @@ public class MainActivity extends Activity {
                 pendingQuickVoice = false;
                 startVoice();
             }
+            // Ask widget (v0.47.0): land on Ask and open the mic,
+            // again only once the lock has cleared.
+            if (pendingAskVoice) {
+                pendingAskVoice = false;
+                tab = "ASK";
+                render();
+                Intent i = new Intent(this, VoiceActivity.class);
+                i.putExtra("mode", "ask");
+                startActivityForResult(i, 301);
+            }
         }
         render();
         Remind.checkNow(this);
@@ -152,6 +168,9 @@ public class MainActivity extends Activity {
         handleShareIntent(intent);
         if (intent != null && "voice".equals(intent.getStringExtra(EXTRA_QUICK_CAPTURE))) {
             pendingQuickVoice = true;
+        }
+        if (intent != null && intent.getBooleanExtra(EXTRA_ASK_VOICE, false)) {
+            pendingAskVoice = true;
         }
     }
 
@@ -540,13 +559,13 @@ public class MainActivity extends Activity {
         top.addView(typ);
         col.addView(top);
 
-        TextView t = Ui.text(this, it.title, 15, Ui.TEXT, true);
+        TextView t = Ui.text(this, Privacy.displayTitle(it), 15, Ui.TEXT, true);
         t.setLayoutParams(Ui.matchWrap(3, this));
         t.setMaxLines(2);
         t.setEllipsize(android.text.TextUtils.TruncateAt.END);
         col.addView(t);
 
-        String snip = Ask.snippet(it, "");
+        String snip = Privacy.isPrivate(it) ? "" : Ask.snippet(it, "");
         if (!snip.isEmpty()) {
             TextView s = Ui.text(this, snip, 13, Ui.DIM, false);
             s.setLayoutParams(Ui.matchWrap(2, this));
@@ -556,7 +575,7 @@ public class MainActivity extends Activity {
         }
         StringBuilder meta = new StringBuilder();
         meta.append(Ui.dateLine(it.createdAt));
-        if (!it.amounts.isEmpty()) meta.append("  -  ").append(it.amounts.replace(",", ", "));
+        if (!it.amounts.isEmpty() && !Privacy.isPrivate(it)) meta.append("  -  ").append(it.amounts.replace(",", ", "));
         if (it.reminderAt > 0) {
             meta.append("  -  due ").append(Extract.formatDate(it.reminderAt))
                 .append(" (").append(Extract.relativeDay(it.reminderAt, System.currentTimeMillis())).append(")");
@@ -620,7 +639,7 @@ public class MainActivity extends Activity {
 
         // People & places (v0.31.0): the names the vault has noticed -
         // one tap lines up everything about that name.
-        java.util.List<Entities.Entity> ents = Entities.top(db.all(), 8);
+        java.util.List<Entities.Entity> ents = Entities.top(Privacy.visible(db.all()), 8);
         if (!ents.isEmpty()) {
             TextView pl = Ui.sectionLabel(this, "People & places");
             pl.setLayoutParams(Ui.matchWrap(14, this));
@@ -633,10 +652,7 @@ public class MainActivity extends Activity {
                     e.name + "  (" + e.itemCount + (e.itemCount == 1 ? " memory)" : " memories)"));
                 chip.setLayoutParams(Ui.matchWrap(6, this));
                 chip.setOnClickListener(new View.OnClickListener() {
-                    @Override public void onClick(View v) {
-                        askInput.setText("everything about " + e.name);
-                        runAsk();
-                    }
+                    @Override public void onClick(View v) { showPersonCard(e); }
                 });
                 content.addView(chip);
             }
@@ -696,7 +712,7 @@ public class MainActivity extends Activity {
     private void showAskResults(String q, float[] vec, int mode) {
         if (askResults == null) return;
         askResults.removeAllViews();
-        List<Ask.Result> results = Ask.search(db.all(), q, vec, true);
+        List<Ask.Result> results = Ask.search(Privacy.visible(db.all()), q, vec, true);
         TextView modeView = Ui.text(this,
             mode == 2 ? "Semantic + keyword search (EmbeddingGemma 2 on this phone)"
                 : "Keyword search (download the on-device model in Settings for semantic search)",
@@ -707,12 +723,14 @@ public class MainActivity extends Activity {
         // Answers that add up: for set questions ("how much do I owe
         // this month"), lead with the total across every match.
         // Pattern questions ("is this higher than usual") win first.
-        Ask.Summary sum = Patterns.answer(db.all(), q, System.currentTimeMillis());
-        if (sum == null) sum = Entities.answer(db.all(), q);
-        if (sum == null) sum = Report.answer(db.all(), q, System.currentTimeMillis());
-        if (sum == null) sum = Expiry.answer(db.all(), q, System.currentTimeMillis());
-        if (sum == null) sum = Resurface.reviewAnswer(db.all(), q, System.currentTimeMillis());
-        if (sum == null) sum = Ask.summarize(db.all(), q, vec, System.currentTimeMillis());
+        Ask.Summary sum = Patterns.answer(Privacy.visible(db.all()), q, System.currentTimeMillis());
+        if (sum == null) sum = Entities.answer(Privacy.visible(db.all()), q);
+        if (sum == null) sum = Report.answer(Privacy.visible(db.all()), q, System.currentTimeMillis());
+        if (sum == null) sum = Forecast.answer(Privacy.visible(db.all()), q, System.currentTimeMillis());
+        if (sum == null) sum = Receipts.answer(Privacy.visible(db.all()), q, System.currentTimeMillis());
+        if (sum == null) sum = Expiry.answer(Privacy.visible(db.all()), q, System.currentTimeMillis());
+        if (sum == null) sum = Resurface.reviewAnswer(Privacy.visible(db.all()), q, System.currentTimeMillis());
+        if (sum == null) sum = Ask.summarize(Privacy.visible(db.all()), q, vec, System.currentTimeMillis());
         if (sum != null) {
             LinearLayout sumCard = Ui.pressCard(this);
             sumCard.setBackground(Ui.rippleBg(this, Ui.PANEL_HI, Ui.ACCENT2, 16, 0x2EFFFFFF));
@@ -808,6 +826,47 @@ public class MainActivity extends Activity {
                 pCard.addView(pp);
             }
             content.addView(pCard);
+        }
+        // Bills forecast (v0.39.0): what's coming over the next three
+        // months - real dated bills plus projected recurrences.
+        {
+            final java.util.List<Forecast.Entry> fc =
+                Forecast.forecast(db.all(), System.currentTimeMillis());
+            if (!fc.isEmpty()) {
+                LinearLayout fCard = Ui.card(this);
+                fCard.addView(Ui.sectionLabel(this, "What's coming"));
+                java.util.Calendar cal = java.util.Calendar.getInstance();
+                for (int m = 0; m < 3; m++) {
+                    java.util.Calendar mc = (java.util.Calendar) cal.clone();
+                    mc.add(java.util.Calendar.MONTH, m);
+                    long total = Forecast.monthTotalCents(fc,
+                        mc.get(java.util.Calendar.YEAR), mc.get(java.util.Calendar.MONTH));
+                    if (total <= 0) continue;
+                    TextView mt = Ui.text(this,
+                        Report.monthName(mc.get(java.util.Calendar.YEAR),
+                            mc.get(java.util.Calendar.MONTH))
+                            + ": about " + Ask.formatMoney(total) + " expected",
+                        13, Ui.ACCENT2, true);
+                    mt.setLayoutParams(Ui.matchWrap(3, this));
+                    fCard.addView(mt);
+                }
+                int shownF = 0;
+                for (Forecast.Entry e : fc) {
+                    if (shownF++ >= 5) break;
+                    TextView fe = Ui.text(this, Forecast.line(e), 13, Ui.TEXT, false);
+                    fe.setLayoutParams(Ui.matchWrap(3, this));
+                    fCard.addView(fe);
+                }
+                if (fc.size() > 5) {
+                    Button full = Ui.ghostButton(this, "Full forecast (" + fc.size() + ")");
+                    full.setLayoutParams(Ui.matchWrap(6, this));
+                    full.setOnClickListener(new View.OnClickListener() {
+                        @Override public void onClick(View v) { showForecastDialog(fc); }
+                    });
+                    fCard.addView(full);
+                }
+                content.addView(fCard);
+            }
         }
         // Expiry radar (v0.30.0): things that stop being valid, soonest
         // first - expired and next-90-days shown, later ones counted.
@@ -915,10 +974,10 @@ public class MainActivity extends Activity {
                     + (handled ? "  -  done " + Extract.relativeDay(it.handledAt, now) : ""),
                 14, handled ? Ui.DIM : (overdue ? Ui.DANGER : Ui.WARN), true);
             card.addView(when);
-            TextView t = Ui.text(this, it.title, 15, handled ? Ui.DIM : Ui.TEXT, false);
+            TextView t = Ui.text(this, Privacy.displayTitle(it), 15, handled ? Ui.DIM : Ui.TEXT, false);
             t.setLayoutParams(Ui.matchWrap(2, this));
             card.addView(t);
-            if (!it.amounts.isEmpty()) {
+            if (!it.amounts.isEmpty() && !Privacy.isPrivate(it)) {
                 card.addView(Ui.text(this, it.amounts.replace(",", ", "), 12, Ui.DIM, false));
             }
             Button hb = Ui.ghostButton(this,
@@ -933,12 +992,155 @@ public class MainActivity extends Activity {
                 }
             });
             card.addView(hb);
+            if (!handled) {
+                Button sb = Ui.ghostButton(this, "Snooze");
+                sb.setLayoutParams(Ui.matchWrap(8, this));
+                sb.setOnClickListener(new View.OnClickListener() {
+                    @Override public void onClick(View v) { showSnoozeChooser(it); }
+                });
+                card.addView(sb);
+            }
             card.setOnClickListener(new View.OnClickListener() {
                 @Override public void onClick(View v) { openDetail(it.id); }
             });
             content.addView(card);
           }
         }
+    }
+
+    /** Vault checkup (v0.45.0): the gaps, and one tap that fixes them. */
+    private void showCheckup() {
+        java.util.List<Item> all = db.all();
+        final java.util.List<Checkup.MissedDate> missed = Checkup.missedDates(all);
+        final java.util.List<Item> unindexed = Checkup.unindexed(all);
+        java.util.List<Item> unread = Checkup.unread(all);
+        java.util.Map<Long, Long> sizes = new java.util.HashMap<Long, Long>();
+        for (Item it : all) {
+            if (it.filePath != null && !it.filePath.isEmpty()) {
+                java.io.File f = new java.io.File(it.filePath);
+                if (f.exists()) sizes.put(it.id, f.length());
+            }
+        }
+        java.util.List<Item> biggest = Checkup.biggest(all, sizes);
+        StringBuilder sb = new StringBuilder();
+        if (missed.isEmpty() && unindexed.isEmpty() && unread.isEmpty()) {
+            sb.append("Everything checks out - no gaps found.\n");
+        }
+        if (!missed.isEmpty()) {
+            sb.append("\n").append(missed.size())
+              .append(missed.size() == 1 ? " memory names" : " memories name")
+              .append(" a date that never became a reminder:");
+            for (Checkup.MissedDate md : missed) {
+                sb.append("\n- ").append(md.item.title).append(" (")
+                  .append(Extract.formatDate(md.suggestedMs)).append(")");
+                if (sb.length() > 900) { sb.append("\n..."); break; }
+            }
+            sb.append("\n");
+        }
+        if (!unindexed.isEmpty()) {
+            sb.append("\n").append(unindexed.size())
+              .append(unindexed.size() == 1 ? " memory is" : " memories are")
+              .append(" not in the meaning index yet, so Ask may miss ")
+              .append(unindexed.size() == 1 ? "it" : "them").append(".\n");
+        }
+        if (!unread.isEmpty()) {
+            sb.append("\n").append(unread.size())
+              .append(unread.size() == 1 ? " photo's" : " photos'")
+              .append(" words were never read - open ")
+              .append(unread.size() == 1 ? "it" : "one")
+              .append(" and tap Read text.\n");
+        }
+        if (!biggest.isEmpty()) {
+            sb.append("\nBiggest files:");
+            for (Item b : biggest) {
+                long s = sizes.get(b.id);
+                sb.append("\n- ").append(b.title).append(" (")
+                  .append(String.format(java.util.Locale.US, "%.1f MB", s / 1048576.0)).append(")");
+            }
+            sb.append("\n");
+        }
+        sb.append("\n").append(backupFreshnessText());
+        android.app.AlertDialog.Builder b =
+            new android.app.AlertDialog.Builder(this)
+                .setTitle("Vault checkup")
+                .setMessage(sb.toString().trim())
+                .setNegativeButton("Close", null);
+        if (!missed.isEmpty() || !unindexed.isEmpty()) {
+            b.setPositiveButton("Fix what's fixable",
+                new android.content.DialogInterface.OnClickListener() {
+                    @Override public void onClick(android.content.DialogInterface d, int w) {
+                        for (Checkup.MissedDate md : missed) {
+                            md.item.reminderAt = md.suggestedMs;
+                            db.update(md.item);
+                        }
+                        if (!unindexed.isEmpty()) Embed.embedPending(MainActivity.this, db);
+                        Toast.makeText(MainActivity.this,
+                            "Set " + missed.size() + (missed.size() == 1 ? " date" : " dates")
+                                + (unindexed.isEmpty() ? "" : ", re-indexing in the background"),
+                            Toast.LENGTH_LONG).show();
+                        render();
+                    }
+                });
+        }
+        b.show();
+    }
+
+    /** People card (v0.43.0): the facts at a glance, then the memories. */
+    private void showPersonCard(final Entities.Entity e) {
+        String card = Entities.cardText(db.all(), e.name, System.currentTimeMillis());
+        new android.app.AlertDialog.Builder(this)
+            .setTitle(e.name)
+            .setMessage(card != null ? card : (e.itemCount + " memories"))
+            .setPositiveButton("All memories", new android.content.DialogInterface.OnClickListener() {
+                @Override public void onClick(android.content.DialogInterface d, int w) {
+                    askInput.setText("everything about " + e.name);
+                    runAsk();
+                }
+            })
+            .setNegativeButton("Close", null)
+            .show();
+    }
+
+    /** Snooze chooser (v0.41.0): push this reminder out a day or a week. */
+    private void showSnoozeChooser(final Item it) {
+        String[] labels = new String[Snooze.CHOICES.length];
+        for (int i = 0; i < labels.length; i++) labels[i] = Snooze.choiceLabel(Snooze.CHOICES[i]);
+        new android.app.AlertDialog.Builder(this)
+            .setTitle("Snooze \"" + it.title + "\"")
+            .setItems(labels, new android.content.DialogInterface.OnClickListener() {
+                @Override public void onClick(android.content.DialogInterface d, int which) {
+                    it.reminderAt = Snooze.snoozedUntil(it.reminderAt, Snooze.CHOICES[which]);
+                    db.update(it);
+                    Toast.makeText(MainActivity.this,
+                        "Snoozed to " + Extract.formatDate(it.reminderAt), Toast.LENGTH_SHORT).show();
+                    render();
+                }
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+
+    /** Full forecast dialog (v0.39.0): every expected bill, by month. */
+    private void showForecastDialog(java.util.List<Forecast.Entry> fc) {
+        StringBuilder sb = new StringBuilder();
+        int lastMonth = -1;
+        for (Forecast.Entry e : fc) {
+            java.util.Calendar c = java.util.Calendar.getInstance();
+            c.setTimeInMillis(e.dueMs);
+            int key = c.get(java.util.Calendar.YEAR) * 12 + c.get(java.util.Calendar.MONTH);
+            if (key != lastMonth) {
+                lastMonth = key;
+                if (sb.length() > 0) sb.append('\n');
+                sb.append(Report.monthName(c.get(java.util.Calendar.YEAR),
+                    c.get(java.util.Calendar.MONTH))).append(":\n");
+            }
+            sb.append(Forecast.line(e)).append('\n');
+        }
+        new android.app.AlertDialog.Builder(this)
+            .setTitle("What's coming - next 3 months")
+            .setMessage(sb.toString().trim())
+            .setPositiveButton("Close", null)
+            .show();
     }
 
     /** Bill trend (v0.33.0): one bill's whole history, bar by bar. */
@@ -1090,6 +1292,12 @@ public class MainActivity extends Activity {
         if (req == REQ_EXPORT_PLAIN) {
             if (result == RESULT_OK && data != null && data.getData() != null) {
                 writePlainExport(data.getData());
+            }
+            return;
+        }
+        if (req == REQ_EXPORT_EXPENSES) {
+            if (result == RESULT_OK && data != null && data.getData() != null) {
+                writeExpensesCsv(data.getData());
             }
             return;
         }
@@ -1671,6 +1879,20 @@ public class MainActivity extends Activity {
             }
         });
         bCard.addView(readable);
+        Button expensesBtn = Ui.ghostButton(this, "Export expenses (.csv)");
+        expensesBtn.setLayoutParams(Ui.matchWrap(8, this));
+        expensesBtn.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                Intent i = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+                i.addCategory(Intent.CATEGORY_OPENABLE);
+                i.setType("text/csv");
+                String stamp = new java.text.SimpleDateFormat("yyyyMMdd", java.util.Locale.US)
+                    .format(new java.util.Date());
+                i.putExtra(Intent.EXTRA_TITLE, "recallvault-expenses-" + stamp + ".csv");
+                startActivityForResult(i, REQ_EXPORT_EXPENSES);
+            }
+        });
+        bCard.addView(expensesBtn);
 
         // Morning digest (v0.28.0): a once-a-day vault summary notification.
         final android.content.SharedPreferences digestPrefs =
@@ -1698,6 +1920,33 @@ public class MainActivity extends Activity {
             }
         });
         bCard.addView(digestBtn);
+
+        // Heads-up reminders (v0.40.0): how early the before-due nudge lands.
+        final Button leadBtn = Ui.ghostButton(this,
+            "Heads-up reminder: " + HeadsUp.label(
+                digestPrefs.getInt(HeadsUp.PREF_LEAD_DAYS, HeadsUp.DEFAULT_LEAD_DAYS)));
+        leadBtn.setLayoutParams(Ui.matchWrap(6, this));
+        leadBtn.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                int cur = digestPrefs.getInt(HeadsUp.PREF_LEAD_DAYS, HeadsUp.DEFAULT_LEAD_DAYS);
+                int next = HeadsUp.nextChoice(cur);
+                digestPrefs.edit().putInt(HeadsUp.PREF_LEAD_DAYS, next).apply();
+                leadBtn.setText("Heads-up reminder: " + HeadsUp.label(next));
+                Toast.makeText(MainActivity.this,
+                    next <= 0 ? "Heads-up reminders off"
+                              : "You will get a nudge " + HeadsUp.label(next).toLowerCase(java.util.Locale.US),
+                    Toast.LENGTH_SHORT).show();
+            }
+        });
+        bCard.addView(leadBtn);
+
+        // Vault checkup (v0.45.0): find and fix the gaps.
+        Button checkupBtn = Ui.ghostButton(this, "Vault checkup");
+        checkupBtn.setLayoutParams(Ui.matchWrap(6, this));
+        checkupBtn.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { showCheckup(); }
+        });
+        bCard.addView(checkupBtn);
 
         // Staples (v0.26.0): storage meter, check-a-backup, import-a-folder.
         long usedBytes = dirSize(getFilesDir()) + dirSize(getCacheDir());
@@ -2161,6 +2410,33 @@ public class MainActivity extends Activity {
     }
 
     /** Write the readable Markdown export to the picked document (v0.21.0). */
+    /** Expense CSV export (v0.42.0): receipts as a spreadsheet. */
+    private void writeExpensesCsv(final Uri uri) {
+        new Thread(new Runnable() {
+            @Override public void run() {
+                try {
+                    String csv = Receipts.csv(db.all());
+                    java.io.OutputStream out = getContentResolver().openOutputStream(uri);
+                    if (out == null) throw new Exception("Could not open the destination");
+                    out.write(csv.getBytes("UTF-8"));
+                    out.close();
+                    ui.post(new Runnable() {
+                        @Override public void run() {
+                            Toast.makeText(MainActivity.this, "Expenses saved", Toast.LENGTH_LONG).show();
+                        }
+                    });
+                } catch (final Exception e) {
+                    ui.post(new Runnable() {
+                        @Override public void run() {
+                            Toast.makeText(MainActivity.this, "Export failed: " + e.getMessage(),
+                                Toast.LENGTH_LONG).show();
+                        }
+                    });
+                }
+            }
+        }, "export-expenses").start();
+    }
+
     private void writePlainExport(final Uri uri) {
         new Thread(new Runnable() {
             @Override public void run() {

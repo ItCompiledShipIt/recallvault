@@ -72,12 +72,21 @@ public class ReminderWorker extends Worker {
             PendingIntent donePi = PendingIntent.getBroadcast(ctx, (int) it.id, done,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
+            // Snooze it right from the notification (v0.41.0).
+            Intent snooze = new Intent(ctx, SnoozeReceiver.class);
+            snooze.setAction(SnoozeReceiver.ACTION);
+            snooze.putExtra("id", it.id);
+            snooze.putExtra("days", 1);
+            PendingIntent snoozePi = PendingIntent.getBroadcast(ctx, (int) it.id, snooze,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
             NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, Remind.CHANNEL)
                 .setSmallIcon(android.R.drawable.ic_dialog_info)
-                .setContentTitle(it.title)
+                .setContentTitle(Privacy.displayTitle(it))
                 .setContentText(text)
                 .setStyle(new NotificationCompat.BigTextStyle().bigText(text))
                 .setContentIntent(pi)
+                .addAction(0, "Snooze 1 day", snoozePi)
                 .addAction(0, "Bills".equals(it.category) ? "Mark paid" : "Mark done", donePi)
                 .setAutoCancel(true)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT);
@@ -107,7 +116,7 @@ public class ReminderWorker extends Worker {
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
             NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, Remind.CHANNEL)
                 .setSmallIcon(android.R.drawable.ic_dialog_alert)
-                .setContentTitle(it.title)
+                .setContentTitle(Privacy.displayTitle(it))
                 .setContentText(text)
                 .setStyle(new NotificationCompat.BigTextStyle().bigText(text))
                 .setContentIntent(pi)
@@ -119,6 +128,35 @@ public class ReminderWorker extends Worker {
                 continue;
             }
             notified.add(key);
+            changed = true;
+        }
+        // Heads-up pass (v0.40.0): one earlier nudge when a deadline
+        // first comes within the lead window (default 3 days).
+        int leadDays = prefs.getInt(HeadsUp.PREF_LEAD_DAYS, HeadsUp.DEFAULT_LEAD_DAYS);
+        for (Item it : HeadsUp.due(items, now, leadDays, notified)) {
+            String text = "Due " + Extract.formatDate(it.reminderAt)
+                + " (" + Extract.relativeDay(it.reminderAt, now) + ")"
+                + (it.amounts.isEmpty() ? "" : " - " + it.amounts.replace(",", ", "))
+                + " - " + it.category;
+            Intent open = new Intent(ctx, DetailActivity.class);
+            open.putExtra("id", it.id);
+            open.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            PendingIntent pi = PendingIntent.getActivity(ctx, (int) (50000 + it.id), open,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, Remind.CHANNEL)
+                .setSmallIcon(android.R.drawable.ic_dialog_info)
+                .setContentTitle("Coming up: " + Privacy.displayTitle(it))
+                .setContentText(text)
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(text))
+                .setContentIntent(pi)
+                .setAutoCancel(true)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+            try {
+                nm.notify((int) (50000 + it.id), b.build());
+            } catch (SecurityException e) {
+                continue;
+            }
+            notified.add(HeadsUp.key(it));
             changed = true;
         }
         if (changed) {
