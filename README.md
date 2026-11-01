@@ -455,9 +455,38 @@ history of this file and the project journal.)
   of a water bill, a meeting note and two images filed as Bills,
   Meetings and Photos.
 
+## v0.27.0 - automatic ingest (Nov 1, 2026)
+
+- Chris's ask: give the vault access to phone files - limited or
+  all - and have it index and ingest by itself. Settings gains
+  an "Automatic ingest" card with both scopes:
+  - Watched folders (SAF grants he picks): walked on the daily
+    worker pass and on app open; a seen-index (document id +
+    last-modified + size, codec JVM-tested) keeps rewalks cheap
+    and the SHA-256 guard catches anything it misses.
+  - Whole phone: new photos and audio via MediaStore, gated by
+    the media permissions and a watermark set when the mode is
+    turned on - only files added after that moment, never the
+    existing library. (Android's media permissions do not reach
+    documents; folders cover those, and the copy says so.)
+  - Everything filed goes through the standard pipeline: copy,
+    hash, OCR/PDF text, fact extraction, embeddings - indexed
+    and searchable like a manual save.
+- Device-proven all three ways: a watched folder's electric
+  bill filed itself as Bills, a new water bill was picked up on
+  the next scan, a repeat scan filed 0 (no duplicates), and with
+  phone mode on, a fresh screenshot was ingested as a Photo and
+  the watermark advanced to its timestamp. Shipped OFF with no
+  sources configured - chris picks the real folders (or phone
+  mode) when he is ready. JVM suite: 96/96.
+- Note from the proof: a probe tap briefly trashed his voice
+  note during testing; the v0.25.0 trash caught it exactly as
+  designed and it was restored untouched within the session.
+
 ## Next queue
 
 1. Watch install + on-watch proof (v0.18.0) - needs the pairing
    code/port from the watch's Wireless debugging screen.
 2. Final app name - chris's pick. (The full "do what i say"
-   build list of Nov 1, 2026 is complete: v0.12.0-v0.26.0.)
+   build list of Nov 1, 2026 is complete: v0.12.0-v0.26.0,
+   plus v0.27.0 automatic ingest.)

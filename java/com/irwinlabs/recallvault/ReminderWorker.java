@@ -95,6 +95,8 @@ public class ReminderWorker extends Worker {
         }
         // Weekly self-maintaining backup rides the daily pass (v0.12.0).
         AutoBackup.runIfDue(ctx);
+        // Automatic ingest of watched folders / new phone media (v0.27.0).
+        FileIngest.runIfEnabled(ctx);
         // Keep any home-screen widget current (v0.14.0).
         VaultWidget.refresh(ctx);
         return Result.success();

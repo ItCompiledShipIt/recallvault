@@ -52,6 +52,8 @@ public class MainActivity extends Activity {
     private static final int REQ_EXPORT_PLAIN = 904;
     private static final int REQ_CHECK_BACKUP = 905;
     private static final int REQ_IMPORT_FOLDER = 906;
+    private static final int REQ_TREE_INGEST = 907;
+    private static final int REQ_PERM_MEDIA = 204;
 
     private Db db;
     private final Handler ui = new Handler(Looper.getMainLooper());
@@ -85,6 +87,11 @@ public class MainActivity extends Activity {
         new Thread(new Runnable() {
             @Override public void run() { purgeOldTrash(); }
         }, "trash-purge").start();
+        // Automatic ingest, opportunistically on open (v0.27.0): the
+        // daily worker also runs it, but Doze can defer that for days.
+        new Thread(new Runnable() {
+            @Override public void run() { FileIngest.runIfEnabled(MainActivity.this); }
+        }, "ingest-open").start();
         Remind.checkNow(this);
         if (android.os.Build.VERSION.SDK_INT >= 33
                 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
@@ -750,6 +757,19 @@ public class MainActivity extends Activity {
         boolean ok = grants.length > 0 && grants[0] == PackageManager.PERMISSION_GRANTED;
         if (req == REQ_PERM_AUDIO && ok) startVoiceMode(pendingVoiceMode);
         if (req == REQ_PERM_CAMERA && ok) startCamera(pendingCaptureType);
+        if (req == REQ_PERM_MEDIA) {
+            boolean any = false;
+            for (int g : grants) if (g == PackageManager.PERMISSION_GRANTED) any = true;
+            if (any) {
+                FileIngest.setPhoneMode(this, true);
+                FileIngest.setEnabled(this, true);
+                Toast.makeText(this, "Phone watching on - new photos and audio will file themselves", Toast.LENGTH_LONG).show();
+                refreshSettings();
+            } else {
+                Toast.makeText(this, "Permission needed to watch the phone's photos and audio", Toast.LENGTH_SHORT).show();
+            }
+            return;
+        }
         if (!ok) Toast.makeText(this, "Permission needed for that capture type", Toast.LENGTH_SHORT).show();
     }
 
@@ -784,6 +804,23 @@ public class MainActivity extends Activity {
         if (req == REQ_IMPORT_FOLDER) {
             if (result == RESULT_OK && data != null && data.getData() != null) {
                 importFolder(data.getData());
+            }
+            return;
+        }
+        if (req == REQ_TREE_INGEST) {
+            if (result == RESULT_OK && data != null && data.getData() != null) {
+                final Uri tree = data.getData();
+                try {
+                    getContentResolver().takePersistableUriPermission(tree,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                } catch (Exception e) {
+                    Toast.makeText(this, "Android would not grant lasting access to that folder", Toast.LENGTH_LONG).show();
+                    return;
+                }
+                FileIngest.addFolder(this, tree);
+                FileIngest.setEnabled(this, true);
+                Toast.makeText(this, "Folder watched. Its files will file themselves.", Toast.LENGTH_LONG).show();
+                refreshSettings();
             }
             return;
         }
@@ -1400,6 +1437,101 @@ public class MainActivity extends Activity {
         bCard.addView(trashBtn);
         box.addView(bCard);
 
+        // Automatic ingest (v0.27.0): watched folders and, optionally,
+        // the whole phone's new photos and audio file themselves.
+        LinearLayout iCard = Ui.card(this);
+        iCard.addView(Ui.sectionLabel(this, "Automatic ingest"));
+        TextView iHelp = Ui.text(this,
+            "Point the vault at folders and it files everything readable "
+            + "in them by itself - the daily check and every app open. "
+            + "Phone-wide watching covers new photos and audio from the "
+            + "moment you turn it on; documents come in through folders. "
+            + "Everything filed gets the same reading, facts and search "
+            + "as a manual save. Duplicates are always skipped.",
+            11, Ui.DIM, false);
+        iHelp.setLayoutParams(Ui.matchWrap(4, this));
+        iCard.addView(iHelp);
+        final android.widget.Switch ingestSwitch = new android.widget.Switch(this);
+        ingestSwitch.setText("Automatic ingest");
+        ingestSwitch.setTextColor(Ui.TEXT);
+        ingestSwitch.setChecked(FileIngest.isEnabled(this));
+        ingestSwitch.setOnCheckedChangeListener(new android.widget.CompoundButton.OnCheckedChangeListener() {
+            @Override public void onCheckedChanged(android.widget.CompoundButton b, boolean on) {
+                FileIngest.setEnabled(MainActivity.this, on);
+                Toast.makeText(MainActivity.this, on ? "Automatic ingest on" : "Automatic ingest off",
+                    Toast.LENGTH_SHORT).show();
+            }
+        });
+        iCard.addView(ingestSwitch);
+        for (final Uri folder : FileIngest.folders(this)) {
+            Button fBtn = Ui.ghostButton(this, "Watched: " + folderLabel(folder) + " (tap to stop watching)");
+            fBtn.setLayoutParams(Ui.matchWrap(6, this));
+            fBtn.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    FileIngest.removeFolder(MainActivity.this, folder);
+                    Toast.makeText(MainActivity.this, "Folder removed", Toast.LENGTH_SHORT).show();
+                    refreshSettings();
+                }
+            });
+            iCard.addView(fBtn);
+        }
+        Button addFolderBtn = Ui.ghostButton(this, "Add a watched folder");
+        addFolderBtn.setLayoutParams(Ui.matchWrap(6, this));
+        addFolderBtn.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+                startActivityForResult(i, REQ_TREE_INGEST);
+            }
+        });
+        iCard.addView(addFolderBtn);
+        final android.widget.Switch phoneSwitch = new android.widget.Switch(this);
+        phoneSwitch.setText("Watch the whole phone (new photos and audio)");
+        phoneSwitch.setTextColor(Ui.TEXT);
+        phoneSwitch.setChecked(FileIngest.phoneMode(this));
+        phoneSwitch.setOnCheckedChangeListener(new android.widget.CompoundButton.OnCheckedChangeListener() {
+            @Override public void onCheckedChanged(android.widget.CompoundButton b, boolean on) {
+                if (on) {
+                    if (android.os.Build.VERSION.SDK_INT >= 33) {
+                        requestPermissions(new String[]{
+                            Manifest.permission.READ_MEDIA_IMAGES,
+                            Manifest.permission.READ_MEDIA_AUDIO}, REQ_PERM_MEDIA);
+                    } else {
+                        FileIngest.setPhoneMode(MainActivity.this, true);
+                        FileIngest.setEnabled(MainActivity.this, true);
+                    }
+                } else {
+                    FileIngest.setPhoneMode(MainActivity.this, false);
+                }
+            }
+        });
+        iCard.addView(phoneSwitch);
+        TextView iStatus = Ui.text(this, FileIngest.statusText(this), 12, Ui.DIM, false);
+        iStatus.setLayoutParams(Ui.matchWrap(4, this));
+        iCard.addView(iStatus);
+        Button nowBtn = Ui.ghostButton(this, "Ingest now");
+        nowBtn.setLayoutParams(Ui.matchWrap(6, this));
+        nowBtn.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                Toast.makeText(MainActivity.this, "Scanning watched places...", Toast.LENGTH_SHORT).show();
+                new Thread(new Runnable() {
+                    @Override public void run() {
+                        final int n = FileIngest.scan(MainActivity.this);
+                        ui.post(new Runnable() {
+                            @Override public void run() {
+                                Toast.makeText(MainActivity.this,
+                                    n == 0 ? "Nothing new to file" : "Filed " + n + (n == 1 ? " new memory" : " new memories"),
+                                    Toast.LENGTH_LONG).show();
+                                render();
+                                refreshSettings();
+                            }
+                        });
+                    }
+                }, "ingest-now").start();
+            }
+        });
+        iCard.addView(nowBtn);
+        box.addView(iCard);
+
         // The settings stack outgrew one screen (v0.12.0): scroll it,
         // or the bottom cards are clipped and unreachable.
         ScrollView settingsScroll = new ScrollView(this);
@@ -1412,6 +1544,18 @@ public class MainActivity extends Activity {
     }
 
     private AlertDialog settingsDialog;
+
+    /** Short display name for a watched tree Uri (v0.27.0). */
+    private String folderLabel(Uri tree) {
+        try {
+            String id = android.provider.DocumentsContract.getTreeDocumentId(tree);
+            int slash = id.lastIndexOf('/');
+            String last = slash >= 0 ? id.substring(slash + 1) : id;
+            return last.isEmpty() ? id : last;
+        } catch (Exception e) {
+            return "folder";
+        }
+    }
 
     /** Hard-delete trashed items older than 30 days, files included (v0.25.0). */
     private void purgeOldTrash() {
