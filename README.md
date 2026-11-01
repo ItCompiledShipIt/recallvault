@@ -729,3 +729,27 @@ history of this file and the project journal.)
    "do what i say" list v0.12.0-v0.26.0 plus v0.27.0, the
    Nov 1 "all" list v0.28.0-v0.37.0, and the second "all"
    list v0.38.0-v0.47.0.)
+
+## v0.49.0 - three themes (Nov 1, 2026)
+
+Directed after the v0.48 layout overhaul still read as "very
+unimpressed with the ui layout and style": all three proposed
+style directions, built as switchable themes.
+
+- Ui's palette is now mutable state written by
+  Ui.applyTheme(); applyChrome() (called by every activity)
+  loads the current theme first, so one switch re-skins every
+  screen. Themes: Console (amber #FFB224 on near-black brown,
+  cream text, orange second accent - the ship-console
+  language), Paper (warm cream background, ink text, rust
+  primary, dark system-bar icons), Aurora (the original
+  periwinkle/teal palette, kept intact).
+- Settings gains an Appearance card listing the three
+  themes with one-line descriptions; tapping one saves the
+  choice, re-skins the shell live and reopens Settings in
+  the new colors. Default on a fresh install: Console.
+- Verified on the S24 Ultra with screenshots of all three
+  themes on the Vault tab; Paper's light status/navigation
+  icons confirmed readable. JVM suite 193/193.
+- Note: the home-screen widgets use XML colors and do not
+  follow the theme yet.

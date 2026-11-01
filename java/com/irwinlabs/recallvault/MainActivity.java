@@ -1788,6 +1788,16 @@ public class MainActivity extends Activity {
         startActivity(e);
     }
 
+    /** Apply a theme everywhere at once (v0.49.0). */
+    private void pickTheme(int t) {
+        Ui.setTheme(this, t);
+        if (settingsDialog != null) settingsDialog.dismiss();
+        buildShell();
+        render();
+        Toast.makeText(this, "Theme: " + Ui.THEME_NAMES[t], Toast.LENGTH_SHORT).show();
+        showSettings();
+    }
+
     private void showSettings() {
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
@@ -1798,6 +1808,27 @@ public class MainActivity extends Activity {
             + "No server is involved. The two models below are the only downloads.",
             12, Ui.TEXT, false);
         box.addView(allLocal);
+
+        // Appearance (v0.49.0): three full themes, applied live.
+        LinearLayout themeCard = Ui.card(this);
+        themeCard.addView(Ui.sectionLabel(this, "Appearance"));
+        TextView thHelp = Ui.text(this,
+            "The whole app re-skins at once - every screen, card and button.",
+            11, Ui.DIM, false);
+        thHelp.setLayoutParams(Ui.matchWrap(4, this));
+        themeCard.addView(thHelp);
+        int curTheme = Ui.theme(this);
+        for (int ti = 0; ti < Ui.THEME_NAMES.length; ti++) {
+            final int t = ti;
+            Button tb = Ui.ghostButton(this,
+                (t == curTheme ? "●  " : "○  ") + Ui.THEME_NAMES[t] + " - " + Ui.THEME_BLURBS[t]);
+            tb.setLayoutParams(Ui.matchWrap(6, this));
+            tb.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) { pickTheme(t); }
+            });
+            themeCard.addView(tb);
+        }
+        box.addView(themeCard);
 
         LinearLayout mCard = Ui.card(this);
         mCard.addView(Ui.sectionLabel(this, "Semantic search"));

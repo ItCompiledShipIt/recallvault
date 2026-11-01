@@ -28,29 +28,91 @@ public final class Ui {
 
     private Ui() {}
 
-    public static final int BG = 0xFF0B0E13;
-    public static final int PANEL = 0xFF141922;
-    public static final int PANEL_HI = 0xFF1C232F;
-    public static final int BORDER = 0xFF273040;
-    public static final int TEXT = 0xFFF2F4F8;
-    public static final int DIM = 0xFF98A2B3;
-    public static final int ACCENT = 0xFF6C8CFF;
-    public static final int ACCENT_DARK_TEXT = 0xFF0B0E13;
-    public static final int ACCENT2 = 0xFF2DD4BF;
-    public static final int WARN = 0xFFF5A524;
-    public static final int DANGER = 0xFFF2555A;
+    // The palette is mutable since v0.49.0: three full themes
+    // (Console / Paper / Aurora) write these fields via
+    // applyTheme(), and every screen rebuilds from them. The
+    // values here are the Aurora defaults.
+    public static int BG = 0xFF0B0E13;
+    public static int PANEL = 0xFF141922;
+    public static int PANEL_HI = 0xFF1C232F;
+    public static int BORDER = 0xFF273040;
+    public static int TEXT = 0xFFF2F4F8;
+    public static int DIM = 0xFF98A2B3;
+    public static int ACCENT = 0xFF6C8CFF;
+    public static int ACCENT_DARK_TEXT = 0xFF0B0E13;
+    public static int ACCENT2 = 0xFF2DD4BF;
+    public static int WARN = 0xFFF5A524;
+    public static int DANGER = 0xFFF2555A;
 
-    private static final int RIPPLE_ON_DARK = 0x2EFFFFFF;
+    private static int RIPPLE_MAIN = 0x2EFFFFFF;
     private static final int RIPPLE_ON_ACCENT = 0x330B0E13;
+    private static boolean LIGHT_BARS = false;
+
+    // ---------- themes (v0.49.0) ----------
+
+    public static final String PREF_THEME = "ui_theme";
+    public static final int THEME_CONSOLE = 0;
+    public static final int THEME_PAPER = 1;
+    public static final int THEME_AURORA = 2;
+    public static final String[] THEME_NAMES = {"Console", "Paper", "Aurora"};
+    public static final String[] THEME_BLURBS = {
+        "Amber on black - the ship-console instrument look",
+        "Warm paper and ink - a field journal, light theme",
+        "Periwinkle and teal on deep navy - gradient glass"};
+
+    public static int theme(android.content.Context ctx) {
+        return ctx.getSharedPreferences(Embed.PREFS, android.content.Context.MODE_PRIVATE)
+            .getInt(PREF_THEME, THEME_CONSOLE);
+    }
+
+    public static void setTheme(android.content.Context ctx, int t) {
+        ctx.getSharedPreferences(Embed.PREFS, android.content.Context.MODE_PRIVATE)
+            .edit().putInt(PREF_THEME, t).apply();
+        applyTheme(ctx);
+    }
+
+    /** Load the chosen theme's palette into the fields above. */
+    public static void applyTheme(android.content.Context ctx) {
+        switch (theme(ctx)) {
+            case THEME_CONSOLE:
+                BG = 0xFF0A0703; PANEL = 0xFF171208; PANEL_HI = 0xFF241A0D;
+                BORDER = 0xFF3D2E13; TEXT = 0xFFF7EBCE; DIM = 0xFFB3A284;
+                ACCENT = 0xFFFFB224; ACCENT_DARK_TEXT = 0xFF1D1305;
+                ACCENT2 = 0xFFFF7A29; WARN = 0xFFFF6B4A; DANGER = 0xFFFF5252;
+                RIPPLE_MAIN = 0x2EFFFFFF; LIGHT_BARS = false;
+                break;
+            case THEME_PAPER:
+                BG = 0xFFF6F1E7; PANEL = 0xFFFFFDF6; PANEL_HI = 0xFFEFE7D6;
+                BORDER = 0xFFD9CDB2; TEXT = 0xFF241E12; DIM = 0xFF7D7462;
+                ACCENT = 0xFFA85B12; ACCENT_DARK_TEXT = 0xFFFFF7E8;
+                ACCENT2 = 0xFF2E6E5E; WARN = 0xFFC2410C; DANGER = 0xFFB3261E;
+                RIPPLE_MAIN = 0x1F000000; LIGHT_BARS = true;
+                break;
+            default: // THEME_AURORA - the original palette
+                BG = 0xFF0B0E13; PANEL = 0xFF141922; PANEL_HI = 0xFF1C232F;
+                BORDER = 0xFF273040; TEXT = 0xFFF2F4F8; DIM = 0xFF98A2B3;
+                ACCENT = 0xFF6C8CFF; ACCENT_DARK_TEXT = 0xFF0B0E13;
+                ACCENT2 = 0xFF2DD4BF; WARN = 0xFFF5A524; DANGER = 0xFFF2555A;
+                RIPPLE_MAIN = 0x2EFFFFFF; LIGHT_BARS = false;
+                break;
+        }
+    }
 
     public static int dp(Activity a, int v) {
         return Math.round(v * a.getResources().getDisplayMetrics().density);
     }
 
-    /** Status bar + navigation bar in app colors, light system icons. */
+    /** Theme + status/navigation bar colors for the chosen theme. */
     public static void applyChrome(Activity a) {
+        applyTheme(a);
         a.getWindow().setStatusBarColor(BG);
         a.getWindow().setNavigationBarColor(PANEL);
+        // Light themes need dark system-bar icons to stay readable.
+        android.view.View decor = a.getWindow().getDecorView();
+        int flags = decor.getSystemUiVisibility();
+        int light = android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+            | android.view.View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+        decor.setSystemUiVisibility(LIGHT_BARS ? (flags | light) : (flags & ~light));
     }
 
     public static GradientDrawable panelBg(int color, int border, int radiusDp, Activity a) {
@@ -89,7 +151,7 @@ public final class Ui {
         b.setTextSize(15);
         b.setAllCaps(false);
         b.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
-        int ripple = (bg == ACCENT || bg == ACCENT2) ? RIPPLE_ON_ACCENT : RIPPLE_ON_DARK;
+        int ripple = (bg == ACCENT || bg == ACCENT2) ? RIPPLE_ON_ACCENT : RIPPLE_MAIN;
         b.setBackground(rippleBg(a, bg, bordered ? BORDER : 0, 12, ripple));
         b.setPadding(dp(a, 16), dp(a, 12), dp(a, 16), dp(a, 12));
         b.setMinHeight(0);
@@ -177,7 +239,7 @@ public final class Ui {
         LinearLayout t = new LinearLayout(a);
         t.setOrientation(LinearLayout.VERTICAL);
         t.setGravity(Gravity.CENTER_HORIZONTAL);
-        t.setBackground(rippleBg(a, PANEL_HI, BORDER, 14, RIPPLE_ON_DARK));
+        t.setBackground(rippleBg(a, PANEL_HI, BORDER, 14, RIPPLE_MAIN));
         t.setPadding(dp(a, 6), dp(a, 12), dp(a, 6), dp(a, 10));
         t.setClickable(true);
         t.setFocusable(true);
@@ -200,8 +262,8 @@ public final class Ui {
         t.setClickable(true);
         t.setFocusable(true);
         int tint = selected ? ACCENT : DIM;
-        if (selected) t.setBackground(rippleBg(a, (ACCENT & 0x00FFFFFF) | 0x1A000000, 0, 12, RIPPLE_ON_DARK));
-        else t.setBackground(rippleBg(a, PANEL, 0, 12, RIPPLE_ON_DARK));
+        if (selected) t.setBackground(rippleBg(a, (ACCENT & 0x00FFFFFF) | 0x1A000000, 0, 12, RIPPLE_MAIN));
+        else t.setBackground(rippleBg(a, PANEL, 0, 12, RIPPLE_MAIN));
         t.addView(icon(a, iconRes, 22, tint));
         TextView l = text(a, label, 11, tint, selected);
         l.setLayoutParams(matchWrap(3, a));
@@ -223,7 +285,7 @@ public final class Ui {
         b.setTypeface(Typeface.DEFAULT, selected ? Typeface.BOLD : Typeface.NORMAL);
         b.setTextColor(selected ? ACCENT_DARK_TEXT : TEXT);
         b.setBackground(rippleBg(a, selected ? ACCENT : PANEL_HI, selected ? 0 : BORDER, 999,
-            selected ? RIPPLE_ON_ACCENT : RIPPLE_ON_DARK));
+            selected ? RIPPLE_ON_ACCENT : RIPPLE_MAIN));
         b.setPadding(dp(a, 14), dp(a, 6), dp(a, 14), dp(a, 6));
         b.setMinHeight(0);
         b.setMinimumHeight(0);
@@ -302,7 +364,7 @@ public final class Ui {
     /** Card with touch ripple (for tappable list items). */
     public static LinearLayout pressCard(Activity a) {
         LinearLayout c = card(a);
-        c.setBackground(rippleBg(a, PANEL, BORDER, 16, RIPPLE_ON_DARK));
+        c.setBackground(rippleBg(a, PANEL, BORDER, 16, RIPPLE_MAIN));
         c.setClickable(true);
         c.setFocusable(true);
         return c;
