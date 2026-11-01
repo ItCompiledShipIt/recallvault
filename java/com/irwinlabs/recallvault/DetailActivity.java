@@ -320,6 +320,27 @@ public class DetailActivity extends Activity {
         });
         root.addView(linkBtn);
 
+        // Find action items (v0.29.0): pull the commitments out of a
+        // meeting's words and file them as their own memories.
+        if ("Meetings".equals(item.category)) {
+            Button actBtn = Ui.ghostButton(this, "Find action items");
+            actBtn.setLayoutParams(Ui.matchWrap(8, this));
+            actBtn.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    String text = (item.extracted != null && !item.extracted.isEmpty())
+                        ? item.extracted : (item.body != null ? item.body : "");
+                    int made = Actions.fileActions(db, item, text);
+                    Toast.makeText(DetailActivity.this,
+                        made > 0 ? "Filed " + made + " action item" + (made == 1 ? "" : "s")
+                                 + " - see the Reminders tab"
+                                 : "No new action items found",
+                        Toast.LENGTH_LONG).show();
+                    if (made > 0) render();
+                }
+            });
+            root.addView(actBtn);
+        }
+
         // Add to calendar (v0.24.0): dated memories can become real
         // calendar events - the calendar app does the saving.
         if (item.reminderAt > 0) {

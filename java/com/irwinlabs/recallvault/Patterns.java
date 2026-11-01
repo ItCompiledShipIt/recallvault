@@ -29,6 +29,8 @@ public final class Patterns {
         public long latestCents;
         public long latestAt;        // newest occurrence's due date
         public boolean monthly;
+        /** Every occurrence as {dueMs, cents}, oldest first (v0.33.0). */
+        public final java.util.List<long[]> history = new java.util.ArrayList<long[]>();
     }
 
     private static final long DAY = 24L * 3600 * 1000;
@@ -85,6 +87,9 @@ public final class Patterns {
             r.displayTitle = newest.title;
             r.latestCents = Ask.principalCents(newest);
             r.latestAt = newest.reminderAt;
+            for (Item it : g) {
+                r.history.add(new long[]{it.reminderAt, Ask.principalCents(it)});
+            }
             long span = newest.reminderAt - g.get(0).reminderAt;
             long avgGap = span / Math.max(1, g.size() - 1);
             r.monthly = avgGap >= 20 * DAY && avgGap <= 45 * DAY;

@@ -13,7 +13,7 @@ import java.util.List;
 public class Db extends SQLiteOpenHelper {
 
     private static final String NAME = "recallvault.db";
-    private static final int VERSION = 8;
+    private static final int VERSION = 9;
 
     public Db(Context ctx) {
         super(ctx.getApplicationContext(), NAME, null, VERSION);
@@ -40,7 +40,8 @@ public class Db extends SQLiteOpenHelper {
             + "file_hash TEXT NOT NULL DEFAULT '',"
             + "pages TEXT NOT NULL DEFAULT '',"
             + "links TEXT NOT NULL DEFAULT '',"
-            + "deleted_at INTEGER NOT NULL DEFAULT 0)");
+            + "deleted_at INTEGER NOT NULL DEFAULT 0,"
+            + "expiry_at INTEGER NOT NULL DEFAULT 0)");
     }
 
     @Override
@@ -73,6 +74,10 @@ public class Db extends SQLiteOpenHelper {
             // v8: trash with undo - deleted_at marks a soft delete - v0.25.0.
             db.execSQL("ALTER TABLE items ADD COLUMN deleted_at INTEGER NOT NULL DEFAULT 0");
         }
+        if (oldV < 9) {
+            // v9: expiry radar - expiry_at tracked apart from due dates - v0.30.0.
+            db.execSQL("ALTER TABLE items ADD COLUMN expiry_at INTEGER NOT NULL DEFAULT 0");
+        }
     }
 
     private ContentValues values(Item it) {
@@ -95,6 +100,10 @@ public class Db extends SQLiteOpenHelper {
         v.put("file_hash", it.fileHash == null ? "" : it.fileHash);
         v.put("pages", it.pages == null ? "" : it.pages);
         v.put("links", it.links == null ? "" : it.links);
+        // Expiry is re-derived from the words on every save (v0.30.0).
+        long exp = Expiry.expiryOf(it);
+        it.expiryAt = exp > 0 ? exp : 0;
+        v.put("expiry_at", it.expiryAt);
         return v;
     }
 
@@ -119,11 +128,12 @@ public class Db extends SQLiteOpenHelper {
         it.pages = c.getString(16);
         it.links = c.getString(17);
         it.deletedAt = c.getLong(18);
+        it.expiryAt = c.getLong(19);
         return it;
     }
 
     private static final String COLS =
-        "id,title,type,category,body,extracted,file_path,mime,created_at,reminder_at,amounts,embedding,embedding_local,embedding_image,handled_at,file_hash,pages,links,deleted_at";
+        "id,title,type,category,body,extracted,file_path,mime,created_at,reminder_at,amounts,embedding,embedding_local,embedding_image,handled_at,file_hash,pages,links,deleted_at,expiry_at";
 
     /**
      * One-time rewrite of every row through the encrypting values()

@@ -46,6 +46,8 @@ public class Item {
     public String links = "";
     /** When this memory was moved to trash; 0 = not trashed (v0.25.0). */
     public long deletedAt = 0;
+    /** When the thing in this memory stops being valid; 0 = none (v0.30.0). */
+    public long expiryAt = 0;
 
     /** All page paths in order: filePath first, then the extra pages. */
     public java.util.List<String> pagePaths() {

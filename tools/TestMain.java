@@ -459,6 +459,287 @@ public class TestMain {
                 && seen.get("content://x/2")[1] == -1L);
         }
 
+        // ---------- v0.28.0: morning digest ----------
+        {
+            long dnow = 1793560000000L; // a Sunday midday
+            Item od = new Item();
+            od.title = "Rent"; od.type = "TEXT"; od.category = "Bills";
+            od.createdAt = dnow - 40L * 24 * 3600 * 1000;
+            od.reminderAt = dnow - 2L * 24 * 3600 * 1000;
+            od.amounts = "1600.00";
+            Item td = new Item();
+            td.title = "Water bill"; td.type = "TEXT"; td.category = "Bills";
+            td.createdAt = dnow - 10L * 24 * 3600 * 1000;
+            td.reminderAt = dnow + 3600 * 1000;
+            td.amounts = "40.00";
+            Item quiet = new Item();
+            quiet.title = "Old note"; quiet.type = "TEXT"; quiet.category = "Notes";
+            quiet.createdAt = dnow - 5L * 24 * 3600 * 1000;
+            Digest.Out d = Digest.compose(java.util.Arrays.asList(od, td, quiet), dnow);
+            check("digest: composed with overdue + today", d != null
+                && d.headline.contains("overdue")
+                && d.lines.size() >= 2
+                && d.lines.get(0).contains("Rent"));
+            Item handled = new Item();
+            handled.title = "Paid bill"; handled.type = "TEXT"; handled.category = "Bills";
+            handled.createdAt = dnow - 90000000L; handled.reminderAt = dnow - 1000;
+            handled.handledAt = dnow - 500;
+            check("digest: handled items stay quiet",
+                Digest.compose(java.util.Arrays.asList(handled), dnow) == null);
+            check("digest: empty vault is quiet",
+                Digest.compose(new java.util.ArrayList<Item>(), dnow) == null);
+        }
+
+        // ---------- v0.29.0: meeting action items ----------
+        {
+            String transcript =
+                "Thanks everyone for coming. The roof is still leaking near the vent.\n"
+                + "I'll send the signed lease to the landlord by Nov 28.\n"
+                + "We need to call the insurance company about the claim.\n"
+                + "The weather has been cold this week.\n"
+                + "Don't forget to renew the parking permit.\n"
+                + "I'll send the signed lease to the landlord by Nov 28.";
+            java.util.List<Actions.Action> acts = Actions.extract(transcript);
+            check("actions: three commitments found (dupe dropped)",
+                acts.size() == 3);
+            boolean dated = false, callFound = false, renewFound = false;
+            for (Actions.Action act1 : acts) {
+                if (act1.text.contains("signed lease") && act1.dueMs > 0) dated = true;
+                if (act1.text.contains("call the insurance")) callFound = true;
+                if (act1.text.contains("renew the parking")) renewFound = true;
+            }
+            check("actions: dated commitment carries its date", dated);
+            check("actions: call + renew commitments found", callFound && renewFound);
+            check("actions: plain chatter yields nothing",
+                Actions.extract("The roof leaks. It rained Tuesday.").isEmpty());
+        }
+
+        // ---------- v0.30.0: expiry radar ----------
+        {
+            long lic = Expiry.expiryOf(
+                "Driver license. Issued Jan 15, 2024. Expires Mar 20, 2027.");
+            check("expiry: picks the date after 'expires', not the issue date",
+                lic > 0 && Extract.formatDate(lic).contains("2027")
+                    && Extract.formatDate(lic).contains("Mar"));
+            check("expiry: no keyword, no expiry",
+                Expiry.expiryOf("Water bill. Amount due $40 by Nov 28.") == -1);
+            long ins = Expiry.expiryOf("Coverage ends Dec 31, 2026 unless renewed.");
+            check("expiry: 'coverage ends' works", ins > 0
+                && Extract.formatDate(ins).contains("2026"));
+            long enow = 1793560000000L;
+            Item e1 = new Item();
+            e1.title = "Passport"; e1.expiryAt = enow + 10L * 24 * 3600 * 1000;
+            Item e2 = new Item();
+            e2.title = "Old permit"; e2.expiryAt = enow - 5L * 24 * 3600 * 1000;
+            Item e3 = new Item();
+            e3.title = "Plain note";
+            java.util.List<Item> sorted =
+                Expiry.expiring(java.util.Arrays.asList(e1, e3, e2));
+            check("expiry: sorted expired-first, dateless excluded",
+                sorted.size() == 2 && sorted.get(0) == e2 && sorted.get(1) == e1);
+            Ask.Summary es = Expiry.answer(java.util.Arrays.asList(e1, e2, e3),
+                "what expires soon", enow);
+            check("expiry: ask hook answers with both", es != null
+                && es.text.contains("Passport") && es.text.contains("expired"));
+            check("expiry: ask hook ignores other questions",
+                Expiry.answer(java.util.Arrays.asList(e1), "how much do I owe", enow) == null);
+            Item e4 = new Item();
+            e4.title = "Car insurance card";
+            e4.body = "Coverage ends soon.";
+            e4.expiryAt = enow + 19L * 24 * 3600 * 1000;
+            Ask.Summary broad = Expiry.answer(java.util.Arrays.asList(e1, e4),
+                "what expires soon", enow);
+            check("expiry: 'what expires soon' lists all, not just word matches",
+                broad != null && broad.count == 2);
+        }
+
+        // ---------- v0.31.0: people & places ----------
+        {
+            Item m1 = new Item();
+            m1.id = 101; m1.title = "Letter from Avista Utilities";
+            m1.body = "Avista Utilities says the meter was read Tuesday.";
+            m1.extracted = ""; m1.createdAt = 1000;
+            Item m2 = new Item();
+            m2.id = 102; m2.title = "Avista Utilities bill";
+            m2.body = "Amount due $54.00."; m2.extracted = ""; m2.createdAt = 2000;
+            Item m3 = new Item();
+            m3.id = 103; m3.title = "Note about Gina";
+            m3.body = "Gina picked up the mail. Gina will call CHAS tomorrow. CHAS opens at eight.";
+            m3.extracted = ""; m3.createdAt = 3000;
+            Item m4 = new Item();
+            m4.id = 104; m4.title = "Random receipt";
+            m4.body = "Bread and milk."; m4.extracted = ""; m4.createdAt = 4000;
+            java.util.List<Item> vault = java.util.Arrays.asList(m1, m2, m3, m4);
+            java.util.List<Entities.Entity> tops = Entities.top(vault, 8);
+            boolean avista = false, gina = false, chas = false, bread = false;
+            for (Entities.Entity e : tops) {
+                if (e.name.equals("Avista Utilities") && e.itemCount == 2) avista = true;
+                if (e.name.equals("Gina")) gina = true;
+                if (e.name.equals("CHAS")) chas = true;
+                if (e.name.equals("Bread")) bread = true;
+            }
+            check("entities: phrase + counts found", avista);
+            check("entities: title name counts once", gina);
+            check("entities: acronym found", chas);
+            check("entities: lowercase chatter ignored", !bread);
+            boolean junk = false;
+            for (Entities.Entity e : tops) {
+                if (e.name.equals("Letter") || e.name.equals("Random")) junk = true;
+            }
+            check("entities: capitalized first words are not entities", !junk);
+            Ask.Summary ea = Entities.answer(vault, "everything about Avista");
+            check("entities: about answer resolves the full name",
+                ea != null && ea.count == 2 && ea.text.contains("Avista Utilities"));
+            check("entities: non-about question passes",
+                Entities.answer(vault, "how much do I owe") == null);
+            check("entities: about lists both memories",
+                Entities.about(vault, "avista utilities").size() == 2);
+        }
+
+        // ---------- v0.32.0: follow-up questions ----------
+        {
+            long fnow = 1793560000000L; // Nov 1, 2026
+            check("followup: month swap",
+                "how much do I owe in November".equals(FollowUp.resolve(
+                    "how much do I owe in October", "and November?", fnow)));
+            check("followup: bare month",
+                "how much do I owe in December".equals(FollowUp.resolve(
+                    "how much do I owe in October", "December", fnow)));
+            check("followup: what-about + abbrev",
+                "what expires in April".equals(FollowUp.resolve(
+                    "what expires in March", "what about Apr?", fnow)));
+            check("followup: last month is relative to now",
+                "how much do I owe in October".equals(FollowUp.resolve(
+                    "how much do I owe in November", "and last month", fnow)));
+            check("followup: no month in last question appends the window",
+                "electricity bill due in November".equals(FollowUp.resolve(
+                    "electricity bill due", "and November?", fnow)));
+            check("followup: fresh question passes through",
+                FollowUp.resolve("how much do I owe in October",
+                    "when is my dentist appointment", fnow) == null);
+            check("followup: no last question, no resolve",
+                FollowUp.resolve(null, "and November?", fnow) == null);
+            check("followup: long sentence is not a follow-up",
+                FollowUp.resolve("how much do I owe in October",
+                    "and November was when the roof leaked badly", fnow) == null);
+        }
+
+        // ---------- v0.32.0: named months are windows in Ask ----------
+        {
+            long anow = 1793560000000L; // Nov 1, 2026
+            long[] oct = Ask.monthWindowMs("how much do I owe in October", anow);
+            check("ask: october window parses", oct != null
+                && Extract.formatDate(oct[0]).contains("Oct")
+                && Extract.formatDate(oct[1]).contains("Nov"));
+            long[] nov27 = Ask.monthWindowMs("bills for November 2027", anow);
+            check("ask: explicit year wins", nov27 != null
+                && Extract.formatDate(nov27[0]).contains("2027"));
+            check("ask: no month, no window",
+                Ask.monthWindowMs("how much do I owe", anow) == null);
+            Item ob1 = new Item();
+            ob1.title = "October electric"; ob1.category = "Bills";
+            ob1.amounts = "$80.00"; ob1.reminderAt = anow - 17L * 24 * 3600 * 1000;
+            ob1.createdAt = anow - 30L * 24 * 3600 * 1000;
+            Item ob2 = new Item();
+            ob2.title = "October water"; ob2.category = "Bills";
+            ob2.amounts = "$40.00"; ob2.reminderAt = anow - 12L * 24 * 3600 * 1000;
+            ob2.createdAt = anow - 29L * 24 * 3600 * 1000;
+            Item nb1 = new Item();
+            nb1.title = "November electric"; nb1.category = "Bills";
+            nb1.amounts = "$95.00"; nb1.reminderAt = anow + 14L * 24 * 3600 * 1000;
+            nb1.createdAt = anow - 2L * 24 * 3600 * 1000;
+            java.util.List<Item> bv = java.util.Arrays.asList(ob1, ob2, nb1);
+            Ask.Summary octSum = Ask.summarize(bv, "how much do I owe in October", null, anow);
+            check("ask: october total scopes to october",
+                octSum != null && octSum.totalCents == 12000
+                    && octSum.text.contains("October"));
+            Ask.Summary novSum = Ask.summarize(bv, "how much do I owe in November", null, anow);
+            check("ask: november single bill stays a best-card answer (by design)",
+                novSum == null);
+        }
+
+        // ---------- v0.33.0: bill history points ----------
+        {
+            long tnow = 1793560000000L;
+            long day = 24L * 3600 * 1000;
+            Item h1 = new Item();
+            h1.title = "Electricity bill"; h1.amounts = "$78.00";
+            h1.reminderAt = tnow - 62 * day; h1.createdAt = h1.reminderAt - day;
+            Item h2 = new Item();
+            h2.title = "Electricity bill"; h2.amounts = "$81.50";
+            h2.reminderAt = tnow - 31 * day; h2.createdAt = h2.reminderAt - day;
+            Item h3 = new Item();
+            h3.title = "Electricity bill"; h3.amounts = "$92.00";
+            h3.reminderAt = tnow - 1 * day; h3.createdAt = h3.reminderAt - day;
+            java.util.List<Patterns.Recurring> rs33 =
+                Patterns.analyze(java.util.Arrays.asList(h3, h1, h2), tnow);
+            check("patterns: history carries all points, oldest first",
+                rs33.size() == 1 && rs33.get(0).history.size() == 3
+                    && rs33.get(0).history.get(0)[1] == 7800
+                    && rs33.get(0).history.get(1)[1] == 8150
+                    && rs33.get(0).history.get(2)[1] == 9200
+                    && rs33.get(0).history.get(0)[0] < rs33.get(0).history.get(2)[0]);
+        }
+
+        // ---------- v0.34.0: near-duplicate photo groups ----------
+        {
+            Item p1 = new Item();
+            p1.title = "Porch photo A";
+            p1.embeddingImage = Embed.encode(new float[]{1f, 0f, 0f, 0f});
+            Item p2 = new Item();
+            p2.title = "Porch photo B";
+            p2.embeddingImage = Embed.encode(new float[]{0.9995f, 0.0316f, 0f, 0f});
+            Item p3 = new Item();
+            p3.title = "Cat photo";
+            p3.embeddingImage = Embed.encode(new float[]{0f, 1f, 0f, 0f});
+            Item p4 = new Item();
+            p4.title = "No vector note";
+            java.util.List<java.util.List<Item>> gs =
+                NearDupes.groups(java.util.Arrays.asList(p1, p2, p3, p4));
+            check("dupes: similar pair groups, others stay out",
+                gs.size() == 1 && gs.get(0).size() == 2
+                    && gs.get(0).contains(p1) && gs.get(0).contains(p2));
+            check("dupes: no vectors, no groups",
+                NearDupes.groups(java.util.Arrays.asList(p4)).isEmpty());
+        }
+
+        // ---------- v0.36.0: monthly report ----------
+        {
+            long dayMs = 24L * 3600 * 1000;
+            // October 2026 items, "now" is Nov 1 2026.
+            long oct5 = 1791200000000L; // early Oct 2026
+            Item ri1 = new Item();
+            ri1.title = "Avista Utilities bill"; ri1.category = "Bills";
+            ri1.body = "Avista Utilities statement."; ri1.amounts = "$54.00";
+            ri1.createdAt = oct5; ri1.reminderAt = oct5 + 10 * dayMs;
+            Item ri2 = new Item();
+            ri2.title = "Groceries photo"; ri2.category = "People";
+            ri2.createdAt = oct5 + dayMs;
+            Item ri3 = new Item();
+            ri3.title = "Avista Utilities letter"; ri3.category = "Bills";
+            ri3.body = "From Avista Utilities."; ri3.amounts = "$60.00";
+            ri3.createdAt = oct5 + 2 * dayMs; ri3.reminderAt = oct5 + 20 * dayMs;
+            ri3.handledAt = oct5 + 21 * dayMs;
+            java.util.List<Item> rv = java.util.Arrays.asList(ri1, ri2, ri3);
+            java.util.List<String> rlines = Report.lines(rv, 2026, 9, 1793560000000L);
+            check("report: lines composed", rlines != null && rlines.size() >= 3);
+            boolean filedLine = false, dueLine = false, handledLine = false, entityLine = false;
+            for (String l : rlines) {
+                if (l.startsWith("3 memories filed")) filedLine = true;
+                if (l.contains("totaling $114.00")) dueLine = true;
+                if (l.contains("1 reminder marked done")) handledLine = true;
+                if (l.contains("Avista Utilities")) entityLine = true;
+            }
+            check("report: filed/due/handled/entity lines", filedLine && dueLine && handledLine && entityLine);
+            check("report: empty month is null",
+                Report.lines(rv, 2026, 5, 1793560000000L) == null);
+            Ask.Summary ra = Report.answer(rv, "my October report", 1793560000000L);
+            check("report: ask hook answers for the named month",
+                ra != null && ra.text.contains("October 2026"));
+            check("report: ask hook ignores plain questions",
+                Report.answer(rv, "when is the bill due", 1793560000000L) == null);
+        }
+
         System.out.println("RESULT: " + pass + " pass, " + fail + " fail");
         if (fail > 0) System.exit(1);
     }

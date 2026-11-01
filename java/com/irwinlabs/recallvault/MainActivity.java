@@ -58,6 +58,10 @@ public class MainActivity extends Activity {
     private Db db;
     private final Handler ui = new Handler(Looper.getMainLooper());
 
+    /** Quick-capture hand-off from the QS tile (v0.35.0). */
+    public static final String EXTRA_QUICK_CAPTURE = "quick_capture";
+    private boolean pendingQuickVoice = false;
+
     private LinearLayout content;
     private String tab = "VAULT"; // VAULT | ASK | REMINDERS
     private String categoryFilter = "All";
@@ -72,6 +76,10 @@ public class MainActivity extends Activity {
         db = new Db(this);
         PdfText.init(this);
         handleShareIntent(getIntent());
+        if (getIntent() != null
+                && "voice".equals(getIntent().getStringExtra(EXTRA_QUICK_CAPTURE))) {
+            pendingQuickVoice = true;
+        }
         buildShell();
         render();
         // Warm the on-device semantic index in the background
@@ -83,6 +91,21 @@ public class MainActivity extends Activity {
         new Thread(new Runnable() {
             @Override public void run() { Db.migrateEncryption(MainActivity.this); }
         }, "vault-migrate").start();
+        // Expiry backfill (v0.30.0): rows saved before the radar existed
+        // get their expiry derived once, through the normal update path.
+        new Thread(new Runnable() {
+            @Override public void run() {
+                android.content.SharedPreferences p =
+                    getSharedPreferences(Embed.PREFS, MODE_PRIVATE);
+                if (p.getLong("expiry_backfilled_at", 0) == 0) {
+                    Db d2 = new Db(MainActivity.this);
+                    for (Item it : d2.all()) {
+                        if (it.expiryAt <= 0 && Expiry.expiryOf(it) > 0) d2.update(it);
+                    }
+                    p.edit().putLong("expiry_backfilled_at", System.currentTimeMillis()).apply();
+                }
+            }
+        }, "expiry-backfill").start();
         // Trash purge: anything deleted over 30 days ago goes for good (v0.25.0).
         new Thread(new Runnable() {
             @Override public void run() { purgeOldTrash(); }
@@ -106,6 +129,12 @@ public class MainActivity extends Activity {
             startActivity(new Intent(this, LockActivity.class));
         } else {
             AppLock.noteActivity();
+            // Quick capture (v0.35.0): the recorder opens only once
+            // the lock has cleared - the tile never bypasses it.
+            if (pendingQuickVoice) {
+                pendingQuickVoice = false;
+                startVoice();
+            }
         }
         render();
         Remind.checkNow(this);
@@ -121,6 +150,9 @@ public class MainActivity extends Activity {
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         handleShareIntent(intent);
+        if (intent != null && "voice".equals(intent.getStringExtra(EXTRA_QUICK_CAPTURE))) {
+            pendingQuickVoice = true;
+        }
     }
 
     private void handleShareIntent(Intent intent) {
@@ -256,6 +288,59 @@ public class MainActivity extends Activity {
         hsv.addView(chips);
         content.addView(hsv);
 
+        // Monthly report card (v0.36.0): last month's report, offered
+        // once when a new month starts.
+        if ("All".equals(categoryFilter) && vaultQuery.trim().isEmpty()) {
+            java.util.Calendar cal = java.util.Calendar.getInstance();
+            final String curKey = cal.get(java.util.Calendar.YEAR) + "-"
+                + cal.get(java.util.Calendar.MONTH);
+            final android.content.SharedPreferences rp =
+                getSharedPreferences(Embed.PREFS, MODE_PRIVATE);
+            if (!curKey.equals(rp.getString("report_seen_month", ""))) {
+                java.util.Calendar lm = (java.util.Calendar) cal.clone();
+                lm.add(java.util.Calendar.MONTH, -1);
+                final int ly = lm.get(java.util.Calendar.YEAR);
+                final int lmo = lm.get(java.util.Calendar.MONTH);
+                final java.util.List<String> rl =
+                    Report.lines(db.all(), ly, lmo, System.currentTimeMillis());
+                if (rl != null) {
+                    LinearLayout rCard = Ui.card(this);
+                    rCard.addView(Ui.sectionLabel(this,
+                        "Your " + Report.monthName(ly, lmo) + " in the vault"));
+                    TextView rt = Ui.text(this, rl.get(0), 13, Ui.TEXT, false);
+                    rt.setLayoutParams(Ui.matchWrap(4, this));
+                    rCard.addView(rt);
+                    Button read = Ui.ghostButton(this, "Read the report");
+                    read.setLayoutParams(Ui.matchWrap(6, this));
+                    read.setOnClickListener(new View.OnClickListener() {
+                        @Override public void onClick(View v) {
+                            StringBuilder sb = new StringBuilder();
+                            for (String l : rl) {
+                                if (sb.length() > 0) sb.append('\n');
+                                sb.append(l);
+                            }
+                            new android.app.AlertDialog.Builder(MainActivity.this)
+                                .setTitle("Your " + Report.monthName(ly, lmo) + " in the vault")
+                                .setMessage(sb.toString())
+                                .setPositiveButton("Close", null)
+                                .show();
+                        }
+                    });
+                    rCard.addView(read);
+                    Button dismiss = Ui.ghostButton(this, "Dismiss");
+                    dismiss.setLayoutParams(Ui.matchWrap(4, this));
+                    dismiss.setOnClickListener(new View.OnClickListener() {
+                        @Override public void onClick(View v) {
+                            rp.edit().putString("report_seen_month", curKey).apply();
+                            render();
+                        }
+                    });
+                    rCard.addView(dismiss);
+                    content.addView(rCard);
+                }
+            }
+        }
+
         // On this day (v0.22.0): memories from this date in earlier years.
         if ("All".equals(categoryFilter) && vaultQuery.trim().isEmpty()) {
             java.util.List<Item> otd = Resurface.onThisDay(db.all(), System.currentTimeMillis());
@@ -272,6 +357,43 @@ public class MainActivity extends Activity {
                     oCard.addView(row);
                 }
                 content.addView(oCard);
+            }
+        }
+
+        // Photo look-alikes (v0.34.0): near-duplicate photos grouped
+        // by their vision vectors, one tap each to review.
+        if ("All".equals(categoryFilter) && vaultQuery.trim().isEmpty()) {
+            final java.util.List<java.util.List<Item>> groups = NearDupes.groups(db.all());
+            if (!groups.isEmpty()) {
+                int photos = 0;
+                for (java.util.List<Item> g : groups) photos += g.size();
+                LinearLayout dCard = Ui.card(this);
+                dCard.addView(Ui.sectionLabel(this, "Photo look-alikes"));
+                TextView dt = Ui.text(this,
+                    groups.size() + (groups.size() == 1 ? " group" : " groups") + ", " + photos
+                        + " photos that look like the same shot. Tap one to open it - "
+                        + "tidying up is your call, from its Delete button.",
+                    12, Ui.DIM, false);
+                dt.setLayoutParams(Ui.matchWrap(4, this));
+                dCard.addView(dt);
+                int gi = 0;
+                for (java.util.List<Item> g : groups) {
+                    gi++;
+                    TextView gl = Ui.text(this, "Group " + gi + " - " + g.size() + " photos",
+                        12, Ui.ACCENT2, true);
+                    gl.setLayoutParams(Ui.matchWrap(6, this));
+                    dCard.addView(gl);
+                    for (final Item it : g) {
+                        Button row = Ui.ghostButton(this,
+                            Extract.formatDate(it.createdAt) + " - " + it.title);
+                        row.setLayoutParams(Ui.matchWrap(4, this));
+                        row.setOnClickListener(new View.OnClickListener() {
+                            @Override public void onClick(View v) { openDetail(it.id); }
+                        });
+                        dCard.addView(row);
+                    }
+                }
+                content.addView(dCard);
             }
         }
 
@@ -496,14 +618,48 @@ public class MainActivity extends Activity {
         });
         content.addView(speak);
 
+        // People & places (v0.31.0): the names the vault has noticed -
+        // one tap lines up everything about that name.
+        java.util.List<Entities.Entity> ents = Entities.top(db.all(), 8);
+        if (!ents.isEmpty()) {
+            TextView pl = Ui.sectionLabel(this, "People & places");
+            pl.setLayoutParams(Ui.matchWrap(14, this));
+            content.addView(pl);
+            TextView ph = Ui.text(this, "Everything about a name, in one place:",
+                12, Ui.DIM, false);
+            content.addView(ph);
+            for (final Entities.Entity e : ents) {
+                Button chip = Ui.ghostButton(this,
+                    e.name + "  (" + e.itemCount + (e.itemCount == 1 ? " memory)" : " memories)"));
+                chip.setLayoutParams(Ui.matchWrap(6, this));
+                chip.setOnClickListener(new View.OnClickListener() {
+                    @Override public void onClick(View v) {
+                        askInput.setText("everything about " + e.name);
+                        runAsk();
+                    }
+                });
+                content.addView(chip);
+            }
+        }
+
         askResults = new LinearLayout(this);
         askResults.setOrientation(LinearLayout.VERTICAL);
         content.addView(askResults);
     }
 
+    /** The last question Ask answered, for follow-ups (v0.32.0). */
+    private String lastAskQuery = null;
+
     private void runAsk() {
-        final String q = askInput.getText().toString().trim();
-        if (q.isEmpty()) return;
+        String raw = askInput.getText().toString().trim();
+        if (raw.isEmpty()) return;
+        // Follow-ups (v0.32.0): "and November?" rewrites itself
+        // against the last question - and the rewrite is shown in
+        // the box, so what was understood is never a guess.
+        String resolved = FollowUp.resolve(lastAskQuery, raw, System.currentTimeMillis());
+        final String q = resolved != null ? resolved : raw;
+        if (resolved != null) askInput.setText(resolved);
+        lastAskQuery = q;
         askResults.removeAllViews();
         final TextView status = Ui.text(this, "Searching...", 13, Ui.DIM, false);
         status.setLayoutParams(Ui.matchWrap(12, this));
@@ -552,6 +708,9 @@ public class MainActivity extends Activity {
         // this month"), lead with the total across every match.
         // Pattern questions ("is this higher than usual") win first.
         Ask.Summary sum = Patterns.answer(db.all(), q, System.currentTimeMillis());
+        if (sum == null) sum = Entities.answer(db.all(), q);
+        if (sum == null) sum = Report.answer(db.all(), q, System.currentTimeMillis());
+        if (sum == null) sum = Expiry.answer(db.all(), q, System.currentTimeMillis());
         if (sum == null) sum = Resurface.reviewAnswer(db.all(), q, System.currentTimeMillis());
         if (sum == null) sum = Ask.summarize(db.all(), q, vec, System.currentTimeMillis());
         if (sum != null) {
@@ -628,11 +787,18 @@ public class MainActivity extends Activity {
         if (!pats.isEmpty()) {
             LinearLayout pCard = Ui.card(this);
             pCard.addView(Ui.sectionLabel(this, "Patterns"));
-            for (Patterns.Recurring r : pats) {
+            for (final Patterns.Recurring r : pats) {
                 TextView pt = Ui.text(this, Patterns.line(r), 13, Ui.TEXT, false);
                 pt.setLayoutParams(Ui.matchWrap(3, this));
+                pt.setClickable(true);
+                pt.setOnClickListener(new View.OnClickListener() {
+                    @Override public void onClick(View v) { showTrendDialog(r); }
+                });
                 pCard.addView(pt);
             }
+            TextView pHint = Ui.text(this, "Tap a bill to see its trend.", 11, Ui.DIM, false);
+            pHint.setLayoutParams(Ui.matchWrap(2, this));
+            pCard.addView(pHint);
             long proj = Patterns.projectedMonthlyCents(pats);
             if (proj > 0) {
                 TextView pp = Ui.text(this,
@@ -643,10 +809,88 @@ public class MainActivity extends Activity {
             }
             content.addView(pCard);
         }
+        // Expiry radar (v0.30.0): things that stop being valid, soonest
+        // first - expired and next-90-days shown, later ones counted.
+        java.util.List<Item> expiring = Expiry.expiring(db.all());
+        if (!expiring.isEmpty()) {
+            long nowMs = System.currentTimeMillis();
+            long horizon = nowMs + 90L * 24 * 3600 * 1000;
+            int later = 0;
+            TextView eh = Ui.sectionLabel(this, "Expiring");
+            eh.setLayoutParams(Ui.matchWrap(14, this));
+            boolean headerAdded = false;
+            for (final Item e : expiring) {
+                if (e.expiryAt > horizon) { later++; continue; }
+                if (!headerAdded) { content.addView(eh); headerAdded = true; }
+                LinearLayout eCard = Ui.pressCard(this);
+                boolean past = e.expiryAt < nowMs;
+                TextView eWhen = Ui.text(this,
+                    (past ? "Expired " : "Expires ") + Extract.formatDate(e.expiryAt)
+                        + "  (" + Extract.relativeDay(e.expiryAt, nowMs) + ")",
+                    14, past ? Ui.DANGER : Ui.WARN, true);
+                eCard.addView(eWhen);
+                TextView eTitle = Ui.text(this, e.title, 15, Ui.TEXT, false);
+                eTitle.setLayoutParams(Ui.matchWrap(2, this));
+                eCard.addView(eTitle);
+                eCard.setOnClickListener(new View.OnClickListener() {
+                    @Override public void onClick(View v) { openDetail(e.id); }
+                });
+                content.addView(eCard);
+            }
+            if (later > 0) {
+                TextView more = Ui.text(this,
+                    "Plus " + later + " more expiring later - ask \"what expires\" for the full list.",
+                    12, Ui.DIM, false);
+                more.setLayoutParams(Ui.matchWrap(4, this));
+                content.addView(more);
+            }
+        }
+        // Action items (v0.29.0): commitments pulled out of meetings,
+        // shown open or handled regardless of whether they carry a date.
+        java.util.List<Item> actionItems = db.byCategory("Actions");
+        java.util.List<Item> openActions = new java.util.ArrayList<Item>();
+        for (Item a : actionItems) if (a.handledAt <= 0) openActions.add(a);
+        if (!actionItems.isEmpty()) {
+            TextView ah = Ui.sectionLabel(this, "Action items from meetings");
+            ah.setLayoutParams(Ui.matchWrap(14, this));
+            content.addView(ah);
+            java.util.List<Item> shown = new java.util.ArrayList<Item>(openActions);
+            for (Item a : actionItems) if (a.handledAt > 0) shown.add(a);
+            for (final Item a : shown) {
+                final boolean aHandled = a.handledAt > 0;
+                LinearLayout aCard = Ui.pressCard(this);
+                if (aHandled) aCard.setAlpha(0.55f);
+                TextView aWhen = Ui.text(this,
+                    a.reminderAt > 0
+                        ? Extract.formatDate(a.reminderAt) + "  (" + Extract.relativeDay(a.reminderAt, System.currentTimeMillis()) + ")"
+                        : "No date set",
+                    13, aHandled ? Ui.DIM : Ui.ACCENT2, true);
+                aCard.addView(aWhen);
+                TextView aTitle = Ui.text(this, a.title, 15, aHandled ? Ui.DIM : Ui.TEXT, false);
+                aTitle.setLayoutParams(Ui.matchWrap(2, this));
+                aCard.addView(aTitle);
+                Button ab = Ui.ghostButton(this, aHandled ? "Undo - still open" : "Mark done");
+                ab.setLayoutParams(Ui.matchWrap(8, this));
+                ab.setOnClickListener(new View.OnClickListener() {
+                    @Override public void onClick(View v) {
+                        a.handledAt = aHandled ? 0 : System.currentTimeMillis();
+                        db.update(a);
+                        render();
+                    }
+                });
+                aCard.addView(ab);
+                aCard.setOnClickListener(new View.OnClickListener() {
+                    @Override public void onClick(View v) { openDetail(a.id); }
+                });
+                content.addView(aCard);
+            }
+        }
         if (items.isEmpty()) {
-            content.addView(Ui.emptyState(this, R.drawable.ic_bell, "No reminders yet",
-                "Save a bill or a document with a due date and it will land here, "
-                + "with a notification before it is due."));
+            if (actionItems.isEmpty()) {
+                content.addView(Ui.emptyState(this, R.drawable.ic_bell, "No reminders yet",
+                    "Save a bill or a document with a due date and it will land here, "
+                    + "with a notification before it is due."));
+            }
             return;
         }
         long now = System.currentTimeMillis();
@@ -695,6 +939,66 @@ public class MainActivity extends Activity {
             content.addView(card);
           }
         }
+    }
+
+    /** Bill trend (v0.33.0): one bill's whole history, bar by bar. */
+    private void showTrendDialog(Patterns.Recurring r) {
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        int pad = Ui.dp(this, 18);
+        box.setPadding(pad, Ui.dp(this, 6), pad, 0);
+        TextView head = Ui.text(this,
+            "Usually " + Ask.formatMoney(r.usualCents) + " - " + r.count + " saved - range "
+                + Ask.formatMoney(r.minCents) + " to " + Ask.formatMoney(r.maxCents)
+                + (r.monthly ? " - about monthly" : ""),
+            13, Ui.DIM, false);
+        head.setLayoutParams(Ui.matchWrap(8, this));
+        box.addView(head);
+        long max = Math.max(1L, r.maxCents);
+        for (long[] p : r.history) {
+            LinearLayout row = new LinearLayout(this);
+            row.setOrientation(LinearLayout.HORIZONTAL);
+            row.setGravity(android.view.Gravity.CENTER_VERTICAL);
+            TextView d = Ui.text(this, Extract.formatDate(p[0]), 12, Ui.DIM, false);
+            d.setLayoutParams(new LinearLayout.LayoutParams(Ui.dp(this, 96),
+                LinearLayout.LayoutParams.WRAP_CONTENT));
+            row.addView(d);
+            LinearLayout track = new LinearLayout(this);
+            track.setOrientation(LinearLayout.HORIZONTAL);
+            track.setLayoutParams(new LinearLayout.LayoutParams(0,
+                LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+            float frac = Math.max(0.04f, (float) p[1] / (float) max);
+            View bar = new View(this);
+            bar.setBackgroundColor(p[1] > r.usualCents ? Ui.WARN : Ui.ACCENT2);
+            bar.setLayoutParams(new LinearLayout.LayoutParams(0, Ui.dp(this, 14), frac));
+            track.addView(bar);
+            View spacer = new View(this);
+            spacer.setLayoutParams(new LinearLayout.LayoutParams(0, 1, 1f - frac));
+            track.addView(spacer);
+            row.addView(track);
+            TextView amt = Ui.text(this, Ask.formatMoney(p[1]), 12, Ui.TEXT, true);
+            amt.setLayoutParams(new LinearLayout.LayoutParams(Ui.dp(this, 64),
+                LinearLayout.LayoutParams.WRAP_CONTENT));
+            amt.setGravity(android.view.Gravity.END);
+            row.addView(amt);
+            row.setLayoutParams(Ui.matchWrap(5, this));
+            box.addView(row);
+        }
+        if (r.latestCents > r.usualCents && r.usualCents > 0) {
+            TextView flag = Ui.text(this,
+                "The latest is " + Ask.formatMoney(r.latestCents - r.usualCents)
+                    + " above usual.",
+                12, Ui.WARN, true);
+            flag.setLayoutParams(Ui.matchWrap(8, this));
+            box.addView(flag);
+        }
+        android.widget.ScrollView sv = new android.widget.ScrollView(this);
+        sv.addView(box);
+        new android.app.AlertDialog.Builder(this)
+            .setTitle(r.displayTitle)
+            .setView(sv)
+            .setPositiveButton("Close", null)
+            .show();
     }
 
     // ---------- capture flows ----------
@@ -1367,6 +1671,33 @@ public class MainActivity extends Activity {
             }
         });
         bCard.addView(readable);
+
+        // Morning digest (v0.28.0): a once-a-day vault summary notification.
+        final android.content.SharedPreferences digestPrefs =
+            getSharedPreferences(Embed.PREFS, MODE_PRIVATE);
+        final android.widget.Switch digestSwitch = new android.widget.Switch(this);
+        digestSwitch.setText("Morning digest (daily vault summary)");
+        digestSwitch.setTextColor(Ui.TEXT);
+        digestSwitch.setChecked(digestPrefs.getBoolean(ReminderWorker.PREF_DIGEST_ENABLED, true));
+        digestSwitch.setOnCheckedChangeListener(new android.widget.CompoundButton.OnCheckedChangeListener() {
+            @Override public void onCheckedChanged(android.widget.CompoundButton b, boolean on) {
+                digestPrefs.edit().putBoolean(ReminderWorker.PREF_DIGEST_ENABLED, on).apply();
+                Toast.makeText(MainActivity.this, on ? "Morning digest on" : "Morning digest off",
+                    Toast.LENGTH_SHORT).show();
+            }
+        });
+        bCard.addView(digestSwitch);
+        Button digestBtn = Ui.ghostButton(this, "Preview morning digest");
+        digestBtn.setLayoutParams(Ui.matchWrap(6, this));
+        digestBtn.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                boolean posted = ReminderWorker.postDigest(MainActivity.this);
+                Toast.makeText(MainActivity.this,
+                    posted ? "Digest posted - check your notifications" : "Nothing to digest today",
+                    Toast.LENGTH_LONG).show();
+            }
+        });
+        bCard.addView(digestBtn);
 
         // Staples (v0.26.0): storage meter, check-a-backup, import-a-folder.
         long usedBytes = dirSize(getFilesDir()) + dirSize(getCacheDir());

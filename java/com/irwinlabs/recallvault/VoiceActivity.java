@@ -360,6 +360,12 @@ public class VoiceActivity extends Activity {
         }
         it.amounts = am.toString();
         db.insert(it);
+        if (meetingMode && it.extracted != null && !it.extracted.isEmpty()) {
+            // Action items from the live captions right away (v0.29.0);
+            // the full transcript pass below adds any it finds too -
+            // duplicates are skipped by title.
+            Actions.fileActions(db, it, it.extracted);
+        }
         Embed.embedPending(this, db);
         boolean meeting = "meeting".equals(mode);
         Toast.makeText(this, meeting ? "Meeting saved" : "Voice note saved", Toast.LENGTH_SHORT).show();
@@ -397,6 +403,11 @@ public class VoiceActivity extends Activity {
                         saved.amounts = am.toString();
                     }
                     d2.update(saved);
+                    if (meetingF) {
+                        // Commitments in the full transcript become
+                        // action items (v0.29.0).
+                        Actions.fileActions(d2, saved, text);
+                    }
                     Embed.embedPending(getApplicationContext(), d2);
                 }
                 @Override public void onError(String message) {

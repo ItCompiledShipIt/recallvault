@@ -225,6 +225,60 @@ public final class Ask {
             || s.contains("due this") || s.contains("bills");
     }
 
+    private static final String[] MONTH_NAMES = {
+        "january", "february", "march", "april", "may", "june",
+        "july", "august", "september", "october", "november", "december"};
+
+    private static final java.util.regex.Pattern MONTH_TOKEN = java.util.regex.Pattern.compile(
+        "\\b(january|february|march|april|may|june|july|august|september|october|november|december"
+        + "|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)(?:\\s+(\\d{4}))?\\b",
+        java.util.regex.Pattern.CASE_INSENSITIVE);
+
+    static boolean isMonthWord(String tok) {
+        String t = tok.toLowerCase(Locale.US);
+        for (String m : MONTH_NAMES) {
+            if (m.equals(t) || m.startsWith(t)) return true;
+        }
+        return false;
+    }
+
+    /**
+     * The named-month window in a question ("in November", "October
+     * 2025"), as {startMs, endMsExclusive}; null when no month is
+     * named. A year-less month means its closest instance to now -
+     * "in October" asked in November is last month, not next year.
+     * (v0.32.0: named months used to leak into the topic keywords,
+     * so "how much do I owe in November" never actually scoped.)
+     */
+    public static long[] monthWindowMs(String q, long nowMs) {
+        if (q == null) return null;
+        java.util.regex.Matcher m = MONTH_TOKEN.matcher(q);
+        if (!m.find()) return null;
+        String tok = m.group(1).toLowerCase(Locale.US);
+        int month = -1;
+        for (int i = 0; i < 12; i++) {
+            if (MONTH_NAMES[i].equals(tok) || MONTH_NAMES[i].startsWith(tok)) { month = i; break; }
+        }
+        if (month < 0) return null;
+        java.util.Calendar cal = java.util.Calendar.getInstance();
+        cal.setTimeInMillis(nowMs);
+        int year;
+        if (m.group(2) != null) {
+            year = Integer.parseInt(m.group(2));
+        } else {
+            year = cal.get(java.util.Calendar.YEAR);
+            int cur = cal.get(java.util.Calendar.MONTH);
+            if (month - cur > 6) year--;
+            else if (cur - month > 6) year++;
+        }
+        java.util.Calendar start = java.util.Calendar.getInstance();
+        start.clear();
+        start.set(year, month, 1);
+        java.util.Calendar end = (java.util.Calendar) start.clone();
+        end.add(java.util.Calendar.MONTH, 1);
+        return new long[]{start.getTimeInMillis(), end.getTimeInMillis()};
+    }
+
     /** Window end (exclusive) implied by the question; Long.MAX_VALUE = no window. */
     public static long windowEndMs(String q, long nowMs) {
         if (q == null) return Long.MAX_VALUE;
@@ -246,7 +300,7 @@ public final class Ask {
         return Long.MAX_VALUE;
     }
 
-    private static long startOfToday(long nowMs) {
+    static long startOfToday(long nowMs) {
         java.util.Calendar cal = java.util.Calendar.getInstance();
         cal.setTimeInMillis(nowMs);
         cal.set(java.util.Calendar.HOUR_OF_DAY, 0);
@@ -273,6 +327,17 @@ public final class Ask {
         // No explicit window: overdue counts too (it is the most owed).
         // With a window word, the frame starts today.
         long from = (to == Long.MAX_VALUE) ? 0 : startOfToday(nowMs);
+        // A named month IS the window (v0.32.0).
+        long[] monthWin = monthWindowMs(query, nowMs);
+        String monthLabel = null;
+        if (monthWin != null) {
+            from = monthWin[0];
+            to = monthWin[1];
+            java.util.Calendar mc = java.util.Calendar.getInstance();
+            mc.setTimeInMillis(monthWin[0]);
+            monthLabel = mc.getDisplayName(java.util.Calendar.MONTH,
+                java.util.Calendar.LONG, Locale.US);
+        }
         // Topical keywords = question words minus the frame vocabulary
         // (owe/due/bill/month/...). "How much do I owe this month" has
         // NO topical word: the frame itself is the filter, and every
@@ -280,7 +345,7 @@ public final class Ask {
         // "electric" as a real topic filter.
         List<String> kws = new ArrayList<String>();
         for (String k : keywords(query)) {
-            if (!FRAME_WORDS.contains(k)) kws.add(k);
+            if (!FRAME_WORDS.contains(k) && !isMonthWord(k) && !k.matches("\\d{4}")) kws.add(k);
         }
         int count = 0;
         long total = 0;
@@ -312,7 +377,9 @@ public final class Ask {
         s.earliestDue = earliest;
         StringBuilder sb = new StringBuilder();
         sb.append(count).append(dueFrame ? " due" : " matching");
-        if (to != Long.MAX_VALUE) {
+        if (monthLabel != null) {
+            sb.append(" in ").append(monthLabel);
+        } else if (to != Long.MAX_VALUE) {
             sb.append(query.toLowerCase(Locale.US).contains("month") ? " this month" : " this week");
         }
         sb.append(", totaling ").append(formatMoney(total)).append('.');

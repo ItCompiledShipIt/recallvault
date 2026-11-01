@@ -51,6 +51,9 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -77,6 +80,18 @@
         <activity android:name=".LockActivity" android:exported="false"
             android:excludeFromRecents="true"
             android:configChanges="orientation|screenSize|keyboardHidden" />
+        <!-- Quick-capture tile in the notification shade (v0.35.0). -->
+        <service
+            android:name=".CaptureTileService"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher"
+            android:label="Voice note"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
         <service android:name=".WatchListenerService" android:exported="true">
             <intent-filter>
                 <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />

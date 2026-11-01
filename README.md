@@ -483,10 +483,133 @@ history of this file and the project journal.)
   note during testing; the v0.25.0 trash caught it exactly as
   designed and it was restored untouched within the session.
 
+## v0.28.0 - morning digest (Nov 1, 2026)
+
+- Once a day the reminder worker also posts a digest
+  notification: what is overdue, what is due today, what is due
+  this week, a bill that is running hot against its own pattern,
+  and an on-this-day memory - composed only when there is
+  something worth saying. Settings gains a Morning digest switch
+  and a Preview button.
+- Device-proven: the posted notification read "Today in your
+  vault - 1 overdue item" with the staged overdue and due-today
+  lines visible in the notification shade dump.
+
+## v0.29.0 - meeting action items (Nov 1, 2026)
+
+- Meetings give up their homework: commitment sentences ("I'll
+  renew...", "don't forget to...", "call the...") are extracted
+  from transcripts and filed as linked "Actions" memories with
+  any date they carry; Ask and the Reminders tab gain an Action
+  items section with Mark done / Undo. Live captions at save
+  time and the post-transcription pass both file, deduped.
+- Device-proven: a staged landlord meeting produced all three
+  commitments in the Reminders tab, the lease carrying its date.
+
+## v0.30.0 - expiry radar (Nov 1, 2026)
+
+- Expiry is tracked apart from due dates (schema v9, expiry_at
+  recomputed from the words at every save, one-time backfill):
+  insurance cards, licenses, warranties. Reminders tab gains an
+  Expiring section (later ones are counted, not listed); Ask
+  answers "what expires soon"; the worker pings once when an
+  expiry comes within 30 days or passes.
+- Device-proven end to end. The proof caught a real bug - the
+  Ask narrowing treated the word "expires" as a topic keyword,
+  so only items containing it were listed; trigger words are
+  now excluded from narrowing, and "what expires soon" lists
+  everything.
+
+## v0.31.0 - people & places (Nov 1, 2026)
+
+- The vault notices names: capitalized phrases and acronyms
+  that span memories, repeat, or sit inside a title (lone
+  capitalized first words are not names). The Ask tab lists the
+  top names as one-tap chips; "everything about X" lines up
+  every memory that mentions X, newest first.
+- Device-proven: chips read "Avista Utilities (2 memories)",
+  "CHAS (1 memory)", "Gina (1 memory)"; tapping Avista lined
+  up both dated memories.
+
+## v0.32.0 - follow-up questions (Nov 1, 2026)
+
+- Ask remembers the last question's window: "and November?",
+  "what about Apr?", a bare "December" - short follow-ups
+  rewrite themselves against the previous question, and the
+  rewrite is shown in the box. Supporting fix found by the
+  proof: named months are now real windows in Ask summaries
+  (before, "how much do I owe in November" never scoped -
+  the month leaked into the topic keywords).
+- Device-proven: "how much do I owe in October" answered "2
+  due in October, totaling $120.00"; "and November?" rewrote
+  itself in the box and answered on the November bill.
+
+## v0.33.0 - bill trend view (Nov 1, 2026)
+
+- Recurring patterns now carry every occurrence; tapping a
+  bill on the Reminders Patterns card opens its trend: usual,
+  count, range, and a bar per occurrence (amber when above
+  usual), with a plain line when the latest runs hot.
+- Device-proven: the electricity series showed "Usually
+  $81.50 - 3 saved - range $78.00 to $92.00 - about monthly"
+  and "The latest is $10.50 above usual."
+
+## v0.34.0 - photo look-alikes (Nov 1, 2026)
+
+- Photos whose vision vectors nearly coincide (cosine >=
+  0.98) are grouped on the Vault tab as look-alikes - bursts,
+  re-saves, recompressed copies the hash guard cannot catch.
+  Review-only by design: each photo opens its detail page,
+  and tidying happens from there, never automatically.
+- Device-proven with real embeddings: two saves of the same
+  drawing grouped; a different drawing stayed out.
+
+## v0.35.0 - quick-capture tile (Nov 1, 2026)
+
+- A Quick Settings tile ("Voice note") and a launcher
+  long-press shortcut, both landing on MainActivity with a
+  quick-capture extra: the voice recorder opens as soon as
+  the app lock clears - the tile goes through the same lock
+  gate as opening the app, never around it. (Placing the
+  tile in the shade panel is the standard one-time drag.)
+- Device-proven: service registered for QS_TILE; a cold
+  start with the lock on lands on the biometric prompt; with
+  the lock off, straight into the recorder.
+
+## v0.36.0 - monthly report (Nov 1, 2026)
+
+- "Your October in the vault": memories filed, the biggest
+  categories, bills that came due and their total, reminders
+  marked done, the busiest day, who kept coming up, and what
+  next month already holds (plus the recurring run-rate).
+  Offered as a Vault card once when a new month starts, and
+  by Ask for any month ("my October report").
+- Device-proven: the staged October read "3 memories filed.
+  Mostly 2 bills, 1 people. Bills and dates that came due: 2,
+  totaling $114.00. 1 reminder marked done. Kept coming up:
+  Avista Utilities (2 memories)."
+
+## v0.37.0 - Ask on the watch (Nov 1, 2026)
+
+- The watch gains "Ask the vault": dictate a question and it
+  travels to the phone (/recallvault/ask), which answers with
+  the same hook chain as the Ask tab (semantic pass included)
+  and sends the answer back (/recallvault/answer) for the
+  watch to display. Companion watch app 1.1.0; note capture
+  is unchanged.
+- Both halves built and the phone half installed; the
+  on-watch half still waits on the same pairing step as
+  v0.18.0 (the code and port from the watch's Wireless
+  debugging screen, which only chris can read).
+
 ## Next queue
 
-1. Watch install + on-watch proof (v0.18.0) - needs the pairing
-   code/port from the watch's Wireless debugging screen.
-2. Final app name - chris's pick. (The full "do what i say"
-   build list of Nov 1, 2026 is complete: v0.12.0-v0.26.0,
-   plus v0.27.0 automatic ingest.)
+1. Watch install + on-watch proof (v0.18.0 capture and
+   v0.37.0 ask) - needs the pairing code/port from the
+   watch's Wireless debugging screen.
+2. Final app name - chris's pick.
+3. Automatic ingest scope pick (v0.27.0, shipped off) -
+   whole-phone watching or watched folders; chris's call.
+   (Two full build lists are now complete: the Nov 1 "do what
+   i say" list v0.12.0-v0.26.0 plus v0.27.0, and the Nov 1
+   "all" list v0.28.0-v0.37.0.)

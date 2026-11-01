@@ -90,15 +90,93 @@ public class ReminderWorker extends Worker {
             notified.add(key);
             changed = true;
         }
+        // Expiry warnings (v0.30.0): one ping per item when its expiry
+        // comes within 30 days (or has passed), same exactly-once rule.
+        for (Item it : db.all()) {
+            if (it.expiryAt <= 0) continue;
+            if (it.expiryAt > now + 30L * 24 * 3600 * 1000) continue;
+            String key = "exp:" + it.id + ":" + it.expiryAt;
+            if (notified.contains(key)) continue;
+            boolean past = it.expiryAt < now;
+            String text = (past ? "Expired " : "Expires ") + Extract.formatDate(it.expiryAt)
+                + " (" + Extract.relativeDay(it.expiryAt, now) + ") - " + it.category;
+            Intent open = new Intent(ctx, DetailActivity.class);
+            open.putExtra("id", it.id);
+            open.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            PendingIntent pi = PendingIntent.getActivity(ctx, (int) (40000 + it.id), open,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, Remind.CHANNEL)
+                .setSmallIcon(android.R.drawable.ic_dialog_alert)
+                .setContentTitle(it.title)
+                .setContentText(text)
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(text))
+                .setContentIntent(pi)
+                .setAutoCancel(true)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+            try {
+                nm.notify((int) (40000 + it.id), b.build());
+            } catch (SecurityException e) {
+                continue;
+            }
+            notified.add(key);
+            changed = true;
+        }
         if (changed) {
             prefs.edit().putStringSet(PREF_NOTIFIED, notified).apply();
         }
         // Weekly self-maintaining backup rides the daily pass (v0.12.0).
         AutoBackup.runIfDue(ctx);
+        // Morning digest, once a day (v0.28.0).
+        maybePostDigest(ctx);
         // Automatic ingest of watched folders / new phone media (v0.27.0).
         FileIngest.runIfEnabled(ctx);
         // Keep any home-screen widget current (v0.14.0).
         VaultWidget.refresh(ctx);
         return Result.success();
+    }
+
+    static final String PREF_DIGEST_ENABLED = "digest_enabled";
+    static final String PREF_DIGEST_DAY = "digest_last_day";
+    static final int DIGEST_ID = 20001;
+
+    private void maybePostDigest(Context ctx) {
+        SharedPreferences prefs = ctx.getSharedPreferences(Embed.PREFS, Context.MODE_PRIVATE);
+        if (!prefs.getBoolean(PREF_DIGEST_ENABLED, true)) return;
+        java.util.Calendar cal = java.util.Calendar.getInstance();
+        int today = cal.get(java.util.Calendar.YEAR) * 1000 + cal.get(java.util.Calendar.DAY_OF_YEAR);
+        if (prefs.getInt(PREF_DIGEST_DAY, -1) == today) return;
+        prefs.edit().putInt(PREF_DIGEST_DAY, today).apply();
+        postDigest(ctx);
+    }
+
+    /** Compose and post the digest now (worker daily pass + Settings preview). */
+    static boolean postDigest(Context ctx) {
+        Remind.ensureChannel(ctx);
+        Db db = new Db(ctx);
+        Digest.Out out = Digest.compose(db.all(), System.currentTimeMillis());
+        if (out == null) return false;
+        StringBuilder big = new StringBuilder();
+        for (String line : out.lines) {
+            if (big.length() > 0) big.append('\n');
+            big.append(line);
+        }
+        Intent open = new Intent(ctx, MainActivity.class);
+        open.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent pi = PendingIntent.getActivity(ctx, DIGEST_ID, open,
+            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, Remind.CHANNEL)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentTitle("Today in your vault - " + out.headline)
+            .setContentText(out.lines.get(0))
+            .setStyle(new NotificationCompat.BigTextStyle().bigText(big.toString()))
+            .setContentIntent(pi)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+        try {
+            NotificationManagerCompat.from(ctx).notify(DIGEST_ID, b.build());
+            return true;
+        } catch (SecurityException e) {
+            return false;
+        }
     }
 }
