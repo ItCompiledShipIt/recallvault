@@ -703,12 +703,17 @@ history of this file and the project journal.)
     listed (tap to re-ask) instead of vanishing.
   - Reminders opens with at-a-glance counts (overdue / due
     today / more this week) above the existing sections.
-- Verified: build + install clean, suite 193/193, no crash
-  records, header/count and widget refresh observed live.
-  Full visual proof of the new screens is still owed - the
-  app lock (his fingerprint) gates them, and this phone's
-  uiautomator tree kept returning the under-window while
-  other activities stacked on top.
+- v0.48.0 as first built was BROKEN: a weighted spacer
+  View in the new header row stretched to the full screen
+  height on this phone, the header swallowed the whole
+  window, and the app showed the brand row alone on black.
+  v0.48.1 removes the spacer (the count now sits under the
+  title) - verified with a pulled screenshot: header, dock,
+  filter, chips, TODAY group, the voice-note card, and the
+  tab bar all render as designed. The lesson is banked:
+  the uiautomator tree was telling the truth the whole
+  time; a "settled" dump with missing subtrees is a bug
+  report, not a tooling quirk.
 
 ## Next queue
 
