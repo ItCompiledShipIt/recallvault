@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.irwinlabs.recallvault">
+
+    <!-- Package visibility (Android 11+): without this declaration the
+         camera intent resolves to nothing from inside the app, even
+         though a camera exists - the Scan / Add-a-page bug of v0.20.0. -->
+    <queries>
+        <intent>
+            <action android:name="android.media.action.IMAGE_CAPTURE" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.INSERT" />
+            <data android:mimeType="vnd.android.cursor.item/event" />
+        </intent>
+    </queries>
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <uses-permission android:name="android.permission.USE_FINGERPRINT" />
+    <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
+
+    <application
+        android:label="RecallVault"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:theme="@android:style/Theme.Material.NoActionBar"
+        android:allowBackup="true"
+        android:usesCleartextTraffic="true"
+        android:supportsRtl="true">
+
+        <provider
+            android:name=".ShareProvider"
+            android:authorities="com.irwinlabs.recallvault.files"
+            android:exported="false"
+            android:grantUriPermissions="true" />
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:configChanges="orientation|screenSize|keyboardHidden">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+                <data android:mimeType="application/pdf" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".EditorActivity" android:exported="false"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
+        <activity android:name=".VoiceActivity" android:exported="false"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
+        <activity android:name=".DetailActivity" android:exported="false"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
+        <activity android:name=".LockActivity" android:exported="false"
+            android:excludeFromRecents="true"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
+        <service android:name=".WatchListenerService" android:exported="true">
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
+                <data android:host="*" android:pathPrefix="/recallvault" android:scheme="wear" />
+            </intent-filter>
+        </service>
+        <receiver android:name=".VaultWidget" android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider"
+                android:resource="@xml/widget_info" />
+        </receiver>
+        <receiver android:name=".HandledReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="com.irwinlabs.recallvault.MARK_HANDLED" />
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>

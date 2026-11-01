@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <files-path name="captures" path="captures/" />
+    <!-- Whole app files dir so any memory's file can be shared out (v0.15.0). -->
+    <files-path name="vault_files" path="." />
+    <cache-path name="cache" path="." />
+</paths>

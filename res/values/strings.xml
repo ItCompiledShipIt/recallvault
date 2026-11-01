@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">RecallVault</string>
+    <string name="widget_desc">What is due this week, plus one-tap voice capture</string>
+</resources>

@@ -1,0 +1,101 @@
+// RecallVault - Gradle build (v0.2.0+). Single-module layout: the
+// Android sources live at the project root (java/, res/, assets/,
+// AndroidManifest.xml) exactly as the v0.1.0 no-Gradle pipeline used
+// them; sourceSets below point AGP at that layout, nothing moved.
+//
+// Versions pinned from live metadata, Oct 31, 2026:
+//  - AGP 9.4.1: proven on this machine with Gradle 9.7.1 + JDK 25
+//    (Loot Dungeon / Moonbrew builds); 9.5.0 exists but is unproven here.
+//  - ML Kit text-recognition 16.0.1: <latest> in Google Maven metadata.
+//  - PdfBox-Android 2.0.27.0: <latest> in Maven Central metadata.
+plugins {
+    id 'com.android.application' version '9.4.1'
+}
+
+android {
+    namespace 'com.irwinlabs.recallvault'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId 'com.irwinlabs.recallvault'
+        minSdk 26
+        targetSdk 34
+        versionCode 29
+        versionName "0.26.0"
+        multiDexEnabled true
+    }
+
+    signingConfigs {
+        house {
+            storeFile file('debug.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
+    }
+
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.house
+        }
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.house
+        }
+    }
+
+    // v0.8.0: ship an arm64-only APK. The 213 MB universal build was
+    // almost all native libraries for chips this phone does not have
+    // (LiteRT-LM/MediaPipe ship every ABI); the app's own .so is
+    // arm64-only already. universalApk off: one APK, the right one.
+    splits {
+        abi {
+            enable true
+            reset()
+            include 'arm64-v8a'
+            universalApk false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+
+    sourceSets {
+        main {
+            manifest.srcFile 'AndroidManifest.xml'
+            java.srcDirs = ['java']
+            res.srcDirs = ['res']
+            assets.srcDirs = ['assets']
+            // librecallwhisper.so (whisper.cpp JNI, built by native/build.sh).
+            jniLibs.srcDirs = ['jniLibs']
+        }
+    }
+}
+
+dependencies {
+    implementation 'com.google.mlkit:text-recognition:16.0.1'
+    implementation 'com.tom-roush:pdfbox-android:2.0.27.0'
+    // v0.3.0 additions, pinned from live Google Maven metadata (Oct 31, 2026):
+    implementation 'androidx.work:work-runtime:2.12.0'
+    implementation 'androidx.core:core:1.17.0'
+    // On-device EmbeddingGemma 2 (Universal Embedder over LiteRT-LM).
+    implementation 'com.google.mediapipe:tasks-retrieval:1.2.0'
+    // Watch capture (v0.18.0): Data Layer messages from the Galaxy Watch app.
+    implementation 'com.google.android.gms:play-services-wearable:18.1.0'
+}
+
+// androidx.core 1.19.x demands compileSdk 37; this project compiles
+// against 36, so hold core at the last 36-compatible line.
+// tasks-retrieval 1.2.0's POM pins litertlm-android 0.17.0-alpha1, but
+// that AAR does NOT contain com.google.ai.edge.litertlm.ActivationDataType,
+// which UniversalEmbedder references - the app crash-looped on device
+// (NoClassDefFoundError) until this force was added. Verified by
+// inspecting the AARs: the class first appears in 0.18.0 (Oct 31, 2026).
+configurations.all {
+    resolutionStrategy {
+        force 'androidx.core:core:1.17.0', 'androidx.core:core-ktx:1.17.0'
+        force 'com.google.ai.edge.litertlm:litertlm-android:0.18.0'
+    }
+}
