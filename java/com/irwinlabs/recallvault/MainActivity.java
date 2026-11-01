@@ -205,6 +205,7 @@ public class MainActivity extends Activity {
     // ---------- shell ----------
 
     private LinearLayout tabsBar;
+    private TextView headerCount;
 
     private void buildShell() {
         Ui.applyChrome(this);
@@ -223,11 +224,15 @@ public class MainActivity extends Activity {
             LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         tlp.setMargins(Ui.dp(this, 12), 0, 0, 0);
         titles.setLayoutParams(tlp);
-        titles.addView(Ui.text(this, "RecallVault", 20, Ui.TEXT, true));
-        titles.addView(Ui.text(this, "Your memory, on your phone", 12, Ui.DIM, false));
+        titles.addView(Ui.text(this, "RecallVault", 18, Ui.TEXT, true));
         header.addView(titles);
+        View hSpacer = new View(this);
+        hSpacer.setLayoutParams(new LinearLayout.LayoutParams(0,
+            LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        header.addView(hSpacer);
+        headerCount = Ui.text(this, "", 12, Ui.DIM, false);
+        header.addView(headerCount);
         root.addView(header);
-        root.addView(Ui.divider(this));
 
         ScrollView scroll = new ScrollView(this);
         scroll.setLayoutParams(new LinearLayout.LayoutParams(
@@ -255,12 +260,27 @@ public class MainActivity extends Activity {
             new View.OnClickListener() { @Override public void onClick(View v) { tab = "VAULT"; render(); } }));
         tabsBar.addView(Ui.tabItem(this, R.drawable.ic_search, "Ask", "ASK".equals(tab),
             new View.OnClickListener() { @Override public void onClick(View v) { tab = "ASK"; render(); } }));
-        tabsBar.addView(Ui.tabItem(this, R.drawable.ic_bell, "Reminders", "REMINDERS".equals(tab),
+        // The Reminders tab carries a live badge (v0.48.0): how
+        // many deadlines are overdue or land inside 48h.
+        int dueSoon = 0;
+        try {
+            long nowB = System.currentTimeMillis();
+            for (Item it : db.withReminders()) {
+                if (it.handledAt == 0 && it.reminderAt > 0
+                        && it.reminderAt <= nowB + 48L * 3600 * 1000) dueSoon++;
+            }
+        } catch (Exception ignored) {}
+        String remLabel = dueSoon > 0 ? "Reminders - " + dueSoon : "Reminders";
+        tabsBar.addView(Ui.tabItem(this, R.drawable.ic_bell, remLabel, "REMINDERS".equals(tab),
             new View.OnClickListener() { @Override public void onClick(View v) { tab = "REMINDERS"; render(); } }));
     }
 
     private void render() {
         if (content == null) return;
+        if (headerCount != null) {
+            int n = db.count();
+            headerCount.setText(n + (n == 1 ? " memory" : " memories"));
+        }
         renderTabs();
         content.removeAllViews();
         if ("ASK".equals(tab)) renderAsk();
@@ -272,7 +292,8 @@ public class MainActivity extends Activity {
     // ---------- VAULT ----------
 
     private void renderVault() {
-        content.addView(captureCard());
+        content.addView(captureDock());
+        attentionStrip();
 
         EditText search = Ui.input(this, "Filter your vault...");
         search.setText(vaultQuery);
@@ -440,6 +461,8 @@ public class MainActivity extends Activity {
         String q = vaultQuery.trim().toLowerCase();
         int shown = 0;
         long lastMonthStamp = -1;
+        long lastDayStamp = -1;
+        long nowMs = System.currentTimeMillis();
         for (Item it : items) {
             if (!q.isEmpty() && !it.searchableText().toLowerCase().contains(q)
                     && !it.title.toLowerCase().contains(q)) continue;
@@ -448,6 +471,18 @@ public class MainActivity extends Activity {
                 mh.setLayoutParams(Ui.matchWrap(10, this));
                 holder.addView(mh);
                 lastMonthStamp = it.createdAt;
+            }
+            // Day-grouped feed (v0.48.0 layout): the vault reads
+            // like a journal - Today, Yesterday, then dated days -
+            // instead of one undifferentiated stack.
+            if (!vaultByMonth) {
+                long day = DayGroup.startOfDay(it.createdAt);
+                if (day != lastDayStamp) {
+                    TextView dh = Ui.sectionLabel(this, DayGroup.label(it.createdAt, nowMs));
+                    dh.setLayoutParams(Ui.matchWrap(12, this));
+                    holder.addView(dh);
+                    lastDayStamp = day;
+                }
             }
             holder.addView(itemCard(it));
             shown++;
@@ -466,6 +501,87 @@ public class MainActivity extends Activity {
             n.setLayoutParams(Ui.matchWrap(10, this));
             holder.addView(n);
         }
+    }
+
+    /**
+     * The capture dock (v0.48.0 layout): one hero action - voice,
+     * the way most memories start - plus a Note shortcut and the
+     * full capture sheet behind one tap. The old seven-tile grid
+     * card ate the top of the home screen; it lives in the sheet
+     * now, unchanged.
+     */
+    private LinearLayout captureDock() {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setLayoutParams(Ui.matchWrap(4, this));
+        Button voice = Ui.iconButton(this, "Voice note", R.drawable.ic_mic, Ui.ACCENT, Ui.ACCENT_DARK_TEXT);
+        voice.setLayoutParams(Ui.weight1(0, this));
+        voice.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { startVoice(); }
+        });
+        row.addView(voice);
+        Button note = Ui.iconButton(this, "Note", R.drawable.ic_note, Ui.PANEL_HI, Ui.TEXT);
+        note.setLayoutParams(Ui.weight1(8, this));
+        note.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                startActivity(new Intent(MainActivity.this, EditorActivity.class));
+            }
+        });
+        row.addView(note);
+        Button more = Ui.ghostButton(this, "+");
+        LinearLayout.LayoutParams mlp = new LinearLayout.LayoutParams(
+            Ui.dp(this, 52), LinearLayout.LayoutParams.MATCH_PARENT);
+        mlp.setMargins(Ui.dp(this, 8), 0, 0, 0);
+        more.setLayoutParams(mlp);
+        more.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { showCaptureSheet(); }
+        });
+        row.addView(more);
+        return row;
+    }
+
+    private void showCaptureSheet() {
+        new android.app.AlertDialog.Builder(this)
+            .setTitle("Save something")
+            .setView(captureCard())
+            .setNegativeButton("Close", null)
+            .show();
+    }
+
+    /**
+     * The attention strip (v0.48.0 layout): when deadlines need
+     * the user, the home screen says so up top - one line, one
+     * tap to the Reminders tab - instead of the count hiding
+     * behind a tab.
+     */
+    private void attentionStrip() {
+        if (!"All".equals(categoryFilter) || !vaultQuery.trim().isEmpty()) return;
+        long now = System.currentTimeMillis();
+        java.util.List<Item> due = new java.util.ArrayList<Item>();
+        for (Item it : db.withReminders()) {
+            if (it.handledAt == 0 && it.reminderAt > 0
+                    && it.reminderAt <= now + 7L * 24 * 3600 * 1000) due.add(it);
+        }
+        if (due.isEmpty()) return;
+        java.util.Collections.sort(due, new java.util.Comparator<Item>() {
+            @Override public int compare(Item a, Item b) {
+                return Long.compare(a.reminderAt, b.reminderAt);
+            }
+        });
+        Item first = due.get(0);
+        LinearLayout strip = Ui.pressCard(this);
+        strip.setBackground(Ui.rippleBg(this, Ui.PANEL, Ui.WARN, 16, 0x2EFFFFFF));
+        strip.setLayoutParams(Ui.matchWrap(12, this));
+        TextView t = Ui.text(this,
+            due.size() + (due.size() == 1 ? " deadline needs" : " deadlines need")
+                + " you - first: " + Privacy.displayTitle(first)
+                + " (" + Extract.relativeDay(first.reminderAt, now) + ")",
+            13, Ui.TEXT, true);
+        strip.addView(t);
+        strip.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { tab = "REMINDERS"; render(); }
+        });
+        content.addView(strip);
     }
 
     private LinearLayout captureCard() {
@@ -602,6 +718,9 @@ public class MainActivity extends Activity {
 
     private EditText askInput;
     private LinearLayout askResults;
+    /** Earlier questions this session, newest first (v0.48.0). */
+    private final java.util.List<String> askEarlier = new java.util.ArrayList<String>();
+    private String lastAnsweredQuery = null;
 
     private void renderAsk() {
         TextView h = Ui.text(this, "Ask your vault", 18, Ui.TEXT, true);
@@ -655,6 +774,26 @@ public class MainActivity extends Activity {
                     @Override public void onClick(View v) { showPersonCard(e); }
                 });
                 content.addView(chip);
+            }
+        }
+
+        // Earlier questions (v0.48.0): Ask reads as a conversation -
+        // what you already asked sits one tap away, above the new
+        // answer, instead of vanishing when the next question lands.
+        if (!askEarlier.isEmpty()) {
+            TextView el = Ui.sectionLabel(this, "Earlier questions");
+            el.setLayoutParams(Ui.matchWrap(14, this));
+            content.addView(el);
+            for (final String eq : askEarlier) {
+                Button row = Ui.ghostButton(this, eq);
+                row.setLayoutParams(Ui.matchWrap(6, this));
+                row.setOnClickListener(new View.OnClickListener() {
+                    @Override public void onClick(View v) {
+                        askInput.setText(eq);
+                        runAsk();
+                    }
+                });
+                content.addView(row);
             }
         }
 
@@ -712,6 +851,20 @@ public class MainActivity extends Activity {
     private void showAskResults(String q, float[] vec, int mode) {
         if (askResults == null) return;
         askResults.removeAllViews();
+        // Conversation shape (v0.48.0): the question sits in its
+        // own bubble above the answer, and the previous question
+        // joins the Earlier list for next time.
+        if (lastAnsweredQuery != null && !lastAnsweredQuery.equals(q)
+                && !askEarlier.contains(lastAnsweredQuery)) {
+            askEarlier.add(0, lastAnsweredQuery);
+            while (askEarlier.size() > 6) askEarlier.remove(askEarlier.size() - 1);
+        }
+        lastAnsweredQuery = q;
+        TextView bubble = Ui.text(this, q, 14, Ui.TEXT, true);
+        bubble.setBackground(Ui.panelBg(Ui.PANEL_HI, Ui.ACCENT, 14, this));
+        bubble.setPadding(Ui.dp(this, 12), Ui.dp(this, 10), Ui.dp(this, 12), Ui.dp(this, 10));
+        bubble.setLayoutParams(Ui.matchWrap(12, this));
+        askResults.addView(bubble);
         List<Ask.Result> results = Ask.search(Privacy.visible(db.all()), q, vec, true);
         TextView modeView = Ui.text(this,
             mode == 2 ? "Semantic + keyword search (EmbeddingGemma 2 on this phone)"
@@ -788,6 +941,28 @@ public class MainActivity extends Activity {
         content.addView(sub);
 
         List<Item> items = db.withReminders();
+        // At-a-glance counts (v0.48.0 layout): the shape of the
+        // week before the detail starts.
+        {
+            long nowR = System.currentTimeMillis();
+            int overdue = 0, today = 0, week = 0;
+            for (Item it : items) {
+                if (it.handledAt != 0 || it.reminderAt <= 0) continue;
+                if (it.reminderAt < DayGroup.startOfDay(nowR)) overdue++;
+                else if (it.reminderAt < DayGroup.startOfDay(nowR) + 24L * 3600 * 1000) today++;
+                else if (it.reminderAt <= nowR + 7L * 24 * 3600 * 1000) week++;
+            }
+            if (overdue + today + week > 0) {
+                StringBuilder sb = new StringBuilder();
+                if (overdue > 0) sb.append(overdue).append(" overdue");
+                if (today > 0) { if (sb.length() > 0) sb.append("  -  "); sb.append(today).append(" due today"); }
+                if (week > 0) { if (sb.length() > 0) sb.append("  -  "); sb.append(week).append(" more this week"); }
+                TextView counts = Ui.text(this, sb.toString(), 13,
+                    overdue > 0 ? Ui.WARN : Ui.ACCENT2, true);
+                counts.setLayoutParams(Ui.matchWrap(8, this));
+                content.addView(counts);
+            }
+        }
         Ask.Summary digest = Ask.dueDigest(items, System.currentTimeMillis());
         if (digest != null) {
             LinearLayout dCard = Ui.card(this);

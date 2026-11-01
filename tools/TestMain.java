@@ -973,6 +973,19 @@ public class TestMain {
             check("privacy: isPrivate flag", Privacy.isPrivate(prv) && !Privacy.isPrivate(pub));
         }
 
+        // ---------- v0.48.0: day-grouped feed labels ----------
+        {
+            long fixedNow = 1794000000000L; // a fixed "now"
+            check("daylabel: today",
+                "Today".equals(DayGroup.label(fixedNow, fixedNow)));
+            check("daylabel: yesterday",
+                "Yesterday".equals(DayGroup.label(fixedNow - 24L * 3600 * 1000, fixedNow)));
+            String older = DayGroup.label(fixedNow - 9L * 24 * 3600 * 1000, fixedNow);
+            check("daylabel: older is a dated label",
+                older != null && !older.equals("Today") && !older.equals("Yesterday")
+                    && older.contains(","));
+        }
+
         System.out.println("RESULT: " + pass + " pass, " + fail + " fail");
         if (fail > 0) System.exit(1);
     }

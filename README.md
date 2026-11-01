@@ -682,6 +682,34 @@ history of this file and the project journal.)
   appear. A second home-screen widget (AskWidget) goes
   straight to a voice question on the Ask tab.
 
+## v0.48.0 - layout overhaul (Nov 1, 2026)
+
+- Requested as "rethink the whole app layout - it looks
+  really basic". Structure, not paint:
+  - Shell: compact one-line header (brand + name + live
+    memory count); the Reminders tab carries a badge with
+    the number of deadlines overdue or due inside 48h.
+  - Vault: the seven-tile capture card is gone from the
+    home screen. A capture dock leads instead - Voice note
+    hero, Note shortcut, and "+" opening the full grid as a
+    sheet (Settings included, unchanged inside). Below it,
+    an attention strip appears only when deadlines need the
+    user (overdue or inside a week), one tap to Reminders.
+  - The feed is day-grouped (DayGroup.java): Today,
+    Yesterday, then dated days - a journal, not a stack.
+    The by-month toggle still switches to month headers.
+  - Ask reads as a conversation: the question sits in its
+    own bubble above the answer, and earlier questions stay
+    listed (tap to re-ask) instead of vanishing.
+  - Reminders opens with at-a-glance counts (overdue / due
+    today / more this week) above the existing sections.
+- Verified: build + install clean, suite 193/193, no crash
+  records, header/count and widget refresh observed live.
+  Full visual proof of the new screens is still owed - the
+  app lock (his fingerprint) gates them, and this phone's
+  uiautomator tree kept returning the under-window while
+  other activities stacked on top.
+
 ## Next queue
 
 1. Watch install + on-watch proof (v0.18.0 capture and
