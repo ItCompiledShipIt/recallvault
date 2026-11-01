@@ -225,13 +225,9 @@ public class MainActivity extends Activity {
         tlp.setMargins(Ui.dp(this, 12), 0, 0, 0);
         titles.setLayoutParams(tlp);
         titles.addView(Ui.text(this, "RecallVault", 18, Ui.TEXT, true));
-        header.addView(titles);
-        View hSpacer = new View(this);
-        hSpacer.setLayoutParams(new LinearLayout.LayoutParams(0,
-            LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
-        header.addView(hSpacer);
         headerCount = Ui.text(this, "", 12, Ui.DIM, false);
-        header.addView(headerCount);
+        titles.addView(headerCount);
+        header.addView(titles);
         root.addView(header);
 
         ScrollView scroll = new ScrollView(this);
