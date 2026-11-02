@@ -119,8 +119,26 @@ public final class FileIngest {
 
     // ---------- the scan ----------
 
+    // One scan at a time, process-wide. The triggers (app open,
+    // the daily worker, Settings) can overlap, and two scans
+    // racing the hash guard filed the same photo three times -
+    // identical hashes on ids 99-101, all copied within 90 ms
+    // (device DB, Nov 1, 2026). The guard is check-then-insert,
+    // so a second scan must never start while one is running.
+    private static final java.util.concurrent.atomic.AtomicBoolean SCANNING =
+        new java.util.concurrent.atomic.AtomicBoolean(false);
+
     /** File everything new from the watched places. Returns the count filed. */
     public static int scan(Context ctx) {
+        if (!SCANNING.compareAndSet(false, true)) return 0;
+        try {
+            return scanInner(ctx);
+        } finally {
+            SCANNING.set(false);
+        }
+    }
+
+    private static int scanInner(Context ctx) {
         Db db = new Db(ctx);
         Map<String, long[]> seen = loadSeen(ctx);
         int[] budget = new int[]{MAX_PER_SCAN};
@@ -135,7 +153,7 @@ public final class FileIngest {
             }
         }
         if (phoneMode(ctx) && budget[0] > 0) {
-            filed += scanMedia(ctx, db, budget);
+            filed += scanMedia(ctx, db, seen, budget);
         }
         saveSeen(ctx, seen);
         prefs(ctx).edit()
@@ -189,7 +207,7 @@ public final class FileIngest {
         return filed;
     }
 
-    private static int scanMedia(Context ctx, Db db, int[] budget) {
+    private static int scanMedia(Context ctx, Db db, Map<String, long[]> seen, int[] budget) {
         long watermark = prefs(ctx).getLong(P_WATERMARK, System.currentTimeMillis() / 1000L);
         long highWater = watermark;
         int filed = 0;
@@ -214,9 +232,19 @@ public final class FileIngest {
                     String mime = c.getString(2);
                     if (added > highWater) highWater = added;
                     if (mime == null || !supported(mime)) continue;
+                    // The seen-index is the durable truth here, not
+                    // the watermark alone: MediaStore ids are stable,
+                    // so a file once settled is never re-filed even
+                    // if the watermark ever moves backwards (a
+                    // reverted pref, a restored backup). The
+                    // watermark only bounds the query.
+                    String key = "media:" + collection.getLastPathSegment() + ":" + id;
+                    if (seen.containsKey(key)) continue;
                     budget[0]--;
                     Uri item = ContentUris.withAppendedId(collection, id);
-                    if (ingestOne(ctx, db, item, mime) == 1) filed++;
+                    int outcome = ingestOne(ctx, db, item, mime);
+                    if (outcome == 1) filed++;
+                    if (outcome >= 0) seen.put(key, new long[]{added, 0});
                 }
             } catch (Exception e) {
                 // Permission missing or provider hiccup: try again next pass.
@@ -356,14 +384,21 @@ public final class FileIngest {
     }
 
     private static void saveSeen(Context ctx, Map<String, long[]> seen) {
+        // Write-then-rename: a kill mid-write used to truncate the
+        // index to zero bytes (observed Nov 1, 2026), which silently
+        // disarmed folder dedupe for the next pass.
         File f = new File(ctx.getFilesDir(), "ingest_seen.txt");
+        File tmp = new File(ctx.getFilesDir(), "ingest_seen.txt.tmp");
         try {
-            java.io.PrintWriter w = new java.io.PrintWriter(new java.io.FileWriter(f));
+            java.io.PrintWriter w = new java.io.PrintWriter(new java.io.FileWriter(tmp));
             try {
                 for (Map.Entry<String, long[]> e : seen.entrySet()) {
                     w.println(IngestSeen.seenLine(e.getKey(), e.getValue()[0], e.getValue()[1]));
                 }
             } finally { w.close(); }
+            if (!tmp.renameTo(f)) {
+                try { tmp.delete(); } catch (Exception e) { /* ignore */ }
+            }
         } catch (Exception e) { /* the hash guard still protects us */ }
     }
 }

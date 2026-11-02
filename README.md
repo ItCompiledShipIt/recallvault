@@ -889,3 +889,21 @@ owe" with a cited sentence. The due-date grounding fix was
 built and installed; its on-device re-check was cut short
 when the phone disconnected, and is owed a 30-second
 re-proof when it reconnects.
+
+## v0.53.1 - ingest race fix (Nov 1, 2026)
+
+The triple-filed screenshot mystery, solved from the phone's
+own DB: the three copies carried IDENTICAL file hashes and
+were copied within 90 ms of each other - overlapping scans
+(app-open hook + daily worker) racing the hash guard, which
+is check-then-insert. Three fixes:
+- A process-wide scan lock: a second scan() while one is
+  running returns immediately.
+- Phone mode now also records settled MediaStore ids in the
+  seen-index ("media:<collection>:<id>"); the watermark only
+  bounds the query, it is no longer the only memory.
+- saveSeen writes a temp file and renames it - a kill
+  mid-write had truncated the index to zero bytes.
+Device-verified cleanup in the same visit: staged test rows
+and the three dupe copies removed, their files deleted, the
+app lock restored on (readback-checked).

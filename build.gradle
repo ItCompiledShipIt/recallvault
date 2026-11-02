@@ -20,8 +20,8 @@ android {
         applicationId 'com.irwinlabs.recallvault'
         minSdk 26
         targetSdk 34
-        versionCode 58
-        versionName "0.53.0"
+        versionCode 59
+        versionName "0.53.1"
         multiDexEnabled true
     }
 
