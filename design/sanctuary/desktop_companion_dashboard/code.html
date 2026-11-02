@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"on-background":"#1c1c18","error":"#ba1a1a","on-tertiary-container":"#b7d0b3","primary-fixed-dim":"#a0d1c0","surface-container-lowest":"#ffffff","on-secondary":"#ffffff","outline":"#717975","tertiary":"#2d422d","on-tertiary-fixed":"#0c200d","on-primary-fixed-variant":"#204f42","tertiary-fixed":"#d0e9cc","surface-dim":"#dcdad4","on-tertiary-fixed-variant":"#374c36","on-primary-fixed":"#002019","outline-variant":"#c0c8c4","error-container":"#ffdad6","on-surface":"#1c1c18","surface-container-high":"#ebe8e2","surface-variant":"#e5e2dc","secondary-fixed-dim":"#ffb597","secondary-fixed":"#ffdbcd","on-primary-container":"#a3d4c3","background":"#fcf9f3","on-secondary-fixed-variant":"#743415","on-secondary-fixed":"#360f00","on-secondary-container":"#773617","inverse-on-surface":"#f3f0ea","tertiary-fixed-dim":"#b4cdb0","inverse-primary":"#a0d1c0","primary":"#154539","surface":"#fcf9f3","on-tertiary":"#ffffff","inverse-surface":"#31312d","surface-container":"#f0eee8","on-error-container":"#93000a","secondary":"#924b2a","tertiary-container":"#445a43","surface-container-low":"#f6f3ed","primary-fixed":"#bceddc","surface-container-highest":"#e5e2dc","primary-container":"#2f5d50","on-primary":"#ffffff","surface-bright":"#fcf9f3","surface-tint":"#396759","on-error":"#ffffff","on-surface-variant":"#404945","secondary-container":"#fea27a"},borderRadius:{DEFAULT:"0.25rem",lg:"0.5rem",xl:"0.75rem",full:"9999px"},spacing:{"gutter-tablet":"1.5rem","space-md":"1rem",margin:"1.25rem","space-lg":"1.5rem","margin-desktop":"3rem","margin-tablet":"2rem",gutter:"1rem","gutter-desktop":"2rem","space-xs":"0.25rem","space-xl":"2.5rem","space-sm":"0.5rem"},fontFamily:{"headline-md":["Plus Jakarta Sans"],"display-lg-mobile":["Plus Jakarta Sans"],"body-lg":["Plus Jakarta Sans"],"headline-lg":["Plus Jakarta Sans"],"label-lg":["Plus Jakarta Sans"],"headline-lg-mobile":["Plus Jakarta Sans"],"display-lg":["Plus Jakarta Sans"],"label-md":["Plus Jakarta Sans"],"label-sm":["Plus Jakarta Sans"],"body-sm":["Plus Jakarta Sans"],"body-md":["Plus Jakarta Sans"],"headline-sm":["Plus Jakarta Sans"]},fontSize:{"headline-md":["22px",{lineHeight:"28px",letterSpacing:"-0.01em",fontWeight:"600"}],"display-lg-mobile":["28px",{lineHeight:"36px",letterSpacing:"-0.015em",fontWeight:"700"}],"body-lg":["17px",{lineHeight:"26px",fontWeight:"400"}],"headline-lg":["30px",{lineHeight:"38px",letterSpacing:"-0.015em",fontWeight:"600"}],"label-lg":["14px",{lineHeight:"20px",letterSpacing:"0.01em",fontWeight:"600"}],"headline-lg-mobile":["24px",{lineHeight:"32px",letterSpacing:"-0.01em",fontWeight:"600"}],"display-lg":["36px",{lineHeight:"44px",letterSpacing:"-0.02em",fontWeight:"700"}],"label-md":["12px",{lineHeight:"16px",letterSpacing:"0.02em",fontWeight:"500"}],"label-sm":["11px",{lineHeight:"14px",letterSpacing:"0.03em",fontWeight:"600"}],"body-sm":["13px",{lineHeight:"18px",fontWeight:"400"}],"body-md":["15px",{lineHeight:"22px",fontWeight:"400"}],"headline-sm":["18px",{lineHeight:"24px",fontWeight:"600"}]}}}};</script></head><body class="bg-surface font-body-md text-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-72 bg-surface-container-low z-50 flex flex-col justify-between py-space-lg px-space-md shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="flex flex-col gap-space-lg"><div class="flex items-center justify-between px-space-sm"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-primary text-[26px]">eco</span><span class="font-headline-sm text-headline-sm text-primary tracking-tight">Sanctuary</span></div><button class="p-space-xs rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" type="button"><span class="material-symbols-outlined text-[20px]">dock_to_right</span></button></div><div class="px-space-sm"><button class="w-full flex items-center justify-center gap-space-sm py-space-sm px-space-md bg-primary-container text-on-primary rounded-xl font-label-lg text-label-lg transition-transform active:scale-95" type="button"><span class="material-symbols-outlined text-[18px]">edit_note</span><span>New Memory</span></button></div><nav class="flex flex-col gap-space-xs px-space-xs" data-active-classes="bg-surface-container-highest text-on-surface font-label-lg rounded-xl"><a aria-current="page" class="flex items-center gap-space-md px-space-md py-space-sm transition-colors bg-surface-container-highest text-on-surface font-label-lg rounded-xl" data-path="all-notes" href="#"><span class="material-symbols-outlined text-[20px]">notes</span><span>All Notes</span></a><a class="flex items-center gap-space-md px-space-md py-space-sm text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md text-body-md rounded-xl" data-path="family-journal" href="#"><span class="material-symbols-outlined text-[20px]">family_restroom</span><span>Family Journal</span></a><a class="flex items-center gap-space-md px-space-md py-space-sm text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md text-body-md rounded-xl" data-path="private-thoughts" href="#"><span class="material-symbols-outlined text-[20px]">lock</span><span>Private Thoughts</span></a><a class="flex items-center gap-space-md px-space-md py-space-sm text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md text-body-md rounded-xl" data-path="recipes-heirlooms" href="#"><span class="material-symbols-outlined text-[20px]">menu_book</span><span>Recipes &amp; Heirlooms</span></a><a class="flex items-center gap-space-md px-space-md py-space-sm text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md text-body-md rounded-xl" data-path="audio-mementos" href="#"><span class="material-symbols-outlined text-[20px]">mic</span><span>Audio Mementos</span></a><a class="flex items-center gap-space-md px-space-md py-space-sm text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors font-body-md text-body-md rounded-xl" data-path="archive" href="#"><span class="material-symbols-outlined text-[20px]">archive</span><span>Quiet Archive</span></a></nav></div><div class="flex flex-col gap-space-md px-space-sm"><div class="bg-tertiary-fixed/30 rounded-xl p-space-md flex flex-col gap-space-xs"><div class="flex items-center gap-space-xs text-tertiary"><span class="material-symbols-outlined text-[16px]">shield_with_heart</span><span class="font-label-sm text-label-sm">Kept Close</span></div><p class="font-body-sm text-body-sm text-on-surface-variant">Saved only on this device. Backed up to personal safe drive.</p></div><div class="flex items-center justify-between pt-space-xs"><a class="flex items-center gap-space-sm text-on-surface-variant hover:text-on-surface transition-colors font-label-md text-label-md" data-path="settings" href="#"><span class="material-symbols-outlined text-[18px]">settings</span><span>Preferences</span></a><span class="font-label-sm text-label-sm text-outline">v1.4</span></div></div></aside><div class="pl-72"><header class="fixed top-0 left-72 right-0 h-16 bg-surface/85 backdrop-blur-xl z-40 flex items-center justify-between px-space-lg shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="flex items-center gap-space-md flex-1 max-w-md"><div class="flex items-center gap-space-sm w-full bg-surface-container-low px-space-md py-space-xs rounded-xl"><span class="material-symbols-outlined text-outline text-[18px]">search</span><input class="w-full bg-transparent border-0 outline-none font-body-sm text-body-sm text-on-surface placeholder:text-outline" placeholder="Search memories, thoughts, reflections..." type="text"/></div></div><div class="flex items-center gap-space-lg"><div class="hidden sm:flex items-center gap-space-xs bg-surface-container px-space-md py-space-xs rounded-full"><span class="w-2 h-2 rounded-full bg-primary"></span><span class="font-label-sm text-label-sm text-on-surface-variant">Safe on this device</span></div><div class="flex items-center gap-space-sm"><button class="p-space-xs rounded-full text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" type="button"><span class="material-symbols-outlined text-[20px]">tune</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="relative pt-16 bg-surface min-h-screen w-full px-space-lg lg:px-margin-desktop"><div class="flex flex-col w-full pb-space-xl">
+<!-- Top Utility Bar & Filter Hub -->
+<div class="py-space-md flex flex-col md:flex-row md:items-center justify-between gap-space-md">
+<div class="flex items-center gap-space-sm flex-wrap">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Collection</span>
+<h1 class="font-headline-md text-headline-md text-on-surface">Family Journal &amp; Notes</h1>
+<span class="ml-space-xs inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+<span>24 Safe Entries</span>
+</span>
+</div>
+<!-- Quick Status indicator for local storage integrity -->
+<div class="flex items-center gap-space-md text-on-surface-variant bg-surface-container-low px-space-md py-space-xs rounded-xl self-start md:self-auto">
+<div class="flex items-center gap-1.5 font-label-md text-label-md">
+<span class="material-symbols-outlined text-[16px] text-primary" style="font-variation-settings: 'FILL' 1;">cloud_off</span>
+<span>2.4 GB used</span>
+<span class="text-outline-variant">•</span>
+<span class="text-primary font-label-md text-label-md">100% On-Device</span>
+</div>
+<div class="w-16 h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="bg-primary h-full w-2/5 rounded-full"></div>
+</div>
+</div>
+</div>
+<!-- Dual Workspace Panes (Middle List Feed + Right Reading Canvas) -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-space-lg items-start">
+<!-- Middle Feed Column (5 cols on wide screens) -->
+<section class="xl:col-span-5 flex flex-col gap-space-md">
+<!-- Search Input Container with Hotkey styling -->
+<div class="relative bg-surface-container-low rounded-xl p-space-xs flex items-center shadow-sm">
+<span class="material-symbols-outlined text-outline pl-space-sm text-[20px]">search</span>
+<input class="w-full bg-transparent border-0 outline-none px-space-sm py-2 font-body-sm text-body-sm text-on-surface placeholder:text-outline" placeholder="Search notes, voice memos, documents (⌘K)" type="text"/>
+<kbd class="hidden sm:inline-block mr-space-sm px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm text-[10px] tracking-widest uppercase">⌘K</kbd>
+</div>
+<!-- Filter Pills Bar -->
+<div class="flex items-center gap-space-xs overflow-x-auto pb-1 no-scrollbar">
+<button class="px-space-md py-1.5 rounded-full bg-primary-container text-on-primary font-label-md text-label-md transition-colors whitespace-nowrap shadow-sm" type="button">
+          All (24)
+        </button>
+<button class="px-space-md py-1.5 rounded-full bg-surface-container-low text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-label-md text-label-md transition-colors whitespace-nowrap flex items-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[15px]">mic</span>
+          Voice Notes
+        </button>
+<button class="px-space-md py-1.5 rounded-full bg-surface-container-low text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-label-md text-label-md transition-colors whitespace-nowrap flex items-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[15px]">family_restroom</span>
+          Family
+        </button>
+<button class="px-space-md py-1.5 rounded-full bg-surface-container-low text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-label-md text-label-md transition-colors whitespace-nowrap flex items-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[15px]">description</span>
+          Documents
+        </button>
+<button class="px-space-md py-1.5 rounded-full bg-surface-container-low text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-label-md text-label-md transition-colors whitespace-nowrap flex items-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[15px]">local_dining</span>
+          Recipes
+        </button>
+</div>
+<!-- Memory Card Feed Stack -->
+<div class="flex flex-col gap-space-sm" id="memory-cards-container">
+<!-- CARD 1: Selected / Maya's 5th Birthday -->
+<article class="bg-surface-container-lowest rounded-xl p-space-md relative overflow-hidden transition-all shadow-md cursor-pointer hover:shadow-lg">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-primary"></div>
+<div class="flex items-start justify-between gap-space-sm mb-space-xs pl-space-xs">
+<div class="flex items-center gap-space-xs flex-wrap">
+<span class="px-2 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label-sm text-label-sm">Family Journal</span>
+<span class="font-body-sm text-body-sm text-outline">Oct 28</span>
+</div>
+<div class="flex items-center gap-1 text-primary">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">shield_person</span>
+<span class="font-label-sm text-label-sm">Private</span>
+</div>
+</div>
+<div class="pl-space-xs">
+<h2 class="font-headline-sm text-headline-sm text-on-surface mb-1">Maya’s 5th Birthday Wishlist &amp; Doctor Visit</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2 mb-space-sm">
+              Pediatric wellness exam notes, booster timeline, and Maya’s excitement about the roller skates and drawing pastels...
+            </p>
+<div class="flex items-center justify-between pt-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-surface-container text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px] text-primary">mic</span> 04:18
+                </span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-surface-container text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px]">photo_library</span> 2 photos
+                </span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-surface-container text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px] text-secondary">task_alt</span> 2 tasks
+                </span>
+</div>
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+</div>
+</div>
+</article>
+<!-- CARD 2: Kitchen Remodel -->
+<article class="bg-surface-container-low hover:bg-surface-container-lowest rounded-xl p-space-md transition-all shadow-sm cursor-pointer hover:shadow-md">
+<div class="flex items-start justify-between gap-space-sm mb-space-xs">
+<div class="flex items-center gap-space-xs flex-wrap">
+<span class="px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm">Home &amp; Estate</span>
+<span class="font-body-sm text-body-sm text-outline">Oct 26</span>
+</div>
+<span class="material-symbols-outlined text-outline-variant text-[16px]">lock_open</span>
+</div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface mb-1">Kitchen Remodel &amp; Cabinet Quote ($4,200)</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2 mb-space-sm">
+            Walkthrough with Henrik contractor. Reviewed natural white oak soft-close boxes, brass pull spacing, and sink clearance.
+          </p>
+<div class="flex items-center gap-space-xs">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-surface-container text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px] text-secondary">picture_as_pdf</span> PDF Quote
+            </span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-surface-container text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px] text-primary">mic</span> 12:40
+            </span>
+</div>
+</article>
+<!-- CARD 3: Mom's Sourdough Recipe -->
+<article class="bg-surface-container-low hover:bg-surface-container-lowest rounded-xl p-space-md transition-all shadow-sm cursor-pointer hover:shadow-md">
+<div class="flex items-start justify-between gap-space-sm mb-space-xs">
+<div class="flex items-center gap-space-xs flex-wrap">
+<span class="px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm">Recipes &amp; Heirlooms</span>
+<span class="font-body-sm text-body-sm text-outline">Oct 14</span>
+</div>
+<span class="material-symbols-outlined text-outline text-[16px]">bookmark</span>
+</div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface mb-1">Mom’s Sourdough Bread Recipe &amp; Timing</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2 mb-space-sm">
+            Handwritten notes on hydration (76%) and overnight autolyse in the chilly back pantry. Key is cold Dutch oven preheating.
+          </p>
+<div class="flex items-center gap-space-xs">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-surface-container text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px]">image</span> 1 Card Scan
+            </span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-surface-container text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px] text-primary">eco</span> Heirloom
+            </span>
+</div>
+</article>
+<!-- CARD 4: Annual Maintenance Checklist -->
+<article class="bg-surface-container-low hover:bg-surface-container-lowest rounded-xl p-space-md transition-all shadow-sm cursor-pointer hover:shadow-md">
+<div class="flex items-start justify-between gap-space-sm mb-space-xs">
+<div class="flex items-center gap-space-xs flex-wrap">
+<span class="px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm">Reminders</span>
+<span class="font-body-sm text-body-sm text-outline">Oct 10</span>
+</div>
+<span class="material-symbols-outlined text-outline-variant text-[16px]">schedule</span>
+</div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface mb-1">Annual Home Maintenance Checklist</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2 mb-space-sm">
+            Cleaned gutter guards, cleared aerators, changed furnace HEPA filters, scheduled chimney sweep before frost.
+          </p>
+<div class="flex items-center gap-space-xs">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-surface-container text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px] text-secondary">checklist</span> 4 Tasks (All Done)
+            </span>
+</div>
+</article>
+</div>
+</section>
+<!-- Right Reading & Inspector Pane (7 cols on wide screens) -->
+<main class="xl:col-span-7 flex flex-col gap-space-md">
+<!-- Main Content Card Container -->
+<div class="bg-surface-container-lowest rounded-2xl p-space-lg lg:p-space-xl shadow-md flex flex-col gap-space-lg">
+<!-- Header & Action Toolbar -->
+<div class="flex flex-col sm:flex-row sm:items-start justify-between gap-space-md pb-space-md">
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center gap-space-sm flex-wrap">
+<span class="px-2.5 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label-sm text-label-sm">Family Journal</span>
+<span class="font-body-sm text-body-sm text-outline">Recorded Wednesday, Oct 28 • 10:14 AM</span>
+<span class="inline-flex items-center gap-1 text-primary bg-tertiary-fixed/30 px-2 py-0.5 rounded-full font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">lock</span>
+                Encrypted on Device
+              </span>
+</div>
+<h2 class="font-display-lg text-display-lg text-on-surface tracking-tight mt-1">
+              Maya’s 5th Birthday Wishlist &amp; Doctor Visit
+            </h2>
+</div>
+<!-- Actions Pill Ribbon -->
+<div class="flex items-center gap-1.5 self-start bg-surface-container-low p-1 rounded-xl">
+<button class="p-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" title="Audio Options" type="button">
+<span class="material-symbols-outlined text-[18px]">volume_up</span>
+</button>
+<button class="p-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" title="Export PDF" type="button">
+<span class="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+</button>
+<button class="p-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" title="Share with Family Member" type="button">
+<span class="material-symbols-outlined text-[18px]">share</span>
+</button>
+<button class="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">edit</span>
+<span>Edit</span>
+</button>
+</div>
+</div>
+<!-- Tactile Audio Player Bar -->
+<div class="bg-surface-container-low rounded-xl p-space-md flex flex-col gap-space-sm shadow-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<button class="w-10 h-10 rounded-full bg-primary-container text-on-primary flex items-center justify-center hover:opacity-95 transition-transform active:scale-95 shadow-sm" id="play-button" type="button">
+<span class="material-symbols-outlined text-[20px]" id="play-icon">play_arrow</span>
+</button>
+<div>
+<p class="font-label-lg text-label-lg text-on-surface">Voice Memento #104</p>
+<p class="font-body-sm text-body-sm text-outline">Dr. Sarah &amp; Maya conversation • 04:18</p>
+</div>
+</div>
+<div class="flex items-center gap-space-md">
+<button class="px-2 py-0.5 rounded bg-surface-container text-on-surface-variant font-label-sm text-label-sm hover:text-on-surface" id="speed-btn" type="button">
+                1.0x
+              </button>
+<div class="hidden sm:flex items-center gap-1.5 text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]">volume_down</span>
+<div class="w-14 h-1 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="bg-primary h-full w-4/5 rounded-full"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Waveform Visualizer + Scrub Track -->
+<div class="pt-space-xs flex flex-col gap-1">
+<div class="relative w-full h-12 flex items-center gap-1 select-none overflow-hidden" id="waveform">
+<!-- Custom Stylized SVG Wave Bars -->
+<svg class="w-full h-full text-outline-variant" fill="none" preserveaspectratio="none" viewbox="0 0 600 48">
+<!-- Played portion (deep forest sage) -->
+<g fill="#2F5D50">
+<rect height="12" rx="2" width="4" x="0" y="18"></rect>
+<rect height="20" rx="2" width="4" x="8" y="14"></rect>
+<rect height="32" rx="2" width="4" x="16" y="8"></rect>
+<rect height="8" rx="2" width="4" x="24" y="20"></rect>
+<rect height="24" rx="2" width="4" x="32" y="12"></rect>
+<rect height="36" rx="2" width="4" x="40" y="6"></rect>
+<rect height="16" rx="2" width="4" x="48" y="16"></rect>
+<rect height="28" rx="2" width="4" x="56" y="10"></rect>
+<rect height="6" rx="2" width="4" x="64" y="22"></rect>
+<rect height="20" rx="2" width="4" x="72" y="14"></rect>
+<rect height="40" rx="2" width="4" x="80" y="4"></rect>
+<rect height="12" rx="2" width="4" x="88" y="18"></rect>
+<rect height="28" rx="2" width="4" x="96" y="10"></rect>
+<rect height="20" rx="2" width="4" x="104" y="14"></rect>
+<rect height="32" rx="2" width="4" x="112" y="8"></rect>
+<rect height="8" rx="2" width="4" x="120" y="20"></rect>
+<rect height="24" rx="2" width="4" x="128" y="12"></rect>
+<rect height="12" rx="2" width="4" x="136" y="18"></rect>
+<rect height="36" rx="2" width="4" x="144" y="6"></rect>
+<rect height="16" rx="2" width="4" x="152" y="16"></rect>
+<rect height="28" rx="2" width="4" x="160" y="10"></rect>
+<rect height="6" rx="2" width="4" x="168" y="22"></rect>
+<rect height="20" rx="2" width="4" x="176" y="14"></rect>
+</g>
+<!-- Remaining Unplayed portion -->
+<g fill="#C0C8C4">
+<rect height="32" rx="2" width="4" x="184" y="8"></rect>
+<rect height="12" rx="2" width="4" x="192" y="18"></rect>
+<rect height="24" rx="2" width="4" x="200" y="12"></rect>
+<rect height="20" rx="2" width="4" x="208" y="14"></rect>
+<rect height="36" rx="2" width="4" x="216" y="6"></rect>
+<rect height="8" rx="2" width="4" x="224" y="20"></rect>
+<rect height="28" rx="2" width="4" x="232" y="10"></rect>
+<rect height="16" rx="2" width="4" x="240" y="16"></rect>
+<rect height="40" rx="2" width="4" x="248" y="4"></rect>
+<rect height="6" rx="2" width="4" x="256" y="22"></rect>
+<rect height="20" rx="2" width="4" x="264" y="14"></rect>
+<rect height="12" rx="2" width="4" x="272" y="18"></rect>
+<rect height="32" rx="2" width="4" x="280" y="8"></rect>
+<rect height="24" rx="2" width="4" x="288" y="12"></rect>
+<rect height="16" rx="2" width="4" x="296" y="16"></rect>
+<rect height="28" rx="2" width="4" x="304" y="10"></rect>
+<rect height="8" rx="2" width="4" x="312" y="20"></rect>
+<rect height="36" rx="2" width="4" x="320" y="6"></rect>
+<rect height="20" rx="2" width="4" x="328" y="14"></rect>
+<rect height="40" rx="2" width="4" x="336" y="4"></rect>
+<rect height="12" rx="2" width="4" x="344" y="18"></rect>
+<rect height="24" rx="2" width="4" x="352" y="12"></rect>
+<rect height="6" rx="2" width="4" x="360" y="22"></rect>
+<rect height="28" rx="2" width="4" x="368" y="10"></rect>
+<rect height="16" rx="2" width="4" x="376" y="16"></rect>
+<rect height="32" rx="2" width="4" x="384" y="8"></rect>
+<rect height="20" rx="2" width="4" x="392" y="14"></rect>
+<rect height="8" rx="2" width="4" x="400" y="20"></rect>
+<rect height="36" rx="2" width="4" x="408" y="6"></rect>
+<rect height="12" rx="2" width="4" x="416" y="18"></rect>
+<rect height="28" rx="2" width="4" x="424" y="10"></rect>
+<rect height="24" rx="2" width="4" x="432" y="12"></rect>
+<rect height="40" rx="2" width="4" x="440" y="4"></rect>
+<rect height="16" rx="2" width="4" x="448" y="16"></rect>
+<rect height="6" rx="2" width="4" x="456" y="22"></rect>
+<rect height="20" rx="2" width="4" x="464" y="14"></rect>
+<rect height="32" rx="2" width="4" x="472" y="8"></rect>
+<rect height="12" rx="2" width="4" x="480" y="18"></rect>
+<rect height="28" rx="2" width="4" x="488" y="10"></rect>
+<rect height="8" rx="2" width="4" x="496" y="20"></rect>
+<rect height="24" rx="2" width="4" x="504" y="12"></rect>
+<rect height="36" rx="2" width="4" x="512" y="6"></rect>
+<rect height="16" rx="2" width="4" x="520" y="16"></rect>
+<rect height="20" rx="2" width="4" x="528" y="14"></rect>
+<rect height="40" rx="2" width="4" x="536" y="4"></rect>
+<rect height="6" rx="2" width="4" x="544" y="22"></rect>
+<rect height="12" rx="2" width="4" x="552" y="18"></rect>
+<rect height="28" rx="2" width="4" x="560" y="10"></rect>
+<rect height="32" rx="2" width="4" x="568" y="8"></rect>
+<rect height="20" rx="2" width="4" x="576" y="14"></rect>
+<rect height="16" rx="2" width="4" x="584" y="16"></rect>
+<rect height="24" rx="2" width="4" x="592" y="12"></rect>
+</g>
+</svg>
+</div>
+<div class="flex justify-between items-center font-label-sm text-label-sm text-outline px-0.5">
+<span>01:14</span>
+<span>-03:04</span>
+</div>
+</div>
+</div>
+<!-- Smart Takeaways & Discovered Tasks Card -->
+<div class="bg-tertiary-fixed/30 rounded-xl p-space-md flex flex-col gap-space-sm shadow-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs text-tertiary">
+<span class="material-symbols-outlined text-[18px]">auto_awesome</span>
+<span class="font-headline-sm text-headline-sm">Smart Takeaways &amp; Discovered Tasks</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-tertiary-fixed-variant">Generated locally</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-sm pt-space-xs">
+<!-- Action Item 1 -->
+<label class="flex items-start gap-space-sm p-space-sm rounded-lg bg-surface-container-lowest/80 cursor-pointer hover:bg-surface-container-lowest transition-colors">
+<input checked="" class="mt-1 w-4 h-4 rounded text-primary accent-primary cursor-pointer" type="checkbox"/>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-on-surface line-through opacity-70">Schedule 5-year booster shot</span>
+<span class="font-body-sm text-body-sm text-outline">Due: Friday, Nov 14 • Valley Pediatric Clinic</span>
+</div>
+</label>
+<!-- Action Item 2 -->
+<label class="flex items-start gap-space-sm p-space-sm rounded-lg bg-surface-container-lowest/80 cursor-pointer hover:bg-surface-container-lowest transition-colors">
+<input class="mt-1 w-4 h-4 rounded text-primary accent-primary cursor-pointer" type="checkbox"/>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-on-surface">Order retro roller skates (Size 11 Toddler)</span>
+<span class="font-body-sm text-body-sm text-outline">Per wishlist: Teal or Lavender with light-up wheels</span>
+</div>
+</label>
+</div>
+</div>
+<!-- Whisper Full Transcription -->
+<div class="flex flex-col gap-space-sm">
+<div class="flex items-center justify-between pb-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-outline text-[18px]">transcribe</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Whisper Transcription</h3>
+</div>
+<span class="font-label-sm text-label-sm text-outline">Accuracy 99.4% • Model v3 Small</span>
+</div>
+<div class="font-body-lg text-body-lg text-on-surface-variant flex flex-col gap-space-md leading-relaxed bg-surface-container-low/40 p-space-lg rounded-xl">
+<p>
+<strong class="text-on-surface font-label-lg text-label-lg block mb-0.5">Dr. Sarah (00:04):</strong>
+              "Alright Maya, let's measure your height first! You're officially 42 and a half inches tall today. That puts her right along the 65th percentile line, which is right where we want to see steady growth."
+            </p>
+<p>
+<strong class="text-on-surface font-label-lg text-label-lg block mb-0.5">Maya (00:48):</strong>
+              "Daddy said when I turn five I can learn how to roller skate on the sidewalk! With pads for my knees."
+            </p>
+<p>
+<strong class="text-on-surface font-label-lg text-label-lg block mb-0.5">Dr. Sarah (01:12):</strong>
+              "That is very exciting! Knee pads and a helmet, always. Looking at her chart, everything with vision and hearing screens came back completely normal. We have her kindergarten pre-entry booster scheduled for mid-November, so make sure to coordinate with nurse Jenny at the desk before heading home."
+            </p>
+</div>
+</div>
+<!-- Attached Media Gallery: High Resolution Artifacts -->
+<div class="flex flex-col gap-space-sm pt-space-xs">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-outline text-[18px]">attach_file</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Attached Visual Mementos (2)</h3>
+</div>
+<button class="text-primary hover:underline font-label-sm text-label-sm flex items-center gap-1" type="button">
+<span class="material-symbols-outlined text-[16px]">add_photo_alternate</span>
+<span>Add attachment</span>
+</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-md">
+<!-- Media 1: Shoe Size Chart -->
+<div class="group relative rounded-xl overflow-hidden bg-surface-container-low shadow-sm flex flex-col">
+<div class="h-48 w-full overflow-hidden bg-surface-container relative">
+<img class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" data-alt="Close up warm vintage photograph of a colorful toddler shoe sizing chart and measuring tape placed neatly on a light natural wood clinic table with soft daylight filtering through sheer curtains. Warm organic colors, muted sage green accents, and natural textures." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBHkUDw8bcvQpgO39GpomoPa8tyPgbVlSxZlhCrwhwjnOO4ds3gtOxZ0kQ7E1Y18i1En81WiCI0dZh_yUTrqsYBQEsZFzBDBwsxYUVpJV9okAVPI-Fk5WosDwCwwTQv_Bm2RHKrCOBvqQWNP-2sMX07Ka2ARlwKvgG3uvNvZOJEr4-5ES08zSW5iAIPtHL0XhkPqGcJoLUjgW6QI_I9MJWNvMsptp59wIx_1o7eSsyE"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+<span class="absolute bottom-2.5 left-3 px-2 py-0.5 rounded-full bg-surface/90 text-on-surface font-label-sm text-label-sm backdrop-blur-md">
+                  Chart Scan • 1.2 MB
+                </span>
+</div>
+<div class="p-space-sm flex items-center justify-between bg-surface-container-lowest">
+<div>
+<h4 class="font-label-lg text-label-lg text-on-surface">Maya Shoe Size Chart.heic</h4>
+<p class="font-body-sm text-body-sm text-outline">Size 11 Toddler • Captured Oct 28</p>
+</div>
+<button class="p-1.5 rounded-lg text-outline hover:text-on-surface hover:bg-surface-container transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+</div>
+</div>
+<!-- Media 2: Clinic Visit Slip -->
+<div class="group relative rounded-xl overflow-hidden bg-surface-container-low shadow-sm flex flex-col">
+<div class="h-48 w-full overflow-hidden bg-surface-container relative">
+<img class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" data-alt="Neat flatlay photograph of a pediatric clinic wellness visit summary slip resting on a calm linen fabric desk beside a wooden ballpoint pen and small green potted succulent plant. Soft warm lighting, organic minimalist aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC_WtuLSiVyDj9x0FpCoU0NF7E6hajpK5K2qUxUrW-rxcgZSNSegCjHaoRK9BMOh9q3F-TbVdwgBB_MS9YUbZ60p63eYfxDP2JtG9KvhPxiZFH9WXrorC8PNJdFIS3n0kzTvlDmIds8UAmgxihJnSElvBohhJAgDoD8FNiqYDhauSYB9w6Vkw00jk-aXdxJQJlemhC9sl_SqI1j9jTCaFGuaptmb-u6yKgKYln0RNFl"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+<span class="absolute bottom-2.5 left-3 px-2 py-0.5 rounded-full bg-surface/90 text-on-surface font-label-sm text-label-sm backdrop-blur-md">
+                  Document • 2.8 MB
+                </span>
+</div>
+<div class="p-space-sm flex items-center justify-between bg-surface-container-lowest">
+<div>
+<h4 class="font-label-lg text-label-lg text-on-surface">Pediatric Checkup Slip.png</h4>
+<p class="font-body-sm text-body-sm text-outline">Dr. Sarah signature • High-res scan</p>
+</div>
+<button class="p-1.5 rounded-lg text-outline hover:text-on-surface hover:bg-surface-container transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer Privacy Note -->
+<div class="pt-space-md flex flex-col sm:flex-row items-center justify-between text-outline gap-space-sm bg-surface-container-low/30 p-space-md rounded-xl">
+<div class="flex items-center gap-space-xs font-label-md text-label-md">
+<span class="material-symbols-outlined text-[18px] text-primary">verified_user</span>
+<span>Zero-Knowledge Safe: Only decrypted with your master device key.</span>
+</div>
+<span class="font-body-sm text-body-sm">Last synced locally 4 minutes ago</span>
+</div>
+</div>
+</main>
+</div>
+</div>
+<script>
+  (function() {
+    const playBtn = document.getElementById('play-button');
+    const playIcon = document.getElementById('play-icon');
+    let isPlaying = false;
+
+    if (playBtn && playIcon) {
+      playBtn.addEventListener('click', () => {
+        isPlaying = !isPlaying;
+        playIcon.textContent = isPlaying ? 'pause' : 'play_arrow';
+      });
+    }
+
+    const speedBtn = document.getElementById('speed-btn');
+    const speeds = ['1.0x', '1.25x', '1.5x', '2.0x'];
+    let currentSpeedIndex = 0;
+
+    if (speedBtn) {
+      speedBtn.addEventListener('click', () => {
+        currentSpeedIndex = (currentSpeedIndex + 1) % speeds.length;
+        speedBtn.textContent = speeds[currentSpeedIndex];
+      });
+    }
+  })();
+</script></main></div></body></html>

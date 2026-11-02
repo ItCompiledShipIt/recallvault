@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "on-surface": "#1c1c18", "surface-container-lowest": "#ffffff", "surface-dim": "#dcdad4", "on-tertiary-fixed-variant": "#374c36", "on-primary-fixed": "#002019", "background": "#fcf9f3", "on-tertiary-fixed": "#0c200d", "primary": "#154539", "secondary-fixed": "#ffdbcd", "on-secondary-fixed": "#360f00", "tertiary-fixed-dim": "#b4cdb0", "surface": "#fcf9f3", "secondary-fixed-dim": "#ffb597", "primary-fixed-dim": "#a0d1c0", "primary-fixed": "#bceddc", "inverse-primary": "#a0d1c0", "on-primary-container": "#a3d4c3", "surface-tint": "#396759", "primary-container": "#2f5d50", "surface-container-high": "#ebe8e2", "secondary": "#924b2a", "surface-bright": "#fcf9f3", "error-container": "#ffdad6", "inverse-on-surface": "#f3f0ea", "outline": "#717975", "surface-container": "#f0eee8", "surface-variant": "#e5e2dc", "tertiary-container": "#445a43", "on-secondary-fixed-variant": "#743415", "on-primary-fixed-variant": "#204f42", "surface-container-highest": "#e5e2dc", "on-background": "#1c1c18", "on-secondary": "#ffffff", "on-primary": "#ffffff", "on-surface-variant": "#404945", "on-error": "#ffffff", "on-tertiary-container": "#b7d0b3", "tertiary": "#2d422d", "on-error-container": "#93000a", "surface-container-low": "#f6f3ed", "on-secondary-container": "#773617", "inverse-surface": "#31312d", "error": "#ba1a1a", "secondary-container": "#fea27a", "on-tertiary": "#ffffff", "outline-variant": "#c0c8c4", "tertiary-fixed": "#d0e9cc" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "margin-desktop": "3rem", "space-sm": "0.5rem", "space-xl": "2.5rem", "gutter-tablet": "1.5rem", "space-lg": "1.5rem", "gutter": "1rem", "margin-tablet": "2rem", "gutter-desktop": "2rem", "margin": "1.25rem", "space-xs": "0.25rem", "space-md": "1rem" }, fontFamily: { "display-lg": ["Plus Jakarta Sans"], "body-lg": ["Plus Jakarta Sans"], "label-md": ["Plus Jakarta Sans"], "headline-lg": ["Plus Jakarta Sans"], "label-sm": ["Plus Jakarta Sans"], "body-md": ["Plus Jakarta Sans"], "headline-md": ["Plus Jakarta Sans"], "headline-lg-mobile": ["Plus Jakarta Sans"], "headline-sm": ["Plus Jakarta Sans"], "label-lg": ["Plus Jakarta Sans"], "body-sm": ["Plus Jakarta Sans"], "display-lg-mobile": ["Plus Jakarta Sans"] }, fontSize: { "display-lg": ["36px", { lineHeight: "44px", letterSpacing: "-0.02em", fontWeight: "700" }], "body-lg": ["17px", { lineHeight: "26px", fontWeight: "400" }], "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.02em", fontWeight: "500" }], "headline-lg": ["30px", { lineHeight: "38px", letterSpacing: "-0.015em", fontWeight: "600" }], "label-sm": ["11px", { lineHeight: "14px", letterSpacing: "0.03em", fontWeight: "600" }], "body-md": ["15px", { lineHeight: "22px", fontWeight: "400" }], "headline-md": ["22px", { lineHeight: "28px", letterSpacing: "-0.01em", fontWeight: "600" }], "headline-lg-mobile": ["24px", { lineHeight: "32px", letterSpacing: "-0.01em", fontWeight: "600" }], "headline-sm": ["18px", { lineHeight: "24px", fontWeight: "600" }], "label-lg": ["14px", { lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "600" }], "body-sm": ["13px", { lineHeight: "18px", fontWeight: "400" }], "display-lg-mobile": ["28px", { lineHeight: "36px", letterSpacing: "-0.015em", fontWeight: "700" }] } } } };</script><style>@layer base{html,body{width:100vw;margin:0;padding:0;}body{overscroll-behavior-y:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface font-body-md text-on-surface flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 pt-safe bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 px-margin flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm min-w-0"><h1 class="font-headline-sm text-headline-sm text-on-surface truncate">Vault</h1><div class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm"><span class="material-symbols-outlined text-[13px] leading-none text-primary">lock</span><span class="truncate">On-device only • Private</span></div></div><a aria-label="Profile" class="w-11 h-11 flex items-center justify-center rounded-full hover:bg-surface-variant transition-colors" data-path="settings" href="#"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></a></div></header><main class="flex-1 flex flex-col relative w-full pt-16 pb-24 bg-surface px-margin"><div class="flex flex-col w-full pb-8">
+<!-- Sub-Header / Back & Reassurance Bar -->
+<div class="flex items-center justify-between py-space-sm mb-space-sm">
+<div class="flex items-center gap-space-sm">
+<a aria-label="Go back" class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-on-surface hover:bg-surface-container-high transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">arrow_back</span>
+</a>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Settings &amp; Privacy</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Your quiet digital safe haven</p>
+</div>
+</div>
+<div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm shadow-sm">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+<span class="truncate">Private Profile</span>
+</div>
+</div>
+<!-- Reassurance Banner -->
+<div class="p-space-md rounded-xl bg-tertiary-fixed/30 text-on-tertiary-fixed-variant mb-space-md shadow-sm">
+<div class="flex items-start gap-3">
+<div class="w-8 h-8 rounded-full bg-tertiary-fixed flex items-center justify-center flex-shrink-0 text-on-tertiary-fixed mt-0.5">
+<span class="material-symbols-outlined text-[18px]">verified_user</span>
+</div>
+<div class="flex-1 min-w-0">
+<p class="font-label-lg text-label-lg font-semibold text-on-tertiary-fixed">Strict Zero-Knowledge Vault</p>
+<p class="font-body-sm text-body-sm mt-0.5 opacity-90 leading-relaxed">No telemetry, zero cloud trackers, and zero remote servers. Everything you save lives on this physical glass and chip.</p>
+</div>
+</div>
+</div>
+<div class="space-y-space-md">
+<!-- Section 1: Device Storage -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm">
+<div class="flex items-center justify-between mb-space-sm">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">hard_drive</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Device Storage</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Encrypted inside Secure Enclave</p>
+</div>
+</div>
+<span class="px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm font-semibold">2.4 GB used</span>
+</div>
+<div class="mt-space-sm p-space-sm rounded-lg bg-surface-container-low">
+<div class="flex items-center justify-between font-label-sm text-label-sm text-on-surface-variant mb-2">
+<span>Storage Breakdown</span>
+<span class="text-primary font-semibold">100% On-Device</span>
+</div>
+<!-- Segmented Visual Progress Bar -->
+<div class="h-3 w-full rounded-full bg-surface-container-highest overflow-hidden flex gap-0.5">
+<div class="bg-primary h-full transition-all duration-500 rounded-l-full" style="width: 66%;" title="Voice Notes (1.6 GB)"></div>
+<div class="bg-secondary-container h-full transition-all duration-500" style="width: 28%;" title="Photos &amp; Scans (680 MB)"></div>
+<div class="bg-tertiary-fixed-dim h-full transition-all duration-500 rounded-r-full" style="width: 6%;" title="Text &amp; Indexes (120 MB)"></div>
+</div>
+<!-- Legend Items -->
+<div class="grid grid-cols-3 gap-2 mt-3 pt-2">
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-primary flex-shrink-0"></span>
+<div class="min-w-0">
+<p class="font-label-sm text-label-sm truncate text-on-surface font-medium">Voice Notes</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">1.6 GB</p>
+</div>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-secondary-container flex-shrink-0"></span>
+<div class="min-w-0">
+<p class="font-label-sm text-label-sm truncate text-on-surface font-medium">Photos &amp; Scans</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">680 MB</p>
+</div>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-tertiary-fixed-dim flex-shrink-0"></span>
+<div class="min-w-0">
+<p class="font-label-sm text-label-sm truncate text-on-surface font-medium">Text &amp; Indexes</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">120 MB</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Section 2: Privacy & Biometric Lock -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm">
+<div class="flex items-center gap-2 mb-space-sm">
+<div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">lock</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Lock &amp; Shield</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Instant hardware biometric protection</p>
+</div>
+</div>
+<div class="space-y-space-sm">
+<!-- Toggle: FaceID -->
+<div class="flex items-center justify-between p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant text-[22px]">fingerprint</span>
+<div>
+<p class="font-label-lg text-label-lg text-on-surface">Face ID / Biometric Lock</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Prompt authentication on launch</p>
+</div>
+</div>
+<button aria-pressed="true" class="w-12 h-7 rounded-full bg-primary flex items-center px-1 transition-colors relative cursor-pointer" onclick="this.classList.toggle('bg-primary'); this.classList.toggle('bg-surface-container-highest'); const knob = this.querySelector('span'); knob.classList.toggle('translate-x-5'); knob.classList.toggle('translate-x-0');" type="button">
+<span class="w-5 h-5 rounded-full bg-surface-container-lowest shadow-sm transform translate-x-5 transition-transform"></span>
+</button>
+</div>
+<!-- Setting: Auto-lock -->
+<div class="flex items-center justify-between p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors cursor-pointer">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant text-[22px]">timer</span>
+<div>
+<p class="font-label-lg text-label-lg text-on-surface">Auto-Lock Sanctuary</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">After 1 minute of inactivity</p>
+</div>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="font-label-md text-label-md">1 min</span>
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</div>
+</div>
+<!-- Toggle: Private Search Mode -->
+<div class="flex items-center justify-between p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant text-[22px]">psychology</span>
+<div>
+<p class="font-label-lg text-label-lg text-on-surface">Local AI Indexing Only</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Queries never depart device NPU</p>
+</div>
+</div>
+<button aria-pressed="true" class="w-12 h-7 rounded-full bg-primary flex items-center px-1 transition-colors relative cursor-pointer" onclick="this.classList.toggle('bg-primary'); this.classList.toggle('bg-surface-container-highest'); const knob = this.querySelector('span'); knob.classList.toggle('translate-x-5'); knob.classList.toggle('translate-x-0');" type="button">
+<span class="w-5 h-5 rounded-full bg-surface-container-lowest shadow-sm transform translate-x-5 transition-transform"></span>
+</button>
+</div>
+</div>
+</div>
+<!-- Section 3: Backup & Family Sharing -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm">
+<div class="flex items-center justify-between mb-space-sm">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">archive</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Encrypted Archives</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Zero-knowledge local transfer</p>
+</div>
+</div>
+</div>
+<div class="space-y-space-sm">
+<!-- Export Button Card -->
+<button class="w-full text-left p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container flex items-center justify-between group transition-colors" type="button">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-full bg-primary-container text-on-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">download_for_offline</span>
+</div>
+<div>
+<p class="font-label-lg text-label-lg text-on-surface font-semibold">Export Private Archive (.vault)</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">AES-256 protected single file container</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-primary group-hover:translate-x-0.5 transition-transform">chevron_right</span>
+</button>
+<!-- AirDrop / USB Button Card -->
+<button class="w-full text-left p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container flex items-center justify-between group transition-colors" type="button">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-full bg-surface-variant text-on-surface-variant flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">usb</span>
+</div>
+<div>
+<p class="font-label-lg text-label-lg text-on-surface font-semibold">AirDrop / USB Drive Sync</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Direct physical peer-to-peer transmission</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:translate-x-0.5 transition-transform">chevron_right</span>
+</button>
+<!-- Encrypted Personal Drive Backup -->
+<div class="p-space-sm rounded-lg bg-surface-container-low">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-full bg-surface-variant text-on-surface-variant flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">cloud_lock</span>
+</div>
+<div>
+<p class="font-label-lg text-label-lg text-on-surface font-semibold">Personal Private Cloud Backup</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Client-side encrypted with passphrase</p>
+</div>
+</div>
+<button aria-pressed="false" class="w-12 h-7 rounded-full bg-surface-container-highest flex items-center px-1 transition-colors relative cursor-pointer" onclick="this.classList.toggle('bg-primary'); this.classList.toggle('bg-surface-container-highest'); const knob = this.querySelector('span'); knob.classList.toggle('translate-x-5'); knob.classList.toggle('translate-x-0');" type="button">
+<span class="w-5 h-5 rounded-full bg-surface-container-lowest shadow-sm transform translate-x-0 transition-transform"></span>
+</button>
+</div>
+<div class="mt-2.5 pt-2 flex items-center gap-1.5 text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px] text-tertiary">key</span>
+<span>Only you hold the encryption key. Even Apple/Google cannot decrypt.</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Section 4: Audio & Transcription -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm">
+<div class="flex items-center gap-2 mb-space-sm">
+<div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">graphic_eq</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Audio &amp; Voice Intelligence</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Local speech-to-text without cloud roundtrips</p>
+</div>
+</div>
+<div class="space-y-space-sm">
+<!-- Model Selector -->
+<div class="p-space-sm rounded-lg bg-surface-container-low flex items-center justify-between cursor-pointer hover:bg-surface-container transition-colors">
+<div>
+<p class="font-label-lg text-label-lg text-on-surface">Whisper Engine</p>
+<p class="font-body-sm text-body-sm text-primary font-medium mt-0.5">Local Standard (High Accuracy, English)</p>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant text-[20px]">tune</span>
+</div>
+<!-- Action Items Detection -->
+<div class="p-space-sm rounded-lg bg-surface-container-low flex items-center justify-between">
+<div>
+<p class="font-label-lg text-label-lg text-on-surface">Auto-detect Dates &amp; Action Items</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Runs on-device lightweight NER parsing</p>
+</div>
+<button aria-pressed="true" class="w-12 h-7 rounded-full bg-primary flex items-center px-1 transition-colors relative cursor-pointer" onclick="this.classList.toggle('bg-primary'); this.classList.toggle('bg-surface-container-highest'); const knob = this.querySelector('span'); knob.classList.toggle('translate-x-5'); knob.classList.toggle('translate-x-0');" type="button">
+<span class="w-5 h-5 rounded-full bg-surface-container-lowest shadow-sm transform translate-x-5 transition-transform"></span>
+</button>
+</div>
+</div>
+</div>
+<!-- Section 5: Vault Maintenance & Danger Zone -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm">
+<div class="flex items-center gap-2 mb-space-sm">
+<div class="w-8 h-8 rounded-lg bg-error-container/40 flex items-center justify-center text-error">
+<span class="material-symbols-outlined text-[18px]">security_update_warning</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Maintenance &amp; Reset</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Temporary memory and physical wipeout</p>
+</div>
+</div>
+<div class="space-y-space-sm">
+<!-- Clear Cache -->
+<button class="w-full text-left p-space-sm rounded-lg bg-surface-container-low hover:bg-surface-container flex items-center justify-between transition-colors" type="button">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant text-[20px]">cleaning_services</span>
+<div>
+<p class="font-label-lg text-label-lg text-on-surface">Clear Temporary Cache</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Frees up 140 MB of transient rendering cache</p>
+</div>
+</div>
+<span class="px-3 py-1 rounded-full bg-surface-container-highest text-on-surface font-label-sm text-label-sm font-semibold">Clear</span>
+</button>
+<!-- Erase Vault -->
+<button class="w-full text-left p-space-sm rounded-lg bg-error-container/20 hover:bg-error-container/30 flex items-center justify-between transition-colors group" type="button">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-error text-[20px]">delete_forever</span>
+<div>
+<p class="font-label-lg text-label-lg text-error font-semibold">Erase All Vault Data</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Destroys local key &amp; permanently unlinks storage</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-error group-hover:scale-110 transition-transform">warning</span>
+</button>
+</div>
+</div>
+<!-- Heartfelt footer reassurance note -->
+<div class="text-center py-space-sm">
+<div class="inline-flex items-center gap-1.5 text-on-surface-variant font-label-md text-label-md">
+<span class="material-symbols-outlined text-primary text-[16px]">nature_people</span>
+<span>Sanctuary v2.4.1 • Crafted for calm privacy</span>
+</div>
+</div>
+</div>
+</div></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface/85 backdrop-blur-xl shadow-[0_-2px_12px_rgba(0,0,0,0.04)]" data-active-classes="text-primary font-semibold"><div class="flex justify-around items-center h-16 px-space-xs"><a class="flex flex-col items-center justify-center w-16 h-12 text-on-surface-variant transition-colors group" data-path="vault" href="#"><span class="material-symbols-outlined text-[22px]">folder_special</span><span class="font-label-sm text-label-sm mt-0.5">Vault</span></a><a class="flex flex-col items-center justify-center w-16 h-12 text-on-surface-variant transition-colors group" data-path="search-&amp;-ask" href="#"><span class="material-symbols-outlined text-[22px]">auto_awesome</span><span class="font-label-sm text-label-sm mt-0.5">Search &amp; Ask</span></a><a class="flex flex-col items-center justify-center w-16 h-12 text-on-surface-variant transition-colors group" data-path="new-memory" href="#"><div class="w-10 h-10 -mt-2 rounded-full bg-primary-container text-on-primary flex items-center justify-center shadow-[0_4px_12px_rgba(47,93,80,0.25)] hover:scale-105 active:scale-95 transition-transform"><span class="material-symbols-outlined text-[22px]">add</span></div><span class="font-label-sm text-label-sm mt-0.5">Capture</span></a><a class="flex flex-col items-center justify-center w-16 h-12 text-on-surface-variant transition-colors group" data-path="settings" href="#"><span class="material-symbols-outlined text-[22px]">shield</span><span class="font-label-sm text-label-sm mt-0.5">Settings</span></a></div></nav></body></html>

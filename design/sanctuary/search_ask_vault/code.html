@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "on-surface": "#1c1c18", "surface-container-lowest": "#ffffff", "surface-dim": "#dcdad4", "on-tertiary-fixed-variant": "#374c36", "on-primary-fixed": "#002019", "background": "#fcf9f3", "on-tertiary-fixed": "#0c200d", "primary": "#154539", "secondary-fixed": "#ffdbcd", "on-secondary-fixed": "#360f00", "tertiary-fixed-dim": "#b4cdb0", "surface": "#fcf9f3", "secondary-fixed-dim": "#ffb597", "primary-fixed-dim": "#a0d1c0", "primary-fixed": "#bceddc", "inverse-primary": "#a0d1c0", "on-primary-container": "#a3d4c3", "surface-tint": "#396759", "primary-container": "#2f5d50", "surface-container-high": "#ebe8e2", "secondary": "#924b2a", "surface-bright": "#fcf9f3", "error-container": "#ffdad6", "inverse-on-surface": "#f3f0ea", "outline": "#717975", "surface-container": "#f0eee8", "surface-variant": "#e5e2dc", "tertiary-container": "#445a43", "on-secondary-fixed-variant": "#743415", "on-primary-fixed-variant": "#204f42", "surface-container-highest": "#e5e2dc", "on-background": "#1c1c18", "on-secondary": "#ffffff", "on-primary": "#ffffff", "on-surface-variant": "#404945", "on-error": "#ffffff", "on-tertiary-container": "#b7d0b3", "tertiary": "#2d422d", "on-error-container": "#93000a", "surface-container-low": "#f6f3ed", "on-secondary-container": "#773617", "inverse-surface": "#31312d", "error": "#ba1a1a", "secondary-container": "#fea27a", "on-tertiary": "#ffffff", "outline-variant": "#c0c8c4", "tertiary-fixed": "#d0e9cc" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "margin-desktop": "3rem", "space-sm": "0.5rem", "space-xl": "2.5rem", "gutter-tablet": "1.5rem", "space-lg": "1.5rem", "gutter": "1rem", "margin-tablet": "2rem", "gutter-desktop": "2rem", "margin": "1.25rem", "space-xs": "0.25rem", "space-md": "1rem" }, fontFamily: { "display-lg": ["Plus Jakarta Sans"], "body-lg": ["Plus Jakarta Sans"], "label-md": ["Plus Jakarta Sans"], "headline-lg": ["Plus Jakarta Sans"], "label-sm": ["Plus Jakarta Sans"], "body-md": ["Plus Jakarta Sans"], "headline-md": ["Plus Jakarta Sans"], "headline-lg-mobile": ["Plus Jakarta Sans"], "headline-sm": ["Plus Jakarta Sans"], "label-lg": ["Plus Jakarta Sans"], "body-sm": ["Plus Jakarta Sans"], "display-lg-mobile": ["Plus Jakarta Sans"] }, fontSize: { "display-lg": ["36px", { lineHeight: "44px", letterSpacing: "-0.02em", fontWeight: "700" }], "body-lg": ["17px", { lineHeight: "26px", fontWeight: "400" }], "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.02em", fontWeight: "500" }], "headline-lg": ["30px", { lineHeight: "38px", letterSpacing: "-0.015em", fontWeight: "600" }], "label-sm": ["11px", { lineHeight: "14px", letterSpacing: "0.03em", fontWeight: "600" }], "body-md": ["15px", { lineHeight: "22px", fontWeight: "400" }], "headline-md": ["22px", { lineHeight: "28px", letterSpacing: "-0.01em", fontWeight: "600" }], "headline-lg-mobile": ["24px", { lineHeight: "32px", letterSpacing: "-0.01em", fontWeight: "600" }], "headline-sm": ["18px", { lineHeight: "24px", fontWeight: "600" }], "label-lg": ["14px", { lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "600" }], "body-sm": ["13px", { lineHeight: "18px", fontWeight: "400" }], "display-lg-mobile": ["28px", { lineHeight: "36px", letterSpacing: "-0.015em", fontWeight: "700" }] } } } };</script><style>@layer base{html,body{width:100vw;margin:0;padding:0;}body{overscroll-behavior-y:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface font-body-md text-on-surface flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 pt-safe bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 px-margin flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm min-w-0"><h1 class="font-headline-sm text-headline-sm text-on-surface truncate">Search &amp; Ask</h1><div class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm"><span class="material-symbols-outlined text-[13px] leading-none text-primary">lock</span><span class="truncate">On-device only • Private</span></div></div><a aria-label="Profile" class="w-11 h-11 flex items-center justify-center rounded-full hover:bg-surface-variant transition-colors" data-path="settings" href="#"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></a></div></header><main class="flex-1 flex flex-col relative w-full pt-16 pb-24 bg-surface px-margin"><div class="flex flex-col w-full pb-8 space-y-6">
+<!-- Friendly Introduction -->
+<section class="space-y-1">
+<div class="flex items-center gap-1.5 text-primary">
+<span class="material-symbols-outlined text-[18px]">psychology</span>
+<span class="font-label-md text-label-md uppercase tracking-wider">Natural Recall</span>
+</div>
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Ask Your Vault</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">
+      Search everything you’ve spoken, noted, or captured. Powered 100% on this phone.
+    </p>
+</section>
+<!-- Interactive Question Box -->
+<section class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm space-y-3">
+<div class="relative flex items-center">
+<textarea class="w-full bg-surface-container-low rounded-lg p-3 pr-12 font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant/60 focus:outline-none focus:bg-surface-container-lowest transition-colors resize-none" id="question-input" placeholder='Ask anything (e.g. "What size shoes does Maya wear?" or "What was the kitchen quote?")...' rows="2"></textarea>
+</div>
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center gap-2 text-on-surface-variant">
+<button aria-label="Voice question" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container text-on-surface-variant hover:bg-surface-container-high active:scale-95 transition-all" id="mic-btn" type="button">
+<span class="material-symbols-outlined text-[18px] text-primary" id="mic-icon">mic</span>
+<span class="font-label-md text-label-md" id="mic-label">Speak query</span>
+</button>
+<span class="font-label-sm text-label-sm text-outline hidden sm:inline">Zero cloud processing</span>
+</div>
+<button class="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-primary-container text-on-primary font-label-lg text-label-lg shadow-sm hover:opacity-95 active:scale-95 transition-all" id="ask-submit-btn" type="button">
+<span>Ask</span>
+<span class="material-symbols-outlined text-[16px]">arrow_upward</span>
+</button>
+</div>
+</section>
+<!-- Everyday Prompt Chips -->
+<section class="space-y-2.5">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-on-surface-variant">Try asking about your recent notes</span>
+<span class="font-label-sm text-label-sm text-primary">Tap to ask</span>
+</div>
+<div class="flex flex-wrap gap-2" id="query-chips-container">
+<button class="query-chip inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors text-left" data-query="What did the contractor quote for cabinets?" type="button">
+<span class="material-symbols-outlined text-[15px] text-primary">straighten</span>
+<span class="font-label-md text-label-md">"What did the contractor quote for cabinets?"</span>
+</button>
+<button class="query-chip inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors text-left" data-query="Where did I park the car at the airport?" type="button">
+<span class="material-symbols-outlined text-[15px] text-primary">local_parking</span>
+<span class="font-label-md text-label-md">"Where did I park the car at the airport?"</span>
+</button>
+<button class="query-chip inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors text-left" data-query="Maya's shoe size and birthday ideas" type="button">
+<span class="material-symbols-outlined text-[15px] text-secondary">cake</span>
+<span class="font-label-md text-label-md">"Maya's shoe size and birthday ideas"</span>
+</button>
+<button class="query-chip inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors text-left" data-query="WiFi password for the guest room" type="button">
+<span class="material-symbols-outlined text-[15px] text-tertiary">wifi</span>
+<span class="font-label-md text-label-md">"WiFi password for the guest room"</span>
+</button>
+</div>
+</section>
+<!-- Recent Answer Showcase Card -->
+<section class="space-y-2">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Latest Answer</span>
+<span class="inline-flex items-center gap-1 text-primary font-label-sm text-label-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+        Synthesized locally
+      </span>
+</div>
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm space-y-3">
+<!-- Asked Question -->
+<div class="flex items-start gap-2.5">
+<div class="w-7 h-7 rounded-full bg-surface-container-high flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">person</span>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant">You asked</p>
+<p class="font-body-md text-body-md font-semibold text-on-surface">What did the contractor say about the kitchen cabinet timeline and quote?</p>
+</div>
+</div>
+<!-- Synthesized Result Box -->
+<div class="bg-surface-container-low rounded-lg p-space-md space-y-3">
+<div class="flex items-center gap-1.5 text-primary">
+<span class="material-symbols-outlined text-[18px]">auto_awesome</span>
+<span class="font-label-sm text-label-sm uppercase tracking-wide">Vault Answer</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface leading-relaxed">
+          In your voice note from Thursday, Oct 26, contractor Dave estimated <span class="font-semibold text-primary">$4,200</span> for the shaker cabinets with installation starting <span class="font-semibold">Nov 18</span>. He needs color choice confirmed by Friday.
+        </p>
+<!-- Audio Snippet Preview -->
+<div class="flex items-center gap-3 bg-surface-container-lowest rounded-lg p-2.5">
+<button aria-label="Play snippet" class="w-8 h-8 rounded-full bg-primary-fixed text-on-primary-fixed flex items-center justify-center shrink-0 active:scale-90 transition-transform" type="button">
+<span class="material-symbols-outlined text-[18px]">play_arrow</span>
+</button>
+<div class="min-w-0 flex-1">
+<div class="flex justify-between items-center text-on-surface-variant">
+<span class="font-label-sm text-label-sm truncate">Dave_Kitchen_Estimate.m4a</span>
+<span class="font-label-sm text-label-sm shrink-0">0:24</span>
+</div>
+<!-- Audio waveform imitation -->
+<div class="flex items-center gap-0.5 h-3 mt-1">
+<div class="w-1 h-2 bg-primary/40 rounded-full"></div>
+<div class="w-1 h-3 bg-primary rounded-full"></div>
+<div class="w-1 h-1.5 bg-primary/60 rounded-full"></div>
+<div class="w-1 h-3 bg-primary rounded-full"></div>
+<div class="w-1 h-2.5 bg-primary/80 rounded-full"></div>
+<div class="w-1 h-1 bg-primary/40 rounded-full"></div>
+<div class="w-1 h-2.5 bg-primary rounded-full"></div>
+<div class="w-1 h-2 bg-primary/50 rounded-full"></div>
+<div class="w-1 h-1.5 bg-primary/40 rounded-full"></div>
+</div>
+</div>
+</div>
+<!-- Source Link Pill -->
+<a class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors max-w-full" href="#">
+<span class="material-symbols-outlined text-[14px] text-primary shrink-0">mic</span>
+<span class="font-label-sm text-label-sm truncate">Linked from "Contractor Meeting Notes &amp; Kitchen Dimensions" • 2 days ago</span>
+</a>
+</div>
+<!-- Action row -->
+<div class="flex items-center justify-between pt-1">
+<button class="inline-flex items-center gap-1 text-on-surface-variant font-label-md text-label-md hover:text-primary transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">content_copy</span>
+<span>Copy text</span>
+</button>
+<div class="flex items-center gap-2">
+<button aria-label="Helpful answer" class="w-7 h-7 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-on-surface" type="button">
+<span class="material-symbols-outlined text-[16px]">thumb_up</span>
+</button>
+<button aria-label="Save as separate card" class="w-7 h-7 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-on-surface" type="button">
+<span class="material-symbols-outlined text-[16px]">bookmark</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Photo / Visual Memory Reference -->
+<section class="bg-surface-container-low rounded-xl p-space-md space-y-3">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]">photo_library</span>
+<span class="font-label-lg text-label-lg text-on-surface">Related Image Captured</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">From same note</span>
+</div>
+<div class="relative w-full h-36 rounded-lg overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Close up warm interior photograph of raw shaker wooden kitchen cabinet samples and paint chips resting on a sunlit oak kitchen table. Soft morning sunlight casts natural shadows on linen notebooks and a brass measuring tape." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAjYUFH9zykF3zbWMe0Jvgpm8xnLejpO1rndXO3lnu2A69TwKYQEy3VElOxEtuvwQFMppKKo2FXaw5k07C4p3CnlvYKz_siQ5W0R7wxA7I-ohYL3bQxEHlUTQB_Ph8oImco4kiBtZZp163zllbRAZTk7ce-J5_3JwMUfyL8qqkJoptWWqcLX1re5ilUxo-QwalmXcgYJCUu9a2dG00_eqzRWqUqrXA9I4_atmoICzmR"/>
+<div class="absolute inset-0 bg-gradient-to-t from-on-surface/60 via-transparent to-transparent"></div>
+<div class="absolute bottom-2.5 left-2.5 right-2.5 flex justify-between items-center text-surface-container-lowest">
+<span class="font-label-sm text-label-sm">Paint swatch: Forest Moss vs Oatmeal</span>
+<span class="material-symbols-outlined text-[16px]">open_in_full</span>
+</div>
+</div>
+</section>
+<!-- Recent Queries History -->
+<section class="space-y-3">
+<div class="flex items-center justify-between">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Recent Searches</h3>
+<button class="font-label-md text-label-md text-primary hover:underline" type="button">Clear</button>
+</div>
+<div class="space-y-2">
+<!-- Search Item 1 -->
+<div class="bg-surface-container-lowest rounded-xl p-3 flex items-center justify-between gap-3 shadow-sm hover:bg-surface-container-low transition-colors cursor-pointer">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-9 h-9 rounded-full bg-secondary-fixed text-on-secondary-fixed flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[18px]">shopping_bag</span>
+</div>
+<div class="min-w-0">
+<p class="font-body-md text-body-md font-semibold text-on-surface truncate">Maya's current shoe size</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Kids &amp; Family • Answered Toddler 8.5 • Yesterday</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-[18px] text-outline shrink-0">chevron_right</span>
+</div>
+<!-- Search Item 2 -->
+<div class="bg-surface-container-lowest rounded-xl p-3 flex items-center justify-between gap-3 shadow-sm hover:bg-surface-container-low transition-colors cursor-pointer">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-9 h-9 rounded-full bg-primary-fixed text-on-primary-fixed flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[18px]">flight</span>
+</div>
+<div class="min-w-0">
+<p class="font-body-md text-body-md font-semibold text-on-surface truncate">Terminal 2 Level 4 Blue parking stall</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Travel Logs • Photo memory • 4 days ago</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-[18px] text-outline shrink-0">chevron_right</span>
+</div>
+<!-- Search Item 3 -->
+<div class="bg-surface-container-lowest rounded-xl p-3 flex items-center justify-between gap-3 shadow-sm hover:bg-surface-container-low transition-colors cursor-pointer">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-9 h-9 rounded-full bg-tertiary-fixed text-on-tertiary-fixed flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[18px]">router</span>
+</div>
+<div class="min-w-0">
+<p class="font-body-md text-body-md font-semibold text-on-surface truncate">Guest WiFi router password</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Home Setup • Text note • Oct 19</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-[18px] text-outline shrink-0">chevron_right</span>
+</div>
+</div>
+</section>
+<!-- Reassurance Card -->
+<section class="bg-tertiary-fixed/40 rounded-xl p-space-md flex items-start gap-3">
+<div class="w-8 h-8 rounded-full bg-tertiary flex items-center justify-center shrink-0 text-on-tertiary mt-0.5">
+<span class="material-symbols-outlined text-[18px]">lock</span>
+</div>
+<div class="space-y-1">
+<p class="font-label-lg text-label-lg text-on-tertiary-fixed">Completely Confidential</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+        Questions are analyzed by an on-device language model. No voice clips, queries, or note transcripts ever depart this phone.
+      </p>
+</div>
+</section>
+</div>
+<script>
+  // Simple interactive chips and voice toggle behavior
+  const input = document.getElementById('question-input');
+  const chips = document.querySelectorAll('.query-chip');
+  const micBtn = document.getElementById('mic-btn');
+  const micIcon = document.getElementById('mic-icon');
+  const micLabel = document.getElementById('mic-label');
+  const askBtn = document.getElementById('ask-submit-btn');
+
+  chips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      const query = chip.getAttribute('data-query');
+      if (input) {
+        input.value = query;
+        input.focus();
+      }
+    });
+  });
+
+  let isRecording = false;
+  if (micBtn) {
+    micBtn.addEventListener('click', () => {
+      isRecording = !isRecording;
+      if (isRecording) {
+        micBtn.classList.remove('bg-surface-container', 'text-on-surface-variant');
+        micBtn.classList.add('bg-secondary-fixed', 'text-on-secondary-fixed');
+        micIcon.textContent = 'graphic_eq';
+        micLabel.textContent = 'Listening...';
+        input.placeholder = 'Listening on device...';
+      } else {
+        micBtn.classList.add('bg-surface-container', 'text-on-surface-variant');
+        micBtn.classList.remove('bg-secondary-fixed', 'text-on-secondary-fixed');
+        micIcon.textContent = 'mic';
+        micLabel.textContent = 'Speak query';
+        input.placeholder = 'Ask anything (e.g. "What size shoes does Maya wear?" or "What was the kitchen quote?")...';
+      }
+    });
+  }
+
+  if (askBtn) {
+    askBtn.addEventListener('click', () => {
+      if (input && input.value.trim() !== '') {
+        const originalText = askBtn.innerHTML;
+        askBtn.innerHTML = '<span class="material-symbols-outlined text-[16px] animate-spin">refresh</span><span>Searching</span>';
+        setTimeout(() => {
+          askBtn.innerHTML = originalText;
+          input.value = '';
+          input.placeholder = 'Memory searched! Ask another question...';
+        }, 600);
+      }
+    });
+  }
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface/85 backdrop-blur-xl shadow-[0_-2px_12px_rgba(0,0,0,0.04)]" data-active-classes="text-primary font-semibold"><div class="flex justify-around items-center h-16 px-space-xs"><a class="flex flex-col items-center justify-center w-16 h-12 text-on-surface-variant transition-colors group" data-path="vault" href="#"><span class="material-symbols-outlined text-[22px]">folder_special</span><span class="font-label-sm text-label-sm mt-0.5">Vault</span></a><a aria-current="page" class="flex flex-col items-center justify-center w-16 h-12 transition-colors group text-primary font-semibold" data-path="search-&amp;-ask" href="#"><span class="material-symbols-outlined text-[22px]">auto_awesome</span><span class="font-label-sm text-label-sm mt-0.5">Search &amp; Ask</span></a><a class="flex flex-col items-center justify-center w-16 h-12 text-on-surface-variant transition-colors group" data-path="new-memory" href="#"><div class="w-10 h-10 -mt-2 rounded-full bg-primary-container text-on-primary flex items-center justify-center shadow-[0_4px_12px_rgba(47,93,80,0.25)] hover:scale-105 active:scale-95 transition-transform"><span class="material-symbols-outlined text-[22px]">add</span></div><span class="font-label-sm text-label-sm mt-0.5">Capture</span></a><a class="flex flex-col items-center justify-center w-16 h-12 text-on-surface-variant transition-colors group" data-path="settings" href="#"><span class="material-symbols-outlined text-[22px]">shield</span><span class="font-label-sm text-label-sm mt-0.5">Settings</span></a></div></nav></body></html>

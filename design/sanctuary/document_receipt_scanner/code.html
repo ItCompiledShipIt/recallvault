@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_stack" name="shell-type"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "on-surface": "#1c1c18", "surface-container-lowest": "#ffffff", "surface-dim": "#dcdad4", "on-tertiary-fixed-variant": "#374c36", "on-primary-fixed": "#002019", "background": "#fcf9f3", "on-tertiary-fixed": "#0c200d", "primary": "#154539", "secondary-fixed": "#ffdbcd", "on-secondary-fixed": "#360f00", "tertiary-fixed-dim": "#b4cdb0", "surface": "#fcf9f3", "secondary-fixed-dim": "#ffb597", "primary-fixed-dim": "#a0d1c0", "primary-fixed": "#bceddc", "inverse-primary": "#a0d1c0", "on-primary-container": "#a3d4c3", "surface-tint": "#396759", "primary-container": "#2f5d50", "surface-container-high": "#ebe8e2", "secondary": "#924b2a", "surface-bright": "#fcf9f3", "error-container": "#ffdad6", "inverse-on-surface": "#f3f0ea", "outline": "#717975", "surface-container": "#f0eee8", "surface-variant": "#e5e2dc", "tertiary-container": "#445a43", "on-secondary-fixed-variant": "#743415", "on-primary-fixed-variant": "#204f42", "surface-container-highest": "#e5e2dc", "on-background": "#1c1c18", "on-secondary": "#ffffff", "on-primary": "#ffffff", "on-surface-variant": "#404945", "on-error": "#ffffff", "on-tertiary-container": "#b7d0b3", "tertiary": "#2d422d", "on-error-container": "#93000a", "surface-container-low": "#f6f3ed", "on-secondary-container": "#773617", "inverse-surface": "#31312d", "error": "#ba1a1a", "secondary-container": "#fea27a", "on-tertiary": "#ffffff", "outline-variant": "#c0c8c4", "tertiary-fixed": "#d0e9cc" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "margin-desktop": "3rem", "space-sm": "0.5rem", "space-xl": "2.5rem", "gutter-tablet": "1.5rem", "space-lg": "1.5rem", "gutter": "1rem", "margin-tablet": "2rem", "gutter-desktop": "2rem", "margin": "1.25rem", "space-xs": "0.25rem", "space-md": "1rem" }, fontFamily: { "display-lg": ["Plus Jakarta Sans"], "body-lg": ["Plus Jakarta Sans"], "label-md": ["Plus Jakarta Sans"], "headline-lg": ["Plus Jakarta Sans"], "label-sm": ["Plus Jakarta Sans"], "body-md": ["Plus Jakarta Sans"], "headline-md": ["Plus Jakarta Sans"], "headline-lg-mobile": ["Plus Jakarta Sans"], "headline-sm": ["Plus Jakarta Sans"], "label-lg": ["Plus Jakarta Sans"], "body-sm": ["Plus Jakarta Sans"], "display-lg-mobile": ["Plus Jakarta Sans"] }, fontSize: { "display-lg": ["36px", { lineHeight: "44px", letterSpacing: "-0.02em", fontWeight: "700" }], "body-lg": ["17px", { lineHeight: "26px", fontWeight: "400" }], "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.02em", fontWeight: "500" }], "headline-lg": ["30px", { lineHeight: "38px", letterSpacing: "-0.015em", fontWeight: "600" }], "label-sm": ["11px", { lineHeight: "14px", letterSpacing: "0.03em", fontWeight: "600" }], "body-md": ["15px", { lineHeight: "22px", fontWeight: "400" }], "headline-md": ["22px", { lineHeight: "28px", letterSpacing: "-0.01em", fontWeight: "600" }], "headline-lg-mobile": ["24px", { lineHeight: "32px", letterSpacing: "-0.01em", fontWeight: "600" }], "headline-sm": ["18px", { lineHeight: "24px", fontWeight: "600" }], "label-lg": ["14px", { lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "600" }], "body-sm": ["13px", { lineHeight: "18px", fontWeight: "400" }], "display-lg-mobile": ["28px", { lineHeight: "36px", letterSpacing: "-0.015em", fontWeight: "700" }] } } } };</script><style>@layer base{html,body{width:100vw;margin:0;padding:0;}body{overscroll-behavior-y:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface font-body-md text-on-surface flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 pt-safe bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 px-margin flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm min-w-0"><button aria-label="Go back" class="w-11 h-11 flex items-center justify-center rounded-full text-on-surface hover:bg-surface-variant transition-colors" onclick="history.back()"><span class="material-symbols-outlined text-[20px]">arrow_back</span></button><h1 class="font-headline-sm text-headline-sm text-on-surface truncate">Memory Detail</h1></div><div class="flex items-center gap-space-xs"><div class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm"><span class="material-symbols-outlined text-[13px] leading-none text-primary">lock</span><span class="truncate">Private</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex-1 flex flex-col relative w-full pt-16 pb-safe bg-surface px-margin"><div class="flex flex-col w-full pb-8">
+<div class="flex items-center justify-between py-space-xs mb-space-sm">
+<div class="flex items-center gap-space-xs">
+<button aria-label="Flashlight toggle" class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors" type="button">
+<span class="material-symbols-outlined text-[20px]">bolt</span>
+</button>
+<div class="flex items-center bg-surface-container rounded-full p-0.5">
+<button class="px-2.5 py-1 rounded-full bg-surface text-on-surface font-label-sm text-label-sm shadow-sm transition-all" id="toggle-auto" type="button">Auto</button>
+<button class="px-2.5 py-1 rounded-full text-on-surface-variant font-label-sm text-label-sm hover:text-on-surface transition-all" id="toggle-manual" type="button">Manual</button>
+</div>
+</div>
+<div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-low text-primary font-label-sm text-label-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+<span class="material-symbols-outlined text-[13px] text-primary">verified_user</span>
+<span class="font-medium">On-Device OCR</span>
+</div>
+</div>
+<div class="relative w-full rounded-xl overflow-hidden bg-surface-container-highest shadow-md aspect-[4/5] flex items-center justify-center">
+<div class="absolute inset-0 bg-cover bg-center filter contrast-[1.03] brightness-[0.98]" data-alt="A warm top-down photograph of a tactile paper contractor invoice on a light oak kitchen table with soft afternoon sunlight casting natural gentle shadows. Clean organic aesthetic, earthy tones, muted botanical styling with soft warm ivory paper and handwritten pencil marks." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAvRQzS964_k_vtwNHVlDBSubb0Pxu1InSm0pseiCXEsvKIyLU0XIEr0Rcyi99syMZuJ-y8dX6S-X-ZScAjDqi7CCVhfkaGOH5Yn-N5yjOV0ApNt7wJl11iNj1Ib7VzGebnTdDRrdiMH5jaySgBoRMf6Ex_M33Sg_Wzc5KfAAmSO8MffVBlziy0J5qWAMbCRE4SBVXMMmMmh_8N7u2VOW51ewPguv_t2m1IZAdUOsq7')"></div>
+<div class="absolute inset-0 bg-gradient-to-b from-primary/10 via-transparent to-primary/20 pointer-events-none"></div>
+<div class="absolute inset-5 rounded-lg border-0 shadow-[0_0_0_9999px_rgba(28,28,24,0.32)] pointer-events-none flex flex-col justify-between p-3 transition-all duration-300">
+<div class="flex justify-between items-start">
+<div class="w-5 h-5 border-t-2 border-l-2 border-primary-fixed rounded-tl-sm"></div>
+<div class="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-container-lowest/90 backdrop-blur-md shadow-sm">
+<span class="material-symbols-outlined text-[14px] text-primary" style="font-variation-settings: 'FILL' 1;">auto_fix_high</span>
+<span class="font-label-sm text-label-sm text-on-surface font-semibold tracking-wide">Document Aligned</span>
+</div>
+<div class="w-5 h-5 border-t-2 border-r-2 border-primary-fixed rounded-tr-sm"></div>
+</div>
+<div class="relative my-auto flex flex-col items-center">
+<div class="w-full h-0.5 bg-gradient-to-r from-transparent via-primary-fixed to-transparent opacity-80 animate-pulse"></div>
+<div class="mt-3 px-3 py-1 rounded-full bg-surface-container-lowest/95 backdrop-blur-md shadow-md flex items-center gap-1.5 max-w-[90%]">
+<span class="material-symbols-outlined text-[16px] text-secondary">text_snippet</span>
+<span class="font-label-sm text-label-sm text-on-surface truncate">Apex Home Woodcraft • Oct 28</span>
+</div>
+</div>
+<div class="flex justify-between items-end">
+<div class="w-5 h-5 border-b-2 border-l-2 border-primary-fixed rounded-bl-sm"></div>
+<div class="px-2 py-0.5 rounded bg-surface/85 backdrop-blur-sm">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Hold steady</span>
+</div>
+<div class="w-5 h-5 border-b-2 border-r-2 border-primary-fixed rounded-br-sm"></div>
+</div>
+</div>
+</div>
+<div class="w-full overflow-x-auto py-space-sm no-scrollbar">
+<div class="flex items-center gap-2 min-w-max">
+<button class="px-3.5 py-1.5 rounded-full bg-primary text-on-primary font-label-md text-label-md shadow-sm flex items-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[16px]">receipt_long</span>
+<span>Receipt / Bill</span>
+</button>
+<button class="px-3.5 py-1.5 rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-colors flex items-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[16px]">edit_note</span>
+<span>Handwritten Note</span>
+</button>
+<button class="px-3.5 py-1.5 rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-colors flex items-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[16px]">description</span>
+<span>Official Document</span>
+</button>
+<button class="px-3.5 py-1.5 rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-colors flex items-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[16px]">menu_book</span>
+<span>Recipe Card</span>
+</button>
+</div>
+</div>
+<div class="flex items-center justify-between px-space-md py-space-xs my-space-xs">
+<button aria-label="Upload from camera roll" class="w-12 h-12 rounded-full bg-surface-container flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors" type="button">
+<span class="material-symbols-outlined text-[22px]">photo_library</span>
+<span class="font-label-sm text-[9px] text-on-surface-variant leading-none mt-0.5">Import</span>
+</button>
+<div class="relative flex items-center justify-center">
+<div class="w-20 h-20 rounded-full bg-surface-container-low flex items-center justify-center p-1.5 shadow-md">
+<button aria-label="Capture page" class="w-full h-full rounded-full bg-primary flex items-center justify-center text-on-primary hover:bg-primary-container active:scale-95 transition-transform shadow" id="shutter-btn" type="button">
+<span class="w-6 h-6 rounded-full bg-surface-container-lowest"></span>
+</button>
+</div>
+</div>
+<div class="relative">
+<button class="w-12 h-12 rounded-full bg-surface-container flex flex-col items-center justify-center text-primary hover:bg-surface-container-high transition-colors" type="button">
+<span class="material-symbols-outlined text-[20px]">layers</span>
+<span class="font-label-sm text-[10px] font-bold text-primary leading-none mt-0.5">1 page</span>
+</button>
+<span class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-secondary text-on-secondary font-label-sm text-[9px] flex items-center justify-center font-bold">1</span>
+</div>
+</div>
+<div class="mt-space-sm bg-surface-container-lowest rounded-xl p-space-md shadow-md flex flex-col gap-space-sm">
+<div class="flex items-center justify-between pb-space-xs">
+<div class="flex items-center gap-2">
+<div class="w-7 h-7 rounded-full bg-primary-fixed flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[16px]">document_scanner</span>
+</div>
+<div>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant block font-bold">Smart Extraction</span>
+<span class="font-headline-sm text-headline-sm text-on-surface leading-tight">Living Room Cabinetry Estimate</span>
+</div>
+</div>
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-medium">98% Match</span>
+</div>
+<div class="grid grid-cols-3 gap-2 bg-surface-container-low rounded-lg p-space-sm">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Merchant</span>
+<span class="font-label-lg text-label-lg text-on-surface font-semibold truncate">Apex Woodcraft</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Total Amount</span>
+<span class="font-label-lg text-label-lg text-secondary font-bold truncate">$4,200.00</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Date</span>
+<span class="font-label-lg text-label-lg text-on-surface font-semibold truncate">Oct 26, 2024</span>
+</div>
+</div>
+<div class="flex flex-col gap-1.5 pt-space-xs">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Suggested Collections</span>
+<div class="flex flex-wrap gap-1.5">
+<button class="px-2.5 py-1 rounded-full bg-surface-container text-on-surface font-label-md text-label-md hover:bg-primary-fixed hover:text-on-primary-fixed transition-colors flex items-center gap-1" type="button">
+<span class="material-symbols-outlined text-[14px]">home_work</span>
+<span>Home Project</span>
+</button>
+<button class="px-2.5 py-1 rounded-full bg-surface-container text-on-surface font-label-md text-label-md hover:bg-primary-fixed hover:text-on-primary-fixed transition-colors flex items-center gap-1" type="button">
+<span class="material-symbols-outlined text-[14px]">local_hospital</span>
+<span>Maya's Care</span>
+</button>
+<button class="px-2.5 py-1 rounded-full bg-surface-container text-on-surface font-label-md text-label-md hover:bg-primary-fixed hover:text-on-primary-fixed transition-colors flex items-center gap-1" type="button">
+<span class="material-symbols-outlined text-[14px]">mic</span>
+<span>Voice Note</span>
+</button>
+</div>
+</div>
+<div class="flex items-center gap-2 pt-space-xs">
+<button class="flex-1 py-3 px-4 rounded-xl bg-primary text-on-primary font-label-lg text-label-lg flex items-center justify-center gap-2 shadow-sm hover:bg-primary-container active:scale-[0.99] transition-all" type="button">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+<span>Save to Sanctuary Vault</span>
+</button>
+<button aria-label="Discard or retake scan" class="w-12 h-12 rounded-xl bg-surface-container text-on-surface-variant hover:bg-surface-container-high flex items-center justify-center transition-colors" type="button">
+<span class="material-symbols-outlined text-[20px]">refresh</span>
+</button>
+</div>
+<div class="flex items-center justify-center gap-1 pt-0.5 text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px] text-tertiary">lock_clock</span>
+<span>Preserved in high-resolution PDF with offline search index</span>
+</div>
+</div>
+</div>
+<script>
+  (function() {
+    const autoBtn = document.getElementById('toggle-auto');
+    const manualBtn = document.getElementById('toggle-manual');
+    const shutter = document.getElementById('shutter-btn');
+
+    if (autoBtn && manualBtn) {
+      autoBtn.addEventListener('click', function() {
+        autoBtn.className = 'px-2.5 py-1 rounded-full bg-surface text-on-surface font-label-sm text-label-sm shadow-sm transition-all';
+        manualBtn.className = 'px-2.5 py-1 rounded-full text-on-surface-variant font-label-sm text-label-sm hover:text-on-surface transition-all';
+      });
+      manualBtn.addEventListener('click', function() {
+        manualBtn.className = 'px-2.5 py-1 rounded-full bg-surface text-on-surface font-label-sm text-label-sm shadow-sm transition-all';
+        autoBtn.className = 'px-2.5 py-1 rounded-full text-on-surface-variant font-label-sm text-label-sm hover:text-on-surface transition-all';
+      });
+    }
+
+    if (shutter) {
+      shutter.addEventListener('click', function() {
+        shutter.classList.add('scale-90');
+        setTimeout(function() {
+          shutter.classList.remove('scale-90');
+        }, 150);
+      });
+    }
+  })();
+</script></main></body></html>

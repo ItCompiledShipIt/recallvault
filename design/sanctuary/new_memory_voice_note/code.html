@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "on-surface": "#1c1c18", "surface-container-lowest": "#ffffff", "surface-dim": "#dcdad4", "on-tertiary-fixed-variant": "#374c36", "on-primary-fixed": "#002019", "background": "#fcf9f3", "on-tertiary-fixed": "#0c200d", "primary": "#154539", "secondary-fixed": "#ffdbcd", "on-secondary-fixed": "#360f00", "tertiary-fixed-dim": "#b4cdb0", "surface": "#fcf9f3", "secondary-fixed-dim": "#ffb597", "primary-fixed-dim": "#a0d1c0", "primary-fixed": "#bceddc", "inverse-primary": "#a0d1c0", "on-primary-container": "#a3d4c3", "surface-tint": "#396759", "primary-container": "#2f5d50", "surface-container-high": "#ebe8e2", "secondary": "#924b2a", "surface-bright": "#fcf9f3", "error-container": "#ffdad6", "inverse-on-surface": "#f3f0ea", "outline": "#717975", "surface-container": "#f0eee8", "surface-variant": "#e5e2dc", "tertiary-container": "#445a43", "on-secondary-fixed-variant": "#743415", "on-primary-fixed-variant": "#204f42", "surface-container-highest": "#e5e2dc", "on-background": "#1c1c18", "on-secondary": "#ffffff", "on-primary": "#ffffff", "on-surface-variant": "#404945", "on-error": "#ffffff", "on-tertiary-container": "#b7d0b3", "tertiary": "#2d422d", "on-error-container": "#93000a", "surface-container-low": "#f6f3ed", "on-secondary-container": "#773617", "inverse-surface": "#31312d", "error": "#ba1a1a", "secondary-container": "#fea27a", "on-tertiary": "#ffffff", "outline-variant": "#c0c8c4", "tertiary-fixed": "#d0e9cc" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "margin-desktop": "3rem", "space-sm": "0.5rem", "space-xl": "2.5rem", "gutter-tablet": "1.5rem", "space-lg": "1.5rem", "gutter": "1rem", "margin-tablet": "2rem", "gutter-desktop": "2rem", "margin": "1.25rem", "space-xs": "0.25rem", "space-md": "1rem" }, fontFamily: { "display-lg": ["Plus Jakarta Sans"], "body-lg": ["Plus Jakarta Sans"], "label-md": ["Plus Jakarta Sans"], "headline-lg": ["Plus Jakarta Sans"], "label-sm": ["Plus Jakarta Sans"], "body-md": ["Plus Jakarta Sans"], "headline-md": ["Plus Jakarta Sans"], "headline-lg-mobile": ["Plus Jakarta Sans"], "headline-sm": ["Plus Jakarta Sans"], "label-lg": ["Plus Jakarta Sans"], "body-sm": ["Plus Jakarta Sans"], "display-lg-mobile": ["Plus Jakarta Sans"] }, fontSize: { "display-lg": ["36px", { lineHeight: "44px", letterSpacing: "-0.02em", fontWeight: "700" }], "body-lg": ["17px", { lineHeight: "26px", fontWeight: "400" }], "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.02em", fontWeight: "500" }], "headline-lg": ["30px", { lineHeight: "38px", letterSpacing: "-0.015em", fontWeight: "600" }], "label-sm": ["11px", { lineHeight: "14px", letterSpacing: "0.03em", fontWeight: "600" }], "body-md": ["15px", { lineHeight: "22px", fontWeight: "400" }], "headline-md": ["22px", { lineHeight: "28px", letterSpacing: "-0.01em", fontWeight: "600" }], "headline-lg-mobile": ["24px", { lineHeight: "32px", letterSpacing: "-0.01em", fontWeight: "600" }], "headline-sm": ["18px", { lineHeight: "24px", fontWeight: "600" }], "label-lg": ["14px", { lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "600" }], "body-sm": ["13px", { lineHeight: "18px", fontWeight: "400" }], "display-lg-mobile": ["28px", { lineHeight: "36px", letterSpacing: "-0.015em", fontWeight: "700" }] } } } };</script><style>@layer base{html,body{width:100vw;margin:0;padding:0;}body{overscroll-behavior-y:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface font-body-md text-on-surface flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 pt-safe bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 px-margin flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm min-w-0"><h1 class="font-headline-sm text-headline-sm text-on-surface truncate">New Memory</h1><div class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm"><span class="material-symbols-outlined text-[13px] leading-none text-primary">lock</span><span class="truncate">On-device only • Private</span></div></div><a aria-label="Profile" class="w-11 h-11 flex items-center justify-center rounded-full hover:bg-surface-variant transition-colors" data-path="settings" href="#"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></a></div></header><main class="flex-1 flex flex-col relative w-full pt-16 pb-24 bg-surface px-margin"><div class="flex flex-col w-full pb-8">
+<!-- Top Action & Tranquility Bar -->
+<div class="flex items-center justify-between py-space-sm mb-space-sm">
+<button class="px-space-md py-2 rounded-full bg-surface-container-high text-on-surface hover:bg-surface-variant active:scale-95 transition-all flex items-center gap-1.5 shadow-sm" type="button">
+<span class="material-symbols-outlined text-[18px]">close</span>
+<span class="font-label-lg text-label-lg">Cancel</span>
+</button>
+<div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label-sm text-label-sm shadow-sm">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">shield_with_heart</span>
+<span>On phone only • Safe</span>
+</div>
+<button class="px-5 py-2 rounded-full bg-primary text-on-primary font-label-lg text-label-lg shadow-md hover:bg-primary-container active:scale-95 transition-all flex items-center gap-1.5" id="save-button" type="button">
+<span>Save</span>
+<span class="material-symbols-outlined text-[18px]">check</span>
+</button>
+</div>
+<!-- Main Note Slate -->
+<div class="flex flex-col gap-space-md">
+<!-- Title & Reassurance Container -->
+<div class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col gap-space-sm">
+<input aria-label="Memory Title" class="w-full bg-transparent font-headline-md text-headline-md text-on-surface placeholder:text-outline focus:outline-none tracking-tight" placeholder="Title or what's on your mind..." type="text" value="Soccer jerseys &amp; Dr. Henderson"/>
+<div class="flex items-center gap-2 text-outline">
+<span class="material-symbols-outlined text-[16px]">schedule</span>
+<span class="font-label-sm text-label-sm">Today, 4:26 PM • Voice draft ready</span>
+</div>
+</div>
+<!-- Category Flow Chips -->
+<div class="flex flex-col gap-1.5">
+<div class="flex items-center justify-between px-1">
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium">Topic Space</span>
+<span class="font-label-sm text-label-sm text-primary">Auto-matched</span>
+</div>
+<div class="flex gap-2 overflow-x-auto pb-1 no-scrollbar -mx-margin px-margin">
+<button class="shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-md text-label-md shadow-sm transition-transform active:scale-95" type="button">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">family_restroom</span>
+<span>Family &amp; Kids</span>
+</button>
+<button class="shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-surface-container text-on-surface-variant hover:bg-surface-container-high font-label-md text-label-md transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">cottage</span>
+<span>Home &amp; Life</span>
+</button>
+<button class="shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-surface-container text-on-surface-variant hover:bg-surface-container-high font-label-md text-label-md transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">lightbulb</span>
+<span>Work &amp; Ideas</span>
+</button>
+<button class="shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-surface-container text-on-surface-variant hover:bg-surface-container-high font-label-md text-label-md transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">verified</span>
+<span>Important Docs</span>
+</button>
+<button class="shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-surface-container text-on-surface-variant hover:bg-surface-container-high font-label-md text-label-md transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">self_improvement</span>
+<span>Daily Thought</span>
+</button>
+</div>
+</div>
+<!-- Live Voice Capture Hub -->
+<div class="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col items-center relative overflow-hidden">
+<!-- Ambient gentle halo -->
+<div class="absolute -top-12 -right-12 w-36 h-36 rounded-full bg-primary-fixed-dim/20 blur-2xl pointer-events-none"></div>
+<div class="absolute -bottom-12 -left-12 w-36 h-36 rounded-full bg-secondary-fixed/20 blur-2xl pointer-events-none"></div>
+<!-- Pulse & Mic Button -->
+<div class="relative flex items-center justify-center my-2">
+<div class="absolute w-24 h-24 rounded-full bg-primary/10 animate-ping duration-1000"></div>
+<div class="absolute w-20 h-20 rounded-full bg-primary-fixed-dim/40"></div>
+<button class="relative z-10 w-16 h-16 rounded-full bg-primary-container text-on-primary flex items-center justify-center shadow-lg active:scale-95 transition-transform" id="mic-toggle" type="button">
+<span class="material-symbols-outlined text-[32px]" id="mic-icon">mic</span>
+</button>
+</div>
+<!-- Duration Counter & Natural State -->
+<div class="flex items-center gap-2 mt-3 mb-4">
+<div class="w-2 h-2 rounded-full bg-secondary animate-pulse"></div>
+<span class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-wider" id="record-timer">00:38</span>
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant">Listening</span>
+</div>
+<!-- Animated Organic Soundwave SVG -->
+<div class="w-full max-w-xs flex items-center justify-center py-1">
+<svg class="w-full h-8 text-primary" fill="none" preserveaspectratio="none" viewbox="0 0 240 32">
+<rect fill="currentColor" height="8" opacity="0.4" rx="2" width="4" x="4" y="12"></rect>
+<rect fill="currentColor" height="16" opacity="0.5" rx="2" width="4" x="14" y="8"></rect>
+<rect fill="currentColor" height="24" opacity="0.7" rx="2" width="4" x="24" y="4"></rect>
+<rect fill="currentColor" height="14" opacity="0.6" rx="2" width="4" x="34" y="9"></rect>
+<rect fill="currentColor" height="28" rx="2" width="4" x="44" y="2"></rect>
+<rect fill="currentColor" height="20" opacity="0.8" rx="2" width="4" x="54" y="6"></rect>
+<rect fill="currentColor" height="10" opacity="0.5" rx="2" width="4" x="64" y="11"></rect>
+<rect fill="currentColor" height="26" rx="2" width="4" x="74" y="3"></rect>
+<rect fill="currentColor" height="18" opacity="0.85" rx="2" width="4" x="84" y="7"></rect>
+<rect fill="currentColor" height="6" opacity="0.4" rx="2" width="4" x="94" y="13"></rect>
+<rect fill="currentColor" height="24" opacity="0.9" rx="2" width="4" x="104" y="4"></rect>
+<rect fill="currentColor" height="30" rx="2" width="4" x="114" y="1"></rect>
+<rect fill="currentColor" height="22" opacity="0.85" rx="2" width="4" x="124" y="5"></rect>
+<rect fill="currentColor" height="12" opacity="0.55" rx="2" width="4" x="134" y="10"></rect>
+<rect fill="currentColor" height="28" rx="2" width="4" x="144" y="2"></rect>
+<rect fill="currentColor" height="18" opacity="0.8" rx="2" width="4" x="154" y="7"></rect>
+<rect fill="currentColor" height="8" opacity="0.45" rx="2" width="4" x="164" y="12"></rect>
+<rect fill="currentColor" height="20" opacity="0.75" rx="2" width="4" x="174" y="6"></rect>
+<rect fill="currentColor" height="26" rx="2" width="4" x="184" y="3"></rect>
+<rect fill="currentColor" height="14" opacity="0.6" rx="2" width="4" x="194" y="9"></rect>
+<rect fill="currentColor" height="22" opacity="0.8" rx="2" width="4" x="204" y="5"></rect>
+<rect fill="currentColor" height="10" opacity="0.5" rx="2" width="4" x="214" y="11"></rect>
+<rect fill="currentColor" height="6" opacity="0.3" rx="2" width="4" x="224" y="13"></rect>
+</svg>
+</div>
+<!-- Real-time Conversational Transcription Stream -->
+<div class="w-full mt-4 p-space-md rounded-xl bg-surface-container-low flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5 text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">record_voice_over</span>
+<span class="font-label-sm text-label-sm font-semibold">Live Speech Recognition</span>
+</div>
+<span class="font-label-sm text-label-sm text-outline">Real-time</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface leading-relaxed">
+          “Reminder to order the soccer team jerseys by Tuesday afternoon and call Dr. Henderson for the annual physical checkup appointment...”
+          <span class="inline-block w-1.5 h-4 ml-0.5 bg-primary align-middle animate-pulse"></span>
+</p>
+</div>
+</div>
+<!-- Extracted Smart Action Pill (Delight moment) -->
+<div class="p-space-md rounded-xl bg-tertiary-fixed text-on-tertiary-fixed flex items-start justify-between gap-3 shadow-sm">
+<div class="flex items-start gap-2.5">
+<div class="w-7 h-7 rounded-full bg-primary-container text-on-primary flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[16px]">auto_awesome</span>
+</div>
+<div>
+<span class="font-label-lg text-label-lg block font-semibold">2 gentle tasks discovered</span>
+<span class="font-body-sm text-body-sm text-on-tertiary-fixed-variant block">Soccer jerseys (due Tue) • Doctor call scheduled</span>
+</div>
+</div>
+<button class="px-2.5 py-1 rounded-full bg-surface-container-lowest text-primary font-label-sm text-label-sm shadow-sm hover:scale-105 active:scale-95 transition-transform" type="button">
+        Create Tasks
+      </button>
+</div>
+<!-- Quick Visual Attachment Strip -->
+<div class="flex flex-col gap-2">
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium px-1">Attached Context</span>
+<div class="grid grid-cols-2 gap-2">
+<div class="relative rounded-xl overflow-hidden shadow-sm bg-surface-container-high h-28 group">
+<img class="w-full h-full object-cover" data-alt="A soft daylight photo of a crumpled school sports jersey order form lying on a clean wooden kitchen table with natural sunlight and sage green stationery" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCDHMvvu2kpOrzW9jt1WaUKXVqvloz98xm-owQFkCx5uW7vP07tInY4HHfLQoTQj2kQiMgeWtNChlRjq8H21dpzgMxK51hadhd-FEacmJS25s0EBlYjJQC0BW7lFcYL1XLv1QsRhWgOPnlX6NHf-W-H5ADfiH-KThlYD4-nCnlRRfYdFIKEHL3eszYa0zmcDrgJq4yVtD_BfrciSo_8H1P2W8vzPDL3sgRxj5eM3CTO"/>
+<div class="absolute inset-0 bg-gradient-to-t from-on-surface/70 via-transparent to-transparent flex items-end p-2.5">
+<div class="flex items-center justify-between w-full text-surface-container-lowest">
+<span class="font-label-sm text-label-sm truncate">Jersey_Form.jpg</span>
+<button class="w-5 h-5 rounded-full bg-on-surface/40 flex items-center justify-center hover:bg-error transition-colors" type="button">
+<span class="material-symbols-outlined text-[12px]">close</span>
+</button>
+</div>
+</div>
+</div>
+<div class="relative rounded-xl overflow-hidden shadow-sm bg-surface-container-high h-28 group">
+<img class="w-full h-full object-cover" data-alt="A doctor reminder appointment card with hand written ink notes resting beside a cozy ceramic coffee mug on a neutral linen surface" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCHKYh3vqAAmuB8tYxQHdBhrwjuL589RkM3grUoJtDNmOERoFxUwaSbJwi4NeqELFpQBeDsWhdoJ7AvB0EbMqsDayxeasBqswRvqOQfqlPL5HVliqhwMf7ZM7pD5clyvgCG-UAZ-bNHmlOL6chvyQfv-57onQWdM8PLsIwlkRSMmpc0wTJ4QP6ZvzBBbWs2BDzsZ-DPFLPp3YEoWOGl0V2KXWFqr9dkv_nUUIVLLtmN"/>
+<div class="absolute inset-0 bg-gradient-to-t from-on-surface/70 via-transparent to-transparent flex items-end p-2.5">
+<div class="flex items-center justify-between w-full text-surface-container-lowest">
+<span class="font-label-sm text-label-sm truncate">Clinic_Card.jpg</span>
+<button class="w-5 h-5 rounded-full bg-on-surface/40 flex items-center justify-center hover:bg-error transition-colors" type="button">
+<span class="material-symbols-outlined text-[12px]">close</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Touch-Friendly Add-Ons Bar -->
+<div class="flex items-center gap-2 pt-1">
+<button class="flex-1 py-3 px-2 rounded-xl bg-surface-container-lowest text-on-surface flex flex-col items-center justify-center gap-1 shadow-sm hover:bg-surface-container transition-colors active:scale-95" type="button">
+<div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">add_a_photo</span>
+</div>
+<span class="font-label-sm text-label-sm truncate text-center">Add Photos</span>
+</button>
+<button class="flex-1 py-3 px-2 rounded-xl bg-surface-container-lowest text-on-surface flex flex-col items-center justify-center gap-1 shadow-sm hover:bg-surface-container transition-colors active:scale-95" type="button">
+<div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">checklist</span>
+</div>
+<span class="font-label-sm text-label-sm truncate text-center">Add Checklist</span>
+</button>
+<button class="flex-1 py-3 px-2 rounded-xl bg-surface-container-lowest text-on-surface flex flex-col items-center justify-center gap-1 shadow-sm hover:bg-surface-container transition-colors active:scale-95" type="button">
+<div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[18px]">notifications_active</span>
+</div>
+<span class="font-label-sm text-label-sm truncate text-center">Set Reminder</span>
+</button>
+</div>
+<!-- Reassurance Guarantee Card -->
+<div class="p-space-md rounded-xl bg-surface-container-low flex items-center gap-3">
+<div class="w-9 h-9 rounded-full bg-primary-fixed flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-[20px]">enhanced_encryption</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-semibold text-on-surface">Zero cloud tracking</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Encrypted and stored only on your phone. Backed up to private drive on request.</span>
+</div>
+</div>
+</div>
+</div>
+<script>
+  // Simple micro-delight toggle interaction
+  const micButton = document.getElementById('mic-toggle');
+  const micIcon = document.getElementById('mic-icon');
+  const timer = document.getElementById('record-timer');
+  let isRecording = true;
+  let seconds = 38;
+
+  if (micButton) {
+    micButton.addEventListener('click', () => {
+      isRecording = !isRecording;
+      if (isRecording) {
+        micIcon.textContent = 'mic';
+        micButton.classList.remove('bg-surface-variant', 'text-on-surface-variant');
+        micButton.classList.add('bg-primary-container', 'text-on-primary');
+      } else {
+        micIcon.textContent = 'play_arrow';
+        micButton.classList.remove('bg-primary-container', 'text-on-primary');
+        micButton.classList.add('bg-surface-variant', 'text-on-surface-variant');
+      }
+    });
+  }
+
+  // Smooth save button tap feedback
+  const saveBtn = document.getElementById('save-button');
+  if (saveBtn) {
+    saveBtn.addEventListener('click', () => {
+      const originalText = saveBtn.innerHTML;
+      saveBtn.innerHTML = '<span>Saved!</span><span class="material-symbols-outlined text-[18px]">done_all</span>';
+      saveBtn.classList.replace('bg-primary', 'bg-tertiary-container');
+      setTimeout(() => {
+        saveBtn.innerHTML = originalText;
+        saveBtn.classList.replace('bg-tertiary-container', 'bg-primary');
+      }, 1800);
+    });
+  }
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface/85 backdrop-blur-xl shadow-[0_-2px_12px_rgba(0,0,0,0.04)]" data-active-classes="text-primary font-semibold"><div class="flex justify-around items-center h-16 px-space-xs"><a class="flex flex-col items-center justify-center w-16 h-12 text-on-surface-variant transition-colors group" data-path="vault" href="#"><span class="material-symbols-outlined text-[22px]">folder_special</span><span class="font-label-sm text-label-sm mt-0.5">Vault</span></a><a class="flex flex-col items-center justify-center w-16 h-12 text-on-surface-variant transition-colors group" data-path="search-&amp;-ask" href="#"><span class="material-symbols-outlined text-[22px]">auto_awesome</span><span class="font-label-sm text-label-sm mt-0.5">Search &amp; Ask</span></a><a aria-current="page" class="flex flex-col items-center justify-center w-16 h-12 transition-colors group text-primary font-semibold" data-path="new-memory" href="#"><div class="w-10 h-10 -mt-2 rounded-full bg-primary-container text-on-primary flex items-center justify-center shadow-[0_4px_12px_rgba(47,93,80,0.25)] hover:scale-105 active:scale-95 transition-transform"><span class="material-symbols-outlined text-[22px]">add</span></div><span class="font-label-sm text-label-sm mt-0.5">Capture</span></a><a class="flex flex-col items-center justify-center w-16 h-12 text-on-surface-variant transition-colors group" data-path="settings" href="#"><span class="material-symbols-outlined text-[22px]">shield</span><span class="font-label-sm text-label-sm mt-0.5">Settings</span></a></div></nav></body></html>

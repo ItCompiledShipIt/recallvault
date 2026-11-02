@@ -1122,6 +1122,14 @@ public class TestMain {
             check("mail: personal note with a plan kept",
                 MailFilter.judge("Saturday",
                     "Dont forget to bring the chairs on Saturday, we eat at 6.", false).keep);
+            check("mail compose: valid passes",
+                MailFilter.composeError("gina@example.com", "Hi", "Body text").isEmpty());
+            check("mail compose: bad address blocked",
+                !MailFilter.composeError("not-an-address", "Hi", "Body").isEmpty());
+            check("mail compose: empty subject blocked",
+                !MailFilter.composeError("a@b.com", "  ", "Body").isEmpty());
+            check("mail compose: empty body blocked",
+                !MailFilter.composeError("a@b.com", "Hi", "").isEmpty());
         }
 
         System.out.println("RESULT: " + pass + " pass, " + fail + " fail");

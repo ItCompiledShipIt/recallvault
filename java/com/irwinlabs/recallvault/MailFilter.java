@@ -49,6 +49,18 @@ public final class MailFilter {
             || lower.startsWith(w + " ") || lower.contains("\n" + w + " ");
     }
 
+    /** Compose-sheet validation (v0.57.0): "" when the
+     *  fields are sendable, else the problem in plain
+     *  words. Lives here so it stays JVM-testable. */
+    public static String composeError(String to, String subject, String body) {
+        if (to == null || !to.trim().contains("@") || !to.trim().contains(".")) {
+            return "That does not look like an email address";
+        }
+        if (subject == null || subject.trim().isEmpty()) return "Give it a subject";
+        if (body == null || body.trim().isEmpty()) return "The message is empty";
+        return "";
+    }
+
     public static Verdict judge(String subject, String body, boolean hasUnsub) {
         String text = ((subject == null ? "" : subject) + "\n" + (body == null ? "" : body));
         String lower = text.toLowerCase(Locale.US);

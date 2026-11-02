@@ -18,7 +18,9 @@ import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.HorizontalScrollView;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -216,6 +218,33 @@ public class MainActivity extends Activity {
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackgroundColor(Ui.BG);
 
+        if (Ui.SANCTUARY) {
+            // Sanctuary header (v0.58.0): wordmark, the privacy
+            // pill, and the profile disc that opens Settings.
+            LinearLayout header = new LinearLayout(this);
+            header.setOrientation(LinearLayout.HORIZONTAL);
+            header.setGravity(Gravity.CENTER_VERTICAL);
+            header.setPadding(Ui.dp(this, 20), Ui.dp(this, 14), Ui.dp(this, 20), Ui.dp(this, 6));
+            TextView wm = Ui.text(this, "Clio", 20, Ui.TEXT, true);
+            wm.setTypeface(Ui.faceDisplay(this));
+            header.addView(wm);
+            LinearLayout.LayoutParams plp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            plp.setMargins(Ui.dp(this, 10), 0, 0, 0);
+            TextView pill = Ui.pill(this, "On-device only • Private");
+            pill.setLayoutParams(plp);
+            header.addView(pill);
+            View hsp = new View(this);
+            hsp.setLayoutParams(new LinearLayout.LayoutParams(0, 1, 1f));
+            header.addView(hsp);
+            header.addView(Ui.avatarDisc(this, new View.OnClickListener() {
+                @Override public void onClick(View v) { tab = "SETTINGS"; render(); }
+            }));
+            headerCount = Ui.text(this, "", 12, Ui.DIM, false);
+            headerCount.setVisibility(View.GONE);
+            header.addView(headerCount);
+            root.addView(header);
+        } else {
         // Top utility strip (Stitch layout, v0.50.0): what the
         // app is, in one line, on every screen.
         LinearLayout strip = new LinearLayout(this);
@@ -249,6 +278,7 @@ public class MainActivity extends Activity {
         titles.addView(headerCount);
         header.addView(titles);
         root.addView(header);
+        }
 
         ScrollView scroll = new ScrollView(this);
         scroll.setLayoutParams(new LinearLayout.LayoutParams(
@@ -310,6 +340,59 @@ public class MainActivity extends Activity {
     private void renderTabs() {
         if (tabsBar == null) return;
         tabsBar.removeAllViews();
+        if (Ui.SANCTUARY) {
+            // The design's bar: Vault / Search & Ask / Capture
+            // (the raised forest disc) / Reminders / Settings.
+            tabsBar.setBackgroundColor(Ui.PANEL);
+            tabsBar.addView(Ui.tabItem(this, R.drawable.ic_vault, "Vault", "VAULT".equals(tab),
+                new View.OnClickListener() { @Override public void onClick(View v) { tab = "VAULT"; render(); } }));
+            tabsBar.addView(Ui.tabItem(this, R.drawable.ic_search, "Search & Ask", "ASK".equals(tab),
+                new View.OnClickListener() { @Override public void onClick(View v) { tab = "ASK"; render(); } }));
+            LinearLayout fabSlot = new LinearLayout(this);
+            fabSlot.setOrientation(LinearLayout.VERTICAL);
+            fabSlot.setGravity(Gravity.CENTER_HORIZONTAL);
+            fabSlot.setLayoutParams(new LinearLayout.LayoutParams(0,
+                LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+            FrameLayout fab = new FrameLayout(this);
+            android.graphics.drawable.GradientDrawable fg = new android.graphics.drawable.GradientDrawable();
+            fg.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+            fg.setColor(Ui.FOREST);
+            fab.setBackground(fg);
+            fab.setElevation(Ui.dp(this, 4));
+            LinearLayout.LayoutParams flp = new LinearLayout.LayoutParams(Ui.dp(this, 52), Ui.dp(this, 52));
+            flp.setMargins(0, Ui.dp(this, 2), 0, 0);
+            fab.setLayoutParams(flp);
+            TextView plus = Ui.text(this, "+", 30, 0xFFFFFFFF, false);
+            plus.setGravity(Gravity.CENTER);
+            FrameLayout.LayoutParams pmlp = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT);
+            plus.setLayoutParams(pmlp);
+            fab.addView(plus);
+            fab.setClickable(true);
+            fab.setFocusable(true);
+            fab.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) { showCaptureSheet(); }
+            });
+            fabSlot.addView(fab);
+            TextView capL = Ui.text(this, "Capture", 11, Ui.DIM, false);
+            capL.setLayoutParams(Ui.matchWrap(3, this));
+            fabSlot.addView(capL);
+            tabsBar.addView(fabSlot);
+            int dueSoonS = 0;
+            try {
+                long nowB = System.currentTimeMillis();
+                for (Item it : db.withReminders()) {
+                    if (it.handledAt == 0 && it.reminderAt > 0
+                            && it.reminderAt <= nowB + 48L * 3600 * 1000) dueSoonS++;
+                }
+            } catch (Exception ignored) {}
+            tabsBar.addView(Ui.tabItem(this, R.drawable.ic_bell,
+                dueSoonS > 0 ? "Reminders • " + dueSoonS : "Reminders", "REMINDERS".equals(tab),
+                new View.OnClickListener() { @Override public void onClick(View v) { tab = "REMINDERS"; render(); } }));
+            tabsBar.addView(Ui.tabItem(this, R.drawable.ic_settings, "Settings", "SETTINGS".equals(tab),
+                new View.OnClickListener() { @Override public void onClick(View v) { tab = "SETTINGS"; render(); } }));
+            return;
+        }
         tabsBar.addView(Ui.tabItem(this, R.drawable.ic_vault, "Vault", "VAULT".equals(tab),
             new View.OnClickListener() { @Override public void onClick(View v) { tab = "VAULT"; render(); } }));
         tabsBar.addView(Ui.tabItem(this, R.drawable.ic_search, "Ask", "ASK".equals(tab),
@@ -360,6 +443,13 @@ public class MainActivity extends Activity {
         content.removeAllViews();
         if ("ASK".equals(tab)) renderAsk();
         else if ("REMINDERS".equals(tab)) renderReminders();
+        else if ("SETTINGS".equals(tab)) {
+            // Settings as a page (v0.58.0): the same builder
+            // the dialog uses, poured into the tab.
+            LinearLayout sb = buildSettingsBox();
+            sb.setPadding(Ui.dp(this, 4), Ui.dp(this, 4), Ui.dp(this, 4), Ui.dp(this, 4));
+            content.addView(sb);
+        }
         else renderVault();
         VaultWidget.refresh(this); // keep the home-screen widget honest (v0.14.0)
     }
@@ -367,13 +457,53 @@ public class MainActivity extends Activity {
     // ---------- VAULT ----------
 
     private void renderVault() {
-        LinearLayout title = Ui.screenTitle(this, "VAULT", "ON-DEVICE");
-        title.setLayoutParams(Ui.matchWrap(6, this));
-        content.addView(title);
-        content.addView(captureDock());
-        attentionStrip();
+        if (Ui.SANCTUARY) {
+            // Sanctuary home (v0.58.0), per the design: a
+            // greeting, the saved-here pill, three quiet ways
+            // in, then the day's memories as tactile cards.
+            int hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY);
+            String greet = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+            TextView g = Ui.text(this, greet, 26, Ui.TEXT, true);
+            g.setTypeface(Ui.faceDisplay(this));
+            g.setLayoutParams(Ui.matchWrap(6, this));
+            content.addView(g);
+            LinearLayout pillRow = new LinearLayout(this);
+            pillRow.setOrientation(LinearLayout.HORIZONTAL);
+            pillRow.setGravity(Gravity.CENTER_VERTICAL);
+            pillRow.setLayoutParams(Ui.matchWrap(8, this));
+            View dot = new View(this);
+            android.graphics.drawable.GradientDrawable dg = new android.graphics.drawable.GradientDrawable();
+            dg.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+            dg.setColor(Ui.ACCENT);
+            dot.setBackground(dg);
+            LinearLayout.LayoutParams dlp = new LinearLayout.LayoutParams(Ui.dp(this, 7), Ui.dp(this, 7));
+            dlp.setMargins(Ui.dp(this, 10), 0, Ui.dp(this, 7), 0);
+            dot.setLayoutParams(dlp);
+            LinearLayout pillBox = new LinearLayout(this);
+            pillBox.setOrientation(LinearLayout.HORIZONTAL);
+            pillBox.setGravity(Gravity.CENTER_VERTICAL);
+            pillBox.setBackground(Ui.panelBg(Ui.PANEL_HI, 0, 999, this));
+            pillBox.addView(dot);
+            TextView pt = Ui.text(this, "Saved on this phone only • 100% Private", 11, Ui.DIM, true);
+            LinearLayout.LayoutParams ptlp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            ptlp.setMargins(0, Ui.dp(this, 5), Ui.dp(this, 12), Ui.dp(this, 5));
+            pt.setLayoutParams(ptlp);
+            pillBox.addView(pt);
+            pillRow.addView(pillBox);
+            content.addView(pillRow);
+            content.addView(quickActions());
+            attentionStrip();
+        } else {
+            LinearLayout title = Ui.screenTitle(this, "VAULT", "ON-DEVICE");
+            title.setLayoutParams(Ui.matchWrap(6, this));
+            content.addView(title);
+            content.addView(captureDock());
+            attentionStrip();
+        }
 
-        EditText search = Ui.input(this, "Filter your vault...");
+        EditText search = Ui.input(this, Ui.SANCTUARY
+            ? "Search your memories, voice notes, photos..." : "Filter your vault...");
         search.setText(vaultQuery);
         search.setLayoutParams(Ui.matchWrap(14, this));
         search.addTextChangedListener(new TextWatcher() {
@@ -518,8 +648,105 @@ public class MainActivity extends Activity {
         LinearLayout listHolder = new LinearLayout(this);
         listHolder.setOrientation(LinearLayout.VERTICAL);
         listHolder.setTag("listHolder");
+        if (Ui.SANCTUARY && "All".equals(categoryFilter) && vaultQuery.trim().isEmpty()) {
+            LinearLayout rh = Ui.sectionHead(this, "Recent Memories", "Organized by day");
+            rh.setLayoutParams(Ui.matchWrap(14, this));
+            content.addView(rh);
+        }
         content.addView(listHolder);
         fillList(listHolder);
+        if (Ui.SANCTUARY && "All".equals(categoryFilter) && vaultQuery.trim().isEmpty()
+                && db.count() > 0) {
+            content.addView(safeCard());
+        }
+    }
+
+    /** The home screen's three quiet ways in (Sanctuary). */
+    private LinearLayout quickActions() {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setLayoutParams(Ui.matchWrap(14, this));
+        row.addView(quickTile(R.drawable.ic_mic, Ui.MINT, Ui.MINT_TEXT, "Record Voice", "Quick audio",
+            new View.OnClickListener() { @Override public void onClick(View v) { startVoice(); } }));
+        row.addView(quickTile(R.drawable.ic_scan, Ui.TERRA_BG, Ui.TERRA_TEXT, "Scan Doc", "Receipt or note",
+            new View.OnClickListener() { @Override public void onClick(View v) { startCamera("SCAN"); } }));
+        row.addView(quickTile(R.drawable.ic_note, Ui.SAGE_BG, Ui.SAGE_TEXT, "Quick Note", "Write a thought",
+            new View.OnClickListener() { @Override public void onClick(View v) {
+                startActivity(new Intent(MainActivity.this, EditorActivity.class)); } }));
+        return row;
+    }
+
+    private LinearLayout quickTile(int iconRes, int discBg, int discFg, String label, String sub,
+                                   View.OnClickListener click) {
+        LinearLayout t = new LinearLayout(this);
+        t.setOrientation(LinearLayout.VERTICAL);
+        t.setGravity(Gravity.CENTER_HORIZONTAL);
+        t.setBackground(Ui.rippleBg(this, Ui.PANEL, 0, 16, 0x1F000000));
+        t.setElevation(Ui.dp(this, 2));
+        t.setPadding(Ui.dp(this, 6), Ui.dp(this, 14), Ui.dp(this, 6), Ui.dp(this, 12));
+        t.setClickable(true);
+        t.setFocusable(true);
+        FrameLayout disc = new FrameLayout(this);
+        android.graphics.drawable.GradientDrawable dg = new android.graphics.drawable.GradientDrawable();
+        dg.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+        dg.setColor(discBg);
+        disc.setBackground(dg);
+        disc.setLayoutParams(new LinearLayout.LayoutParams(Ui.dp(this, 46), Ui.dp(this, 46)));
+        ImageView iv = Ui.icon(this, iconRes, 22, discFg == Ui.MINT_TEXT ? Ui.FOREST : discFg);
+        FrameLayout.LayoutParams ilp = new FrameLayout.LayoutParams(Ui.dp(this, 22), Ui.dp(this, 22));
+        ilp.gravity = Gravity.CENTER;
+        iv.setLayoutParams(ilp);
+        disc.addView(iv);
+        t.addView(disc);
+        TextView l = Ui.text(this, label, 13, Ui.TEXT, true);
+        l.setLayoutParams(Ui.matchWrap(8, this));
+        l.setGravity(Gravity.CENTER);
+        t.addView(l);
+        TextView s = Ui.text(this, sub, 11, Ui.DIM, false);
+        s.setGravity(Gravity.CENTER);
+        t.addView(s);
+        t.setOnClickListener(click);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0,
+            LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+        lp.setMargins(Ui.dp(this, 4), 0, Ui.dp(this, 4), 0);
+        t.setLayoutParams(lp);
+        return t;
+    }
+
+    /** The mint assurance card that closes the home feed. */
+    private LinearLayout safeCard() {
+        LinearLayout c = new LinearLayout(this);
+        c.setOrientation(LinearLayout.HORIZONTAL);
+        c.setGravity(Gravity.CENTER_VERTICAL);
+        c.setBackground(Ui.panelBg(0xFFE4F5EC, 0, 20, this));
+        c.setPadding(Ui.dp(this, 16), Ui.dp(this, 14), Ui.dp(this, 16), Ui.dp(this, 14));
+        c.setLayoutParams(Ui.matchWrap(14, this));
+        FrameLayout disc = new FrameLayout(this);
+        android.graphics.drawable.GradientDrawable dg = new android.graphics.drawable.GradientDrawable();
+        dg.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+        dg.setColor(Ui.FOREST);
+        disc.setBackground(dg);
+        disc.setLayoutParams(new LinearLayout.LayoutParams(Ui.dp(this, 40), Ui.dp(this, 40)));
+        ImageView iv = Ui.icon(this, R.drawable.ic_lock, 20, 0xFFFFFFFF);
+        FrameLayout.LayoutParams ilp = new FrameLayout.LayoutParams(Ui.dp(this, 20), Ui.dp(this, 20));
+        ilp.gravity = Gravity.CENTER;
+        iv.setLayoutParams(ilp);
+        disc.addView(iv);
+        c.addView(disc);
+        LinearLayout texts = new LinearLayout(this);
+        texts.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout.LayoutParams tlp = new LinearLayout.LayoutParams(0,
+            LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+        tlp.setMargins(Ui.dp(this, 12), 0, 0, 0);
+        texts.setLayoutParams(tlp);
+        texts.addView(Ui.text(this, "Kept safe on this device", 14, Ui.TEXT, true));
+        TextView body = Ui.text(this,
+            "No external servers or tracking. Your notes, voice memos, and photos live solely in your hands.",
+            12, Ui.DIM, false);
+        body.setLayoutParams(Ui.matchWrap(3, this));
+        texts.addView(body);
+        c.addView(texts);
+        return c;
     }
 
     /**
@@ -887,6 +1114,7 @@ public class MainActivity extends Activity {
     }
 
     private LinearLayout itemCard(final Item it) {
+        if (Ui.SANCTUARY) return sanctuaryCard(it);
         // Stitch layout (v0.50.0): tag row on top (type tag left,
         // amount/status chip right), then title, snippet, and a
         // meta row whose tail is an honest status word.
@@ -970,6 +1198,154 @@ public class MainActivity extends Activity {
             @Override public void onClick(View v) { openDetail(it.id); }
         });
         return card;
+    }
+
+    /** Sanctuary memory card (v0.58.0), per the design:
+     *  tinted category pill and the time up top, a bold
+     *  title, a gentle snippet, a player row for voice,
+     *  and a quiet fact footer - Kept close. */
+    private LinearLayout sanctuaryCard(final Item it) {
+        LinearLayout card = Ui.pressCard(this);
+        boolean priv = Privacy.isPrivate(it);
+        LinearLayout top = new LinearLayout(this);
+        top.setOrientation(LinearLayout.HORIZONTAL);
+        top.setGravity(Gravity.CENTER_VERTICAL);
+        int[] tint = catTint(it.category);
+        top.addView(Ui.catPill(this, it.category, tint[0], tint[1]));
+        View tsp = new View(this);
+        tsp.setLayoutParams(new LinearLayout.LayoutParams(0, 1, 1f));
+        top.addView(tsp);
+        top.addView(Ui.text(this, cardTime(it.createdAt), 11, Ui.DIM, false));
+        if (priv) {
+            ImageView lk = Ui.icon(this, R.drawable.ic_lock, 14, Ui.DIM);
+            LinearLayout.LayoutParams lkp = new LinearLayout.LayoutParams(Ui.dp(this, 14), Ui.dp(this, 14));
+            lkp.setMargins(Ui.dp(this, 6), 0, 0, 0);
+            lk.setLayoutParams(lkp);
+            top.addView(lk);
+        }
+        card.addView(top);
+
+        TextView t = Ui.text(this, Privacy.displayTitle(it), 17, Ui.TEXT, true);
+        t.setLayoutParams(Ui.matchWrap(8, this));
+        t.setMaxLines(2);
+        t.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        card.addView(t);
+
+        if (priv) {
+            TextView s = Ui.text(this, "•••• •••• ••••", 13, Ui.DIM, false);
+            s.setLayoutParams(Ui.matchWrap(3, this));
+            card.addView(s);
+        } else {
+            String snip = Ask.snippet(it, "");
+            if (!snip.isEmpty()) {
+                TextView s = Ui.text(this, snip, 14, Ui.DIM, false);
+                s.setLayoutParams(Ui.matchWrap(3, this));
+                s.setMaxLines(2);
+                s.setEllipsize(android.text.TextUtils.TruncateAt.END);
+                card.addView(s);
+            }
+        }
+
+        if ("VOICE".equals(it.type) || "MEETING".equals(it.type)) {
+            LinearLayout prow = new LinearLayout(this);
+            prow.setOrientation(LinearLayout.HORIZONTAL);
+            prow.setGravity(Gravity.CENTER_VERTICAL);
+            prow.setBackground(Ui.panelBg(Ui.PANEL_HI, 0, 14, this));
+            prow.setPadding(Ui.dp(this, 8), Ui.dp(this, 8), Ui.dp(this, 12), Ui.dp(this, 8));
+            prow.setLayoutParams(Ui.matchWrap(10, this));
+            FrameLayout disc = new FrameLayout(this);
+            android.graphics.drawable.GradientDrawable dg = new android.graphics.drawable.GradientDrawable();
+            dg.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+            dg.setColor(Ui.FOREST);
+            disc.setBackground(dg);
+            disc.setLayoutParams(new LinearLayout.LayoutParams(Ui.dp(this, 38), Ui.dp(this, 38)));
+            ImageView pv = Ui.icon(this, R.drawable.ic_play, 16, 0xFFFFFFFF);
+            FrameLayout.LayoutParams pvlp = new FrameLayout.LayoutParams(Ui.dp(this, 16), Ui.dp(this, 16));
+            pvlp.gravity = Gravity.CENTER;
+            pv.setLayoutParams(pvlp);
+            disc.addView(pv);
+            prow.addView(disc);
+            LinearLayout wave = new LinearLayout(this);
+            wave.setOrientation(LinearLayout.HORIZONTAL);
+            wave.setGravity(Gravity.CENTER_VERTICAL);
+            LinearLayout.LayoutParams wlp = new LinearLayout.LayoutParams(0,
+                LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+            wlp.setMargins(Ui.dp(this, 10), 0, Ui.dp(this, 10), 0);
+            wave.setLayoutParams(wlp);
+            long seed = it.id * 2654435761L;
+            for (int i = 0; i < 26; i++) {
+                seed = seed * 1103515245L + 12345L;
+                int h = 5 + (int) ((seed >> 16) % 13);
+                View bar = new View(this);
+                bar.setBackgroundColor(i < 10 ? Ui.ACCENT : 0xFFCFC9BC);
+                LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(Ui.dp(this, 3), Ui.dp(this, h));
+                blp.setMargins(Ui.dp(this, 1), 0, Ui.dp(this, 1), 0);
+                bar.setLayoutParams(blp);
+                wave.addView(bar);
+            }
+            prow.addView(wave);
+            prow.addView(Ui.text(this, "VOICE".equals(it.type) ? "Voice Memo" : "Meeting", 11, Ui.DIM, true));
+            card.addView(prow);
+        }
+
+        LinearLayout foot = new LinearLayout(this);
+        foot.setOrientation(LinearLayout.HORIZONTAL);
+        foot.setGravity(Gravity.CENTER_VERTICAL);
+        foot.setLayoutParams(Ui.matchWrap(10, this));
+        String left;
+        int leftColor = Ui.DIM;
+        if (priv) left = "Private only";
+        else if (it.reminderAt > 0 && it.handledAt == 0) {
+            left = "Due " + Extract.formatDate(it.reminderAt);
+            leftColor = Ui.WARN;
+        } else if ("VOICE".equals(it.type) || "MEETING".equals(it.type)) {
+            left = it.body != null && !it.body.trim().isEmpty()
+                ? "Audio transcribed locally" : "Voice note";
+        } else if ("PHOTO".equals(it.type) || "SCAN".equals(it.type) || "DOCUMENT".equals(it.type)) {
+            left = "Saved on device";
+        } else {
+            long cents = Ask.principalCents(it);
+            left = cents > 0 ? Ask.formatMoney(cents) : "Kept close";
+            if (cents > 0) leftColor = Ui.WARN;
+        }
+        foot.addView(Ui.text(this, left, 11, leftColor, true));
+        View fsp = new View(this);
+        fsp.setLayoutParams(new LinearLayout.LayoutParams(0, 1, 1f));
+        foot.addView(fsp);
+        foot.addView(Ui.text(this, priv ? "Only yours" : "Kept close", 11, Ui.DIM, false));
+        card.addView(foot);
+
+        card.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { openDetail(it.id); }
+        });
+        return card;
+    }
+
+    /** Category pill tints in the Sanctuary palette. */
+    private int[] catTint(String category) {
+        if ("Bills".equals(category) || "People".equals(category)) {
+            return new int[]{Ui.TERRA_BG, Ui.TERRA_TEXT};
+        }
+        if ("Receipts".equals(category) || "Wallet".equals(category)) {
+            return new int[]{Ui.MINT, Ui.MINT_TEXT};
+        }
+        if ("Meetings".equals(category)) {
+            return new int[]{Ui.SAGE_BG, Ui.SAGE_TEXT};
+        }
+        return new int[]{Ui.PANEL_HI, Ui.DIM};
+    }
+
+    /** Card timestamp: a clock time today, a date before. */
+    private String cardTime(long epoch) {
+        java.util.Calendar c = java.util.Calendar.getInstance();
+        c.setTimeInMillis(epoch);
+        java.util.Calendar now = java.util.Calendar.getInstance();
+        boolean today = c.get(java.util.Calendar.YEAR) == now.get(java.util.Calendar.YEAR)
+            && c.get(java.util.Calendar.DAY_OF_YEAR) == now.get(java.util.Calendar.DAY_OF_YEAR);
+        if (today) {
+            return new java.text.SimpleDateFormat("h:mm a", java.util.Locale.US).format(new java.util.Date(epoch));
+        }
+        return Extract.formatDate(epoch);
     }
 
     /** The honest status word at a card's tail (Stitch layout). */
@@ -2388,15 +2764,28 @@ public class MainActivity extends Activity {
 
     /** Apply a theme everywhere at once (v0.49.0). */
     private void pickTheme(int t) {
+        boolean wasDialog = settingsDialog != null && settingsDialog.isShowing();
         Ui.setTheme(this, t);
         if (settingsDialog != null) settingsDialog.dismiss();
         buildShell();
         render();
         Toast.makeText(this, "Theme: " + Ui.THEME_NAMES[t], Toast.LENGTH_SHORT).show();
-        showSettings();
+        if (wasDialog) showSettings();
     }
 
     private void showSettings() {
+        ScrollView settingsScroll = new ScrollView(this);
+        settingsScroll.addView(buildSettingsBox());
+        settingsDialog = new AlertDialog.Builder(this)
+            .setTitle("Settings")
+            .setView(settingsScroll)
+            .setPositiveButton("Close", null)
+            .show();
+    }
+
+    /** The full settings stack as a view - used by the
+     *  dialog and, under Sanctuary, by the Settings tab. */
+    private LinearLayout buildSettingsBox() {
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
         box.setPadding(Ui.dp(this, 20), Ui.dp(this, 12), Ui.dp(this, 20), Ui.dp(this, 4));
@@ -3209,6 +3598,14 @@ public class MainActivity extends Activity {
         });
         mCard2.addView(mailSwitch);
         if (mailSet) {
+            Button writeMail = Ui.ghostButton(this, "Write an email");
+            writeMail.setLayoutParams(Ui.matchWrap(4, this));
+            writeMail.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    ComposeMail.show(MainActivity.this, "", "");
+                }
+            });
+            mCard2.addView(writeMail);
             Button forgetMail = Ui.ghostButton(this, "Forget this account");
             forgetMail.setLayoutParams(Ui.matchWrap(4, this));
             forgetMail.setOnClickListener(new View.OnClickListener() {
@@ -3222,16 +3619,7 @@ public class MainActivity extends Activity {
             mCard2.addView(forgetMail);
         }
         box.addView(mCard2);
-
-        // The settings stack outgrew one screen (v0.12.0): scroll it,
-        // or the bottom cards are clipped and unreachable.
-        ScrollView settingsScroll = new ScrollView(this);
-        settingsScroll.addView(box);
-        settingsDialog = new AlertDialog.Builder(this)
-            .setTitle("Settings")
-            .setView(settingsScroll)
-            .setPositiveButton("Close", null)
-            .show();
+        return box;
     }
 
     private AlertDialog settingsDialog;
@@ -4147,8 +4535,12 @@ public class MainActivity extends Activity {
 
     /** Rebuild the Settings dialog so control states match reality. */
     private void refreshSettings() {
-        if (settingsDialog != null) settingsDialog.dismiss();
-        showSettings();
+        if (settingsDialog != null && settingsDialog.isShowing()) {
+            settingsDialog.dismiss();
+            showSettings();
+        } else if ("SETTINGS".equals(tab)) {
+            render();
+        }
     }
 
     private void downloadWhisper(final TextView status) {

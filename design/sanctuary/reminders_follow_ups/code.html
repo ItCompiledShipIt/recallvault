@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "on-surface": "#1c1c18", "surface-container-lowest": "#ffffff", "surface-dim": "#dcdad4", "on-tertiary-fixed-variant": "#374c36", "on-primary-fixed": "#002019", "background": "#fcf9f3", "on-tertiary-fixed": "#0c200d", "primary": "#154539", "secondary-fixed": "#ffdbcd", "on-secondary-fixed": "#360f00", "tertiary-fixed-dim": "#b4cdb0", "surface": "#fcf9f3", "secondary-fixed-dim": "#ffb597", "primary-fixed-dim": "#a0d1c0", "primary-fixed": "#bceddc", "inverse-primary": "#a0d1c0", "on-primary-container": "#a3d4c3", "surface-tint": "#396759", "primary-container": "#2f5d50", "surface-container-high": "#ebe8e2", "secondary": "#924b2a", "surface-bright": "#fcf9f3", "error-container": "#ffdad6", "inverse-on-surface": "#f3f0ea", "outline": "#717975", "surface-container": "#f0eee8", "surface-variant": "#e5e2dc", "tertiary-container": "#445a43", "on-secondary-fixed-variant": "#743415", "on-primary-fixed-variant": "#204f42", "surface-container-highest": "#e5e2dc", "on-background": "#1c1c18", "on-secondary": "#ffffff", "on-primary": "#ffffff", "on-surface-variant": "#404945", "on-error": "#ffffff", "on-tertiary-container": "#b7d0b3", "tertiary": "#2d422d", "on-error-container": "#93000a", "surface-container-low": "#f6f3ed", "on-secondary-container": "#773617", "inverse-surface": "#31312d", "error": "#ba1a1a", "secondary-container": "#fea27a", "on-tertiary": "#ffffff", "outline-variant": "#c0c8c4", "tertiary-fixed": "#d0e9cc" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "margin-desktop": "3rem", "space-sm": "0.5rem", "space-xl": "2.5rem", "gutter-tablet": "1.5rem", "space-lg": "1.5rem", "gutter": "1rem", "margin-tablet": "2rem", "gutter-desktop": "2rem", "margin": "1.25rem", "space-xs": "0.25rem", "space-md": "1rem" }, fontFamily: { "display-lg": ["Plus Jakarta Sans"], "body-lg": ["Plus Jakarta Sans"], "label-md": ["Plus Jakarta Sans"], "headline-lg": ["Plus Jakarta Sans"], "label-sm": ["Plus Jakarta Sans"], "body-md": ["Plus Jakarta Sans"], "headline-md": ["Plus Jakarta Sans"], "headline-lg-mobile": ["Plus Jakarta Sans"], "headline-sm": ["Plus Jakarta Sans"], "label-lg": ["Plus Jakarta Sans"], "body-sm": ["Plus Jakarta Sans"], "display-lg-mobile": ["Plus Jakarta Sans"] }, fontSize: { "display-lg": ["36px", { lineHeight: "44px", letterSpacing: "-0.02em", fontWeight: "700" }], "body-lg": ["17px", { lineHeight: "26px", fontWeight: "400" }], "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.02em", fontWeight: "500" }], "headline-lg": ["30px", { lineHeight: "38px", letterSpacing: "-0.015em", fontWeight: "600" }], "label-sm": ["11px", { lineHeight: "14px", letterSpacing: "0.03em", fontWeight: "600" }], "body-md": ["15px", { lineHeight: "22px", fontWeight: "400" }], "headline-md": ["22px", { lineHeight: "28px", letterSpacing: "-0.01em", fontWeight: "600" }], "headline-lg-mobile": ["24px", { lineHeight: "32px", letterSpacing: "-0.01em", fontWeight: "600" }], "headline-sm": ["18px", { lineHeight: "24px", fontWeight: "600" }], "label-lg": ["14px", { lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "600" }], "body-sm": ["13px", { lineHeight: "18px", fontWeight: "400" }], "display-lg-mobile": ["28px", { lineHeight: "36px", letterSpacing: "-0.015em", fontWeight: "700" }] } } } };</script><style>@layer base{html,body{width:100vw;margin:0;padding:0;}body{overscroll-behavior-y:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface font-body-md text-on-surface flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 pt-safe bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 px-margin flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm min-w-0"><h1 class="font-headline-sm text-headline-sm text-on-surface truncate">Vault</h1><div class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm"><span class="material-symbols-outlined text-[13px] leading-none text-primary">lock</span><span class="truncate">On-device only • Private</span></div></div><a aria-label="Profile" class="w-11 h-11 flex items-center justify-center rounded-full hover:bg-surface-variant transition-colors" data-path="settings" href="#"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></a></div></header><main class="flex-1 flex flex-col relative w-full pt-16 pb-24 bg-surface px-margin"><div class="flex flex-col w-full pb-8">
+<div class="flex flex-col gap-space-sm mb-space-md">
+<div class="flex items-baseline justify-between">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface tracking-tight">Reminders &amp; Follow-ups</h2>
+<span class="inline-flex items-center gap-1 font-label-sm text-label-sm text-primary px-2 py-0.5 rounded-full bg-primary-fixed/60">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+        Synced
+      </span>
+</div>
+<!-- Tab Filter -->
+<div class="flex p-1 rounded-xl bg-surface-container-high gap-1" role="tablist">
+<button class="flex-1 py-1.5 px-3 rounded-lg text-center font-label-md text-label-md transition-all bg-surface-container-lowest text-primary shadow-sm" id="tab-upcoming" onclick="switchTab('upcoming')">
+        Upcoming (4)
+      </button>
+<button class="flex-1 py-1.5 px-3 rounded-lg text-center font-label-md text-label-md transition-all text-on-surface-variant hover:text-on-surface" id="tab-past" onclick="switchTab('past')">
+        Past Memories
+      </button>
+<button class="flex-1 py-1.5 px-3 rounded-lg text-center font-label-md text-label-md transition-all text-on-surface-variant hover:text-on-surface" id="tab-completed" onclick="switchTab('completed')">
+        Completed
+      </button>
+</div>
+</div>
+<!-- Friendly Summary Banner -->
+<div class="flex items-start gap-space-sm p-space-md rounded-xl bg-surface-container-low mb-space-lg shadow-sm">
+<div class="w-9 h-9 rounded-full bg-primary-fixed flex items-center justify-center shrink-0 text-primary">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">arrow_back_ios_new</span>
+</div>
+<div class="flex flex-col gap-0.5 min-w-0">
+<p class="font-label-lg text-label-lg text-on-surface">Found in your sanctuary</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-snug">
+        3 reminders discovered from your voice notes &amp; reflections this week. Kept private on this phone.
+      </p>
+</div>
+</div>
+<!-- Timeline Flow Container -->
+<div class="flex flex-col gap-space-lg relative">
+<!-- Group: TODAY -->
+<div class="flex flex-col gap-space-sm">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary-container"></span>
+<span class="font-label-sm text-label-sm tracking-wider uppercase text-secondary font-bold">Today</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">• Nov 12</span>
+</div>
+<!-- Card: Dr Henderson Checkup -->
+<div class="group relative flex flex-col p-space-md rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-md transition-all">
+<div class="flex items-start gap-space-sm">
+<!-- Checkbox -->
+<button aria-label="Mark complete" class="w-6 h-6 mt-0.5 rounded-lg bg-surface-container-high flex items-center justify-center transition-colors active:scale-95 shrink-0" onclick="toggleCheck(this)">
+<span class="material-symbols-outlined text-[16px] text-surface-container-highest transition-opacity opacity-0 check-mark">check</span>
+</button>
+<div class="flex-1 min-w-0">
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-medium leading-snug task-title">
+              Call Dr. Henderson for annual physical checkup
+            </h3>
+<div class="flex flex-wrap items-center gap-1.5 mt-2">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[13px] text-primary">mic</span>
+                Voice Note • 4:26 PM
+              </span>
+<span class="font-label-sm text-label-sm text-outline">Soccer Jerseys audio</span>
+</div>
+</div>
+<!-- Dial Shortcut -->
+<a aria-label="Call Dr. Henderson" class="w-10 h-10 rounded-full bg-primary-fixed/50 hover:bg-primary-fixed text-primary flex items-center justify-center transition-transform active:scale-90 shrink-0" href="tel:5550192">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">call</span>
+</a>
+</div>
+</div>
+</div>
+<!-- Group: TOMORROW -->
+<div class="flex flex-col gap-space-sm">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary-container"></span>
+<span class="font-label-sm text-label-sm tracking-wider uppercase text-primary font-bold">Tomorrow, Tuesday</span>
+</div>
+<!-- Card: Soccer team jerseys -->
+<div class="relative flex flex-col p-space-md rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-md transition-all">
+<div class="flex items-start gap-space-sm">
+<button aria-label="Mark complete" class="w-6 h-6 mt-0.5 rounded-lg bg-surface-container-high flex items-center justify-center transition-colors active:scale-95 shrink-0" onclick="toggleCheck(this)">
+<span class="material-symbols-outlined text-[16px] text-surface-container-highest transition-opacity opacity-0 check-mark">check</span>
+</button>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between gap-2">
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-medium leading-snug task-title">
+                Order Maya's soccer team jerseys (size toddler 8.5)
+              </h3>
+</div>
+<div class="flex flex-wrap items-center gap-2 mt-2">
+<span class="inline-flex items-center gap-1 font-label-sm text-label-sm text-secondary font-medium">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+                Due 2:00 PM
+              </span>
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-secondary-fixed/50 text-on-secondary-fixed-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[13px]">family_restroom</span>
+                Family &amp; Kids
+              </span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Group: THURSDAY, NOV 14 -->
+<div class="flex flex-col gap-space-sm">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-outline-variant"></span>
+<span class="font-label-sm text-label-sm tracking-wider uppercase text-on-surface-variant font-bold">Thursday, Nov 14</span>
+</div>
+<!-- Card: Maya Booster Immunization -->
+<div class="flex flex-col p-space-md rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-md transition-all gap-space-sm">
+<div class="flex items-start gap-space-sm">
+<div class="w-6 h-6 mt-0.5 rounded-lg bg-tertiary-fixed flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[16px] text-on-tertiary-fixed" style="font-variation-settings: 'FILL' 1;">event</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-baseline justify-between gap-1">
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-medium leading-snug">
+                Maya's 5-Year Booster Immunization
+              </h3>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+              3:30 PM with Dr. Patel • Oakwood Pediatric Clinic
+            </p>
+</div>
+</div>
+<!-- Attachment and Quick Actions -->
+<div class="flex flex-col gap-2 pt-1">
+<!-- Thumbnail Attachment -->
+<div class="flex items-center gap-3 p-2 rounded-lg bg-surface-container-low transition-colors">
+<img class="w-12 h-12 rounded-lg object-cover shrink-0" data-alt="A soft-focus, warm-toned close-up of a neatly folded pediatrician clinic appointment card and health summary sheet resting on a rustic linen tabletop in natural morning sunlight, gentle shadows and cream hues." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCMv05otsxpKwOFXxeRtlCAWLNzUQsNA3blHUbzbAflqg_APIlNXJps5Y7rdncuEf14es2xajT78OKyUSb22p9uAjtXimpJ_VI-frd5luueAaociECLuvZOz2S1dEgxNYWl7Hq-pEaXGzCb5i0b9QJaWv3qTs1kpP4XbOTbarw0bzlG6aIw4rZKNRA9pbOxEsywNOZoQTfanbZZiQU94ROIdTon9Y294goPQbrXyIKQ"/>
+<div class="flex flex-col min-w-0 flex-1">
+<span class="font-label-md text-label-md text-on-surface font-medium truncate">Doctor_Visit_Slip_DrPatel.pdf</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Scanned via Camera • 1.2 MB</span>
+</div>
+<button class="px-2.5 py-1 rounded-full bg-surface-container-highest text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm shrink-0">
+              View
+            </button>
+</div>
+<!-- Calendar Add Chip Button -->
+<div class="flex items-center gap-2">
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary text-on-primary font-label-md text-label-md hover:bg-primary-container active:scale-95 transition-all shadow-sm">
+<span class="material-symbols-outlined text-[16px]">edit_calendar</span>
+<span>Add to Apple / Google Calendar</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Group: FRIDAY, NOV 18 -->
+<div class="flex flex-col gap-space-sm">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-outline-variant"></span>
+<span class="font-label-sm text-label-sm tracking-wider uppercase text-on-surface-variant font-bold">Friday, Nov 18</span>
+</div>
+<!-- Card: Paint Color Followup -->
+<div class="relative flex flex-col p-space-md rounded-xl bg-surface-container-lowest shadow-sm hover:shadow-md transition-all">
+<div class="flex items-start gap-space-sm">
+<button aria-label="Mark complete" class="w-6 h-6 mt-0.5 rounded-lg bg-surface-container-high flex items-center justify-center transition-colors active:scale-95 shrink-0" onclick="toggleCheck(this)">
+<span class="material-symbols-outlined text-[16px] text-surface-container-highest transition-opacity opacity-0 check-mark">check</span>
+</button>
+<div class="flex-1 min-w-0">
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-medium leading-snug task-title">
+              Confirm cabinet paint color with Dave
+            </h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+              Decide between <span class="font-medium text-primary">Forest Moss</span> and <span class="font-medium text-secondary">Oatmeal Linen</span>
+</p>
+<div class="flex items-center gap-2 mt-2">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[13px] text-secondary">hearing</span>
+                From Kitchen Contractor voice note
+              </span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Reassurance Micro-banner -->
+<div class="flex items-center justify-center gap-1.5 mt-space-lg mb-space-md py-2 px-3 rounded-full bg-surface-container-low text-on-surface-variant">
+<span class="material-symbols-outlined text-[15px] text-primary" style="font-variation-settings: 'FILL' 1;">shield</span>
+<span class="font-label-sm text-label-sm">Reminders generated locally • Never uploaded to external servers</span>
+</div>
+<!-- Quick Manual Reminder Sticky/Input Bar -->
+<div class="sticky bottom-0 z-20 pt-2 pb-1 bg-gradient-to-t from-surface via-surface to-transparent">
+<div class="flex items-center gap-2 p-1.5 pl-3.5 rounded-xl bg-surface-container-lowest shadow-md">
+<input class="flex-1 bg-transparent border-0 outline-none font-body-md text-body-md text-on-surface placeholder:text-outline/70 min-w-0" id="manual-reminder-input" placeholder="Add a reminder or follow-up..." type="text"/>
+<!-- Date Picker Shortcut -->
+<button aria-label="Select date" class="w-9 h-9 rounded-lg hover:bg-surface-container text-on-surface-variant flex items-center justify-center transition-colors shrink-0" onclick="focusDate()">
+<span class="material-symbols-outlined text-[20px]">calendar_today</span>
+</button>
+<!-- Voice Input Mic Button -->
+<button aria-label="Dictate reminder" class="w-9 h-9 rounded-lg bg-primary-container text-on-primary flex items-center justify-center transition-transform active:scale-90 shrink-0 shadow-sm" onclick="triggerMic(this)">
+<span class="material-symbols-outlined text-[20px]" id="mic-icon">mic</span>
+</button>
+</div>
+</div>
+</div>
+<script>
+  function toggleCheck(button) {
+    const checkIcon = button.querySelector('.check-mark');
+    const card = button.closest('.group') || button.closest('.relative');
+    const title = card ? card.querySelector('.task-title') : null;
+    
+    if (checkIcon.classList.contains('opacity-0')) {
+      checkIcon.classList.remove('opacity-0', 'text-surface-container-highest');
+      checkIcon.classList.add('opacity-100', 'text-on-primary');
+      button.classList.remove('bg-surface-container-high');
+      button.classList.add('bg-primary');
+      if (title) {
+        title.classList.add('line-through', 'text-outline');
+      }
+    } else {
+      checkIcon.classList.add('opacity-0', 'text-surface-container-highest');
+      checkIcon.classList.remove('opacity-100', 'text-on-primary');
+      button.classList.add('bg-surface-container-high');
+      button.classList.remove('bg-primary');
+      if (title) {
+        title.classList.remove('line-through', 'text-outline');
+      }
+    }
+  }
+
+  function switchTab(tabId) {
+    const tabs = ['upcoming', 'past', 'completed'];
+    tabs.forEach(t => {
+      const el = document.getElementById('tab-' + t);
+      if (t === tabId) {
+        el.className = "flex-1 py-1.5 px-3 rounded-lg text-center font-label-md text-label-md transition-all bg-surface-container-lowest text-primary shadow-sm";
+      } else {
+        el.className = "flex-1 py-1.5 px-3 rounded-lg text-center font-label-md text-label-md transition-all text-on-surface-variant hover:text-on-surface";
+      }
+    });
+  }
+
+  function triggerMic(btn) {
+    const icon = btn.querySelector('#mic-icon');
+    if (btn.classList.contains('bg-secondary')) {
+      btn.classList.remove('bg-secondary');
+      btn.classList.add('bg-primary-container');
+      icon.textContent = 'mic';
+    } else {
+      btn.classList.remove('bg-primary-container');
+      btn.classList.add('bg-secondary');
+      icon.textContent = 'graphic_eq';
+      const input = document.getElementById('manual-reminder-input');
+      input.placeholder = "Listening... say reminder and date";
+      setTimeout(() => {
+        btn.classList.remove('bg-secondary');
+        btn.classList.add('bg-primary-container');
+        icon.textContent = 'mic';
+        input.value = "Schedule Maya dentist visit for next week";
+      }, 2600);
+    }
+  }
+
+  function focusDate() {
+    const input = document.getElementById('manual-reminder-input');
+    input.value = input.value ? input.value + " on Friday 3pm" : "Friday 3pm: ";
+    input.focus();
+  }
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface/85 backdrop-blur-xl shadow-[0_-2px_12px_rgba(0,0,0,0.04)]" data-active-classes="text-primary font-semibold"><div class="flex justify-around items-center h-16 px-space-xs"><a class="flex flex-col items-center justify-center w-16 h-12 text-on-surface-variant transition-colors group" data-path="vault" href="#"><span class="material-symbols-outlined text-[22px]">folder_special</span><span class="font-label-sm text-label-sm mt-0.5">Vault</span></a><a class="flex flex-col items-center justify-center w-16 h-12 text-on-surface-variant transition-colors group" data-path="search-&amp;-ask" href="#"><span class="material-symbols-outlined text-[22px]">auto_awesome</span><span class="font-label-sm text-label-sm mt-0.5">Search &amp; Ask</span></a><a class="flex flex-col items-center justify-center w-16 h-12 text-on-surface-variant transition-colors group" data-path="new-memory" href="#"><div class="w-10 h-10 -mt-2 rounded-full bg-primary-container text-on-primary flex items-center justify-center shadow-[0_4px_12px_rgba(47,93,80,0.25)] hover:scale-105 active:scale-95 transition-transform"><span class="material-symbols-outlined text-[22px]">add</span></div><span class="font-label-sm text-label-sm mt-0.5">Capture</span></a><a class="flex flex-col items-center justify-center w-16 h-12 text-on-surface-variant transition-colors group" data-path="settings" href="#"><span class="material-symbols-outlined text-[22px]">shield</span><span class="font-label-sm text-label-sm mt-0.5">Settings</span></a></div></nav></body></html>

@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_stack" name="shell-type"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "on-surface": "#1c1c18", "surface-container-lowest": "#ffffff", "surface-dim": "#dcdad4", "on-tertiary-fixed-variant": "#374c36", "on-primary-fixed": "#002019", "background": "#fcf9f3", "on-tertiary-fixed": "#0c200d", "primary": "#154539", "secondary-fixed": "#ffdbcd", "on-secondary-fixed": "#360f00", "tertiary-fixed-dim": "#b4cdb0", "surface": "#fcf9f3", "secondary-fixed-dim": "#ffb597", "primary-fixed-dim": "#a0d1c0", "primary-fixed": "#bceddc", "inverse-primary": "#a0d1c0", "on-primary-container": "#a3d4c3", "surface-tint": "#396759", "primary-container": "#2f5d50", "surface-container-high": "#ebe8e2", "secondary": "#924b2a", "surface-bright": "#fcf9f3", "error-container": "#ffdad6", "inverse-on-surface": "#f3f0ea", "outline": "#717975", "surface-container": "#f0eee8", "surface-variant": "#e5e2dc", "tertiary-container": "#445a43", "on-secondary-fixed-variant": "#743415", "on-primary-fixed-variant": "#204f42", "surface-container-highest": "#e5e2dc", "on-background": "#1c1c18", "on-secondary": "#ffffff", "on-primary": "#ffffff", "on-surface-variant": "#404945", "on-error": "#ffffff", "on-tertiary-container": "#b7d0b3", "tertiary": "#2d422d", "on-error-container": "#93000a", "surface-container-low": "#f6f3ed", "on-secondary-container": "#773617", "inverse-surface": "#31312d", "error": "#ba1a1a", "secondary-container": "#fea27a", "on-tertiary": "#ffffff", "outline-variant": "#c0c8c4", "tertiary-fixed": "#d0e9cc" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "margin-desktop": "3rem", "space-sm": "0.5rem", "space-xl": "2.5rem", "gutter-tablet": "1.5rem", "space-lg": "1.5rem", "gutter": "1rem", "margin-tablet": "2rem", "gutter-desktop": "2rem", "margin": "1.25rem", "space-xs": "0.25rem", "space-md": "1rem" }, fontFamily: { "display-lg": ["Plus Jakarta Sans"], "body-lg": ["Plus Jakarta Sans"], "label-md": ["Plus Jakarta Sans"], "headline-lg": ["Plus Jakarta Sans"], "label-sm": ["Plus Jakarta Sans"], "body-md": ["Plus Jakarta Sans"], "headline-md": ["Plus Jakarta Sans"], "headline-lg-mobile": ["Plus Jakarta Sans"], "headline-sm": ["Plus Jakarta Sans"], "label-lg": ["Plus Jakarta Sans"], "body-sm": ["Plus Jakarta Sans"], "display-lg-mobile": ["Plus Jakarta Sans"] }, fontSize: { "display-lg": ["36px", { lineHeight: "44px", letterSpacing: "-0.02em", fontWeight: "700" }], "body-lg": ["17px", { lineHeight: "26px", fontWeight: "400" }], "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.02em", fontWeight: "500" }], "headline-lg": ["30px", { lineHeight: "38px", letterSpacing: "-0.015em", fontWeight: "600" }], "label-sm": ["11px", { lineHeight: "14px", letterSpacing: "0.03em", fontWeight: "600" }], "body-md": ["15px", { lineHeight: "22px", fontWeight: "400" }], "headline-md": ["22px", { lineHeight: "28px", letterSpacing: "-0.01em", fontWeight: "600" }], "headline-lg-mobile": ["24px", { lineHeight: "32px", letterSpacing: "-0.01em", fontWeight: "600" }], "headline-sm": ["18px", { lineHeight: "24px", fontWeight: "600" }], "label-lg": ["14px", { lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "600" }], "body-sm": ["13px", { lineHeight: "18px", fontWeight: "400" }], "display-lg-mobile": ["28px", { lineHeight: "36px", letterSpacing: "-0.015em", fontWeight: "700" }] } } } };</script><style>@layer base{html,body{width:100vw;margin:0;padding:0;}body{overscroll-behavior-y:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface font-body-md text-on-surface flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 pt-safe bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 px-margin flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm min-w-0"><button aria-label="Go back" class="w-11 h-11 flex items-center justify-center rounded-full text-on-surface hover:bg-surface-variant transition-colors" onclick="history.back()"><span class="material-symbols-outlined text-[20px]">arrow_back</span></button><h1 class="font-headline-sm text-headline-sm text-on-surface truncate">Memory Detail</h1></div><div class="flex items-center gap-space-xs"><div class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm"><span class="material-symbols-outlined text-[13px] leading-none text-primary">lock</span><span class="truncate">Private</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex-1 flex flex-col relative w-full pt-16 pb-safe bg-surface px-margin"><div class="flex flex-col w-full pb-8">
+<!-- Micro contextual action toolbar -->
+<div class="flex items-center justify-between py-space-sm mb-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-high text-on-surface-variant font-label-md text-label-md">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+        Family &amp; Kids
+      </span>
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary-fixed/60 text-on-primary-fixed-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[12px]">verified_user</span>
+        On-device private
+      </span>
+</div>
+<div class="flex items-center gap-1">
+<button aria-label="Favorite memory" class="w-10 h-10 rounded-full flex items-center justify-center bg-surface-container-low text-on-surface-variant hover:text-secondary active:scale-95 transition-all" id="favBtn" onclick="toggleFavorite()">
+<span class="material-symbols-outlined text-[20px]" id="favIcon">favorite</span>
+</button>
+<button aria-label="Share memory" class="w-10 h-10 rounded-full flex items-center justify-center bg-surface-container-low text-on-surface-variant active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[20px]">ios_share</span>
+</button>
+<button aria-label="More options" class="w-10 h-10 rounded-full flex items-center justify-center bg-surface-container-low text-on-surface-variant active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</div>
+</div>
+<!-- Memory Header & Title -->
+<div class="flex flex-col gap-1 mb-space-md">
+<span class="font-label-md text-label-md text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">calendar_today</span>
+      Saturday, Oct 28 • 10:15 AM
+    </span>
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface tracking-tight">
+      Maya’s 5th Birthday Wishlist &amp; Pediatrician Follow-up
+    </h2>
+</div>
+<!-- Voice Note Player Card -->
+<div class="rounded-xl bg-surface-container-low p-space-md shadow-sm mb-space-lg flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">mic</span>
+</span>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-on-surface font-semibold">Recorded Voice Note</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Clear audio • Clean transcription</span>
+</div>
+</div>
+<div class="flex items-center gap-1">
+<button class="px-2.5 py-1 rounded-full bg-surface-container text-primary font-label-sm text-label-sm font-semibold active:scale-95 transition-all" id="speedBtn" onclick="cycleSpeed()">
+          1.0x
+        </button>
+<button aria-label="Speaker mode" class="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors" id="speakerBtn" onclick="toggleSpeaker()">
+<span class="material-symbols-outlined text-[18px]" id="speakerIcon">volume_up</span>
+</button>
+</div>
+</div>
+<!-- Waveform scrub strip -->
+<div class="flex items-center gap-2 pt-1">
+<button class="w-11 h-11 shrink-0 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-md active:scale-90 transition-transform" id="playBtn" onclick="togglePlay()">
+<span class="material-symbols-outlined text-[24px]" id="playIcon">play_arrow</span>
+</button>
+<!-- Scrubbable Audio Bars -->
+<div class="flex-1 flex flex-col gap-1">
+<div class="flex items-center justify-between h-9 px-1 gap-[3px] cursor-pointer select-none" id="waveform">
+<span class="w-1 rounded-full bg-primary h-3"></span>
+<span class="w-1 rounded-full bg-primary h-5"></span>
+<span class="w-1 rounded-full bg-primary h-7"></span>
+<span class="w-1 rounded-full bg-primary h-4"></span>
+<span class="w-1 rounded-full bg-primary h-8"></span>
+<span class="w-1 rounded-full bg-primary h-6"></span>
+<span class="w-1 rounded-full bg-primary h-7"></span>
+<span class="w-1 rounded-full bg-primary h-9"></span>
+<span class="w-1 rounded-full bg-primary h-5"></span>
+<span class="w-1 rounded-full bg-primary/40 h-8"></span>
+<span class="w-1 rounded-full bg-primary/30 h-6"></span>
+<span class="w-1 rounded-full bg-primary/30 h-4"></span>
+<span class="w-1 rounded-full bg-primary/30 h-7"></span>
+<span class="w-1 rounded-full bg-primary/30 h-5"></span>
+<span class="w-1 rounded-full bg-primary/30 h-8"></span>
+<span class="w-1 rounded-full bg-primary/30 h-4"></span>
+<span class="w-1 rounded-full bg-primary/30 h-6"></span>
+<span class="w-1 rounded-full bg-primary/30 h-3"></span>
+<span class="w-1 rounded-full bg-primary/30 h-7"></span>
+<span class="w-1 rounded-full bg-primary/30 h-4"></span>
+<span class="w-1 rounded-full bg-primary/30 h-2"></span>
+</div>
+<div class="flex justify-between items-center px-1 font-label-sm text-label-sm text-on-surface-variant">
+<span id="currentTime">00:54</span>
+<span>02:14</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Smart Auto-Summary / Key Highlights -->
+<div class="rounded-xl bg-tertiary-fixed/40 p-space-md mb-space-lg flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">auto_awesome</span>
+<h3 class="font-headline-sm text-headline-sm text-on-tertiary-fixed font-semibold">Key Highlights</h3>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-lowest/80 text-on-tertiary-fixed-variant font-label-sm text-label-sm">
+        Instant summary
+      </span>
+</div>
+<div class="flex flex-col gap-2.5">
+<!-- Item 1: Gift -->
+<div class="flex items-start gap-2.5 bg-surface-container-lowest/90 rounded-lg p-3 shadow-sm">
+<span class="w-7 h-7 rounded-full bg-secondary-fixed flex items-center justify-center text-on-secondary-fixed shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[16px]">redeem</span>
+</span>
+<div class="flex flex-col min-w-0">
+<span class="font-label-lg text-label-lg text-on-surface font-semibold">Birthday Wishlist</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+            Purple adjustable roller skates (size 11) &amp; illustrated ocean pop-up book.
+          </p>
+</div>
+</div>
+<!-- Item 2: Doctor note -->
+<div class="flex items-start gap-2.5 bg-surface-container-lowest/90 rounded-lg p-3 shadow-sm">
+<span class="w-7 h-7 rounded-full bg-primary-fixed flex items-center justify-center text-on-primary-fixed shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[16px]">medical_services</span>
+</span>
+<div class="flex flex-col min-w-0">
+<span class="font-label-lg text-label-lg text-on-surface font-semibold">Booster Shots Scheduled</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+            Tuesday, Nov 14 at 3:30 PM with Dr. Patel (Oakwood Clinic).
+          </p>
+</div>
+</div>
+<!-- Item 3: Allergy Note -->
+<div class="flex items-start gap-2.5 bg-surface-container-lowest/90 rounded-lg p-3 shadow-sm">
+<span class="w-7 h-7 rounded-full bg-tertiary-fixed-dim flex items-center justify-center text-on-tertiary-fixed shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+</span>
+<div class="flex flex-col min-w-0">
+<span class="font-label-lg text-label-lg text-on-surface font-semibold">Allergy Screening</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+            Peanuts confirmed negative. Safe for regular classroom snacks.
+          </p>
+</div>
+</div>
+</div>
+</div>
+<!-- Full Transcription -->
+<div class="rounded-xl bg-surface-container-lowest p-space-md shadow-sm mb-space-lg flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">notes</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Full Transcription</h3>
+</div>
+<button class="flex items-center gap-1 font-label-sm text-label-sm text-primary hover:text-primary-container transition-colors" id="copyBtn" onclick="copyTranscription()">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>
+<span>Copy</span>
+</button>
+</div>
+<div class="font-body-md text-body-md text-on-surface leading-relaxed space-y-3">
+<p>
+        “So Maya spent the whole morning talking about her upcoming 5th birthday. She was super clear: she wants purple roller skates, preferably adjustable since her feet are growing fast. She thinks she’s size 11 now. Also mentioned that ocean creature pop-up book she saw at the library.”
+      </p>
+<p>
+        “We just finished up with Dr. Patel’s clinic. Maya measured 43 inches and 41 pounds — healthy growth curve. Dr. Patel confirmed the allergen skin test for peanuts came back completely negative, which is huge peace of mind for kindergarten snack rotations next year.”
+      </p>
+<p>
+        “We need to head back in for her 5-year booster immunizations on November 14th around 3:30 PM. Reception gave us the appointment card and the current pediatric shoe sizing guide to double check at home.”
+      </p>
+</div>
+</div>
+<!-- Attached Visual Records / Documents -->
+<div class="flex flex-col gap-space-sm mb-space-xl">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">attach_file</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Attached Snapshots</h3>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">2 items attached</span>
+</div>
+<!-- 2 Column Uniform Preview Grid -->
+<div class="grid grid-cols-2 gap-space-sm">
+<!-- Attached Item 1 -->
+<div class="rounded-xl overflow-hidden bg-surface-container-lowest shadow-sm flex flex-col group cursor-pointer active:scale-[0.98] transition-transform">
+<div class="relative w-full h-32 overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="A warm organic close up photograph of a gentle paper shoe sizing chart ruler with child footprints and measurement lines on a wooden desk with soft morning daylight." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCqJfYSi93_NDlK2YS8BXSa-U5cibQv1dyYnS5zwjB1bY7lSxy-LidnBG90cfIzX8MsO60_9sn-rzZ4VJziebXxNJnPMM9XnWMGXI0VgpN9VArwTFyw3Bw6IS3EM768e25k2bnKHkH9scu-T_Nxr1pvmpPvY42N3SvsHMmY6hpxt02ohtIEmPlsPwuq9KHjIvUljUy28_TDIe7HqISxvWwU_4rUog8xuNvX8tFl0WV0"/>
+<span class="absolute top-2 right-2 w-6 h-6 rounded-full bg-surface-container-lowest/80 backdrop-blur-md flex items-center justify-center text-on-surface">
+<span class="material-symbols-outlined text-[14px]">straighten</span>
+</span>
+</div>
+<div class="p-2.5 flex flex-col">
+<span class="font-label-lg text-label-lg text-on-surface truncate font-medium">Shoe Size Chart</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Size 11 mark • JPEG</span>
+</div>
+</div>
+<!-- Attached Item 2 -->
+<div class="rounded-xl overflow-hidden bg-surface-container-lowest shadow-sm flex flex-col group cursor-pointer active:scale-[0.98] transition-transform">
+<div class="relative w-full h-32 overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="A clean top-down shot of a pediatrician clinic visit appointment card and reminder slip resting on warm linen cloth with comforting botanical green tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAe2-Y1eWl61e478m_FB_RBZzJQb-hRns63B6pFO1NDwnMjD6KWKaCOljm1gd5Tqx3z4QXjlsRuIRvZvIkH0mwy8UqfVTuEL1Rdwa4IyQH6N2ASJnPA3gi-IrVXYkrUQVpLcq1xCUEsj9jgcA7e90eMFlBzAQ90-wsx0vhC8uiDR_DcPlYKjD7lJbfGSqeUjLEQ1oGmt4upZ1VrBdrF2ajsUMvJ4agW85h68roEsWwk"/>
+<span class="absolute top-2 right-2 w-6 h-6 rounded-full bg-surface-container-lowest/80 backdrop-blur-md flex items-center justify-center text-on-surface">
+<span class="material-symbols-outlined text-[14px]">description</span>
+</span>
+</div>
+<div class="p-2.5 flex flex-col">
+<span class="font-label-lg text-label-lg text-on-surface truncate font-medium">Clinic Visit Slip</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Nov 14 Booster • PDF</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Reassurance & Privacy Guarantee Callout -->
+<div class="rounded-xl bg-surface-container-low p-space-md mb-space-lg flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-[20px]">shield</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-on-surface font-semibold">Kept safe on this device</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+        Protected with biometric lock. Only synchronized to your personal private storage.
+      </p>
+</div>
+</div>
+<!-- Action Footer -->
+<div class="flex flex-col gap-2.5 pt-space-xs">
+<!-- Primary reminder action -->
+<button class="w-full h-12 rounded-xl bg-primary text-on-primary font-label-lg text-label-lg flex items-center justify-center gap-2 shadow-sm active:scale-[0.99] transition-transform" onclick="handleAddToCalendar(this)">
+<span class="material-symbols-outlined text-[18px]">event_available</span>
+<span>Add to Calendar • Nov 14 (3:30 PM)</span>
+</button>
+<!-- Secondary share / export action -->
+<button class="w-full h-12 rounded-xl bg-surface-container-high text-on-surface font-label-lg text-label-lg flex items-center justify-center gap-2 active:scale-[0.99] transition-transform" onclick="handleExportPDF(this)">
+<span class="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+<span>Export PDF / Share with Family</span>
+</button>
+<!-- Gentle delete or archive action -->
+<div class="flex justify-center pt-2">
+<button class="px-4 py-2 rounded-full text-secondary font-label-md text-label-md flex items-center gap-1.5 hover:bg-secondary-fixed/30 active:scale-95 transition-all" onclick="handleDelete()">
+<span class="material-symbols-outlined text-[16px]">delete_outline</span>
+<span>Delete this memory</span>
+</button>
+</div>
+</div>
+</div>
+<script>
+  let isPlaying = false;
+  let isFavorited = false;
+  let speeds = ['1.0x', '1.25x', '1.5x', '2.0x'];
+  let speedIdx = 0;
+  let speakerOn = true;
+
+  function togglePlay() {
+    isPlaying = !isPlaying;
+    const playIcon = document.getElementById('playIcon');
+    if (playIcon) {
+      playIcon.innerText = isPlaying ? 'pause' : 'play_arrow';
+    }
+  }
+
+  function toggleFavorite() {
+    isFavorited = !isFavorited;
+    const favIcon = document.getElementById('favIcon');
+    const favBtn = document.getElementById('favBtn');
+    if (favIcon && favBtn) {
+      if (isFavorited) {
+        favIcon.innerText = 'favorite';
+        favIcon.style.fontVariationSettings = "'FILL' 1";
+        favBtn.classList.add('text-secondary');
+      } else {
+        favIcon.innerText = 'favorite';
+        favIcon.style.fontVariationSettings = "'FILL' 0";
+        favBtn.classList.remove('text-secondary');
+      }
+    }
+  }
+
+  function cycleSpeed() {
+    speedIdx = (speedIdx + 1) % speeds.length;
+    const speedBtn = document.getElementById('speedBtn');
+    if (speedBtn) {
+      speedBtn.innerText = speeds[speedIdx];
+    }
+  }
+
+  function toggleSpeaker() {
+    speakerOn = !speakerOn;
+    const speakerIcon = document.getElementById('speakerIcon');
+    if (speakerIcon) {
+      speakerIcon.innerText = speakerOn ? 'volume_up' : 'volume_off';
+    }
+  }
+
+  function copyTranscription() {
+    const copyBtn = document.getElementById('copyBtn');
+    if (copyBtn) {
+      const originalHTML = copyBtn.innerHTML;
+      copyBtn.innerHTML = '<span class="material-symbols-outlined text-[14px]">done</span><span>Copied!</span>';
+      setTimeout(() => {
+        copyBtn.innerHTML = originalHTML;
+      }, 1800);
+    }
+  }
+
+  function handleAddToCalendar(btn) {
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<span class="material-symbols-outlined text-[18px]">check</span><span>Appointment Saved to Calendar</span>';
+    btn.classList.add('bg-tertiary');
+    setTimeout(() => {
+      btn.innerHTML = orig;
+      btn.classList.remove('bg-tertiary');
+    }, 2200);
+  }
+
+  function handleExportPDF(btn) {
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<span class="material-symbols-outlined text-[18px]">done</span><span>PDF Ready to Share</span>';
+    setTimeout(() => {
+      btn.innerHTML = orig;
+    }, 2000);
+  }
+
+  function handleDelete() {
+    if (confirm('Safely remove this memory from your device?')) {
+      history.back();
+    }
+  }
+</script></main></body></html>

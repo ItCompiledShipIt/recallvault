@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "on-surface": "#1c1c18", "surface-container-lowest": "#ffffff", "surface-dim": "#dcdad4", "on-tertiary-fixed-variant": "#374c36", "on-primary-fixed": "#002019", "background": "#fcf9f3", "on-tertiary-fixed": "#0c200d", "primary": "#154539", "secondary-fixed": "#ffdbcd", "on-secondary-fixed": "#360f00", "tertiary-fixed-dim": "#b4cdb0", "surface": "#fcf9f3", "secondary-fixed-dim": "#ffb597", "primary-fixed-dim": "#a0d1c0", "primary-fixed": "#bceddc", "inverse-primary": "#a0d1c0", "on-primary-container": "#a3d4c3", "surface-tint": "#396759", "primary-container": "#2f5d50", "surface-container-high": "#ebe8e2", "secondary": "#924b2a", "surface-bright": "#fcf9f3", "error-container": "#ffdad6", "inverse-on-surface": "#f3f0ea", "outline": "#717975", "surface-container": "#f0eee8", "surface-variant": "#e5e2dc", "tertiary-container": "#445a43", "on-secondary-fixed-variant": "#743415", "on-primary-fixed-variant": "#204f42", "surface-container-highest": "#e5e2dc", "on-background": "#1c1c18", "on-secondary": "#ffffff", "on-primary": "#ffffff", "on-surface-variant": "#404945", "on-error": "#ffffff", "on-tertiary-container": "#b7d0b3", "tertiary": "#2d422d", "on-error-container": "#93000a", "surface-container-low": "#f6f3ed", "on-secondary-container": "#773617", "inverse-surface": "#31312d", "error": "#ba1a1a", "secondary-container": "#fea27a", "on-tertiary": "#ffffff", "outline-variant": "#c0c8c4", "tertiary-fixed": "#d0e9cc" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "margin-desktop": "3rem", "space-sm": "0.5rem", "space-xl": "2.5rem", "gutter-tablet": "1.5rem", "space-lg": "1.5rem", "gutter": "1rem", "margin-tablet": "2rem", "gutter-desktop": "2rem", "margin": "1.25rem", "space-xs": "0.25rem", "space-md": "1rem" }, fontFamily: { "display-lg": ["Plus Jakarta Sans"], "body-lg": ["Plus Jakarta Sans"], "label-md": ["Plus Jakarta Sans"], "headline-lg": ["Plus Jakarta Sans"], "label-sm": ["Plus Jakarta Sans"], "body-md": ["Plus Jakarta Sans"], "headline-md": ["Plus Jakarta Sans"], "headline-lg-mobile": ["Plus Jakarta Sans"], "headline-sm": ["Plus Jakarta Sans"], "label-lg": ["Plus Jakarta Sans"], "body-sm": ["Plus Jakarta Sans"], "display-lg-mobile": ["Plus Jakarta Sans"] }, fontSize: { "display-lg": ["36px", { lineHeight: "44px", letterSpacing: "-0.02em", fontWeight: "700" }], "body-lg": ["17px", { lineHeight: "26px", fontWeight: "400" }], "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.02em", fontWeight: "500" }], "headline-lg": ["30px", { lineHeight: "38px", letterSpacing: "-0.015em", fontWeight: "600" }], "label-sm": ["11px", { lineHeight: "14px", letterSpacing: "0.03em", fontWeight: "600" }], "body-md": ["15px", { lineHeight: "22px", fontWeight: "400" }], "headline-md": ["22px", { lineHeight: "28px", letterSpacing: "-0.01em", fontWeight: "600" }], "headline-lg-mobile": ["24px", { lineHeight: "32px", letterSpacing: "-0.01em", fontWeight: "600" }], "headline-sm": ["18px", { lineHeight: "24px", fontWeight: "600" }], "label-lg": ["14px", { lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "600" }], "body-sm": ["13px", { lineHeight: "18px", fontWeight: "400" }], "display-lg-mobile": ["28px", { lineHeight: "36px", letterSpacing: "-0.015em", fontWeight: "700" }] } } } };</script><style>@layer base{html,body{width:100vw;margin:0;padding:0;}body{overscroll-behavior-y:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface font-body-md text-on-surface flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 pt-safe bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 px-margin flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm min-w-0"><h1 class="font-headline-sm text-headline-sm text-on-surface truncate">Vault</h1><div class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm"><span class="material-symbols-outlined text-[13px] leading-none text-primary">lock</span><span class="truncate">On-device only • Private</span></div></div><a aria-label="Profile" class="w-11 h-11 flex items-center justify-center rounded-full hover:bg-surface-variant transition-colors" data-path="settings" href="#"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></a></div></header><main class="flex-1 flex flex-col relative w-full pt-16 pb-24 bg-surface px-margin"><div class="flex flex-col w-full pb-8 space-y-space-lg">
+<!-- Friendly Greeting & Reassurance Header -->
+<section class="flex flex-col space-y-space-xs pt-2">
+<div class="flex items-center justify-between">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Good morning, Sarah</h2>
+<div class="w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center text-primary" title="Synced to local storage">
+<span class="material-symbols-outlined text-[18px]">spa</span>
+</div>
+</div>
+<div class="flex items-center gap-1.5 self-start px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+<span>Saved on this phone only • 100% Private</span>
+</div>
+</section>
+<!-- Search & Filter Area -->
+<section class="flex flex-col space-y-space-sm">
+<div class="relative w-full">
+<div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-outline">
+<span class="material-symbols-outlined text-[20px]">search</span>
+</div>
+<input class="w-full h-12 pl-10 pr-10 bg-surface-container-lowest text-on-surface placeholder:text-outline/70 font-body-md text-body-md rounded-xl shadow-sm focus:outline-none focus:bg-surface-container-low transition-all" placeholder="Search your memories, voice notes, photos..." type="search"/>
+<button aria-label="Audio search" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-outline hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">mic</span>
+</button>
+</div>
+<!-- Filter Chips Carousel -->
+<div class="flex items-center gap-space-xs overflow-x-auto py-1 -mx-margin px-margin no-scrollbar" id="filter-container">
+<button class="filter-chip px-3.5 py-1.5 rounded-full bg-primary text-on-primary font-label-md text-label-md whitespace-nowrap shadow-sm transition-all" data-filter="all">
+        All
+      </button>
+<button class="filter-chip px-3.5 py-1.5 rounded-full bg-surface-container text-on-surface-variant hover:bg-surface-container-high font-label-md text-label-md whitespace-nowrap transition-all" data-filter="voice">
+        Voice Memos
+      </button>
+<button class="filter-chip px-3.5 py-1.5 rounded-full bg-surface-container text-on-surface-variant hover:bg-surface-container-high font-label-md text-label-md whitespace-nowrap transition-all" data-filter="family">
+        Family &amp; Home
+      </button>
+<button class="filter-chip px-3.5 py-1.5 rounded-full bg-surface-container text-on-surface-variant hover:bg-surface-container-high font-label-md text-label-md whitespace-nowrap transition-all" data-filter="work">
+        Work Ideas
+      </button>
+<button class="filter-chip px-3.5 py-1.5 rounded-full bg-surface-container text-on-surface-variant hover:bg-surface-container-high font-label-md text-label-md whitespace-nowrap transition-all" data-filter="docs">
+        Documents &amp; Receipts
+      </button>
+</div>
+</section>
+<!-- Quick Capture Strip -->
+<section class="grid grid-cols-3 gap-space-xs">
+<button class="flex flex-col items-center justify-center p-3 rounded-xl bg-surface-container-lowest hover:bg-primary-fixed/20 shadow-sm active:scale-95 transition-all group text-left">
+<div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-primary group-hover:scale-105 transition-transform mb-1.5">
+<span class="material-symbols-outlined text-[20px]">mic</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface text-center">Record Voice</span>
+<span class="font-label-sm text-label-sm text-outline mt-0.5">Quick audio</span>
+</button>
+<button class="flex flex-col items-center justify-center p-3 rounded-xl bg-surface-container-lowest hover:bg-secondary-fixed/30 shadow-sm active:scale-95 transition-all group text-left">
+<div class="w-10 h-10 rounded-full bg-secondary-fixed flex items-center justify-center text-on-secondary-fixed group-hover:scale-105 transition-transform mb-1.5">
+<span class="material-symbols-outlined text-[20px]">document_scanner</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface text-center">Scan Doc</span>
+<span class="font-label-sm text-label-sm text-outline mt-0.5">Receipt or note</span>
+</button>
+<button class="flex flex-col items-center justify-center p-3 rounded-xl bg-surface-container-lowest hover:bg-tertiary-fixed/30 shadow-sm active:scale-95 transition-all group text-left">
+<div class="w-10 h-10 rounded-full bg-tertiary-fixed flex items-center justify-center text-on-tertiary-fixed group-hover:scale-105 transition-transform mb-1.5">
+<span class="material-symbols-outlined text-[20px]">edit_note</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface text-center">Quick Note</span>
+<span class="font-label-sm text-label-sm text-outline mt-0.5">Write a thought</span>
+</button>
+</section>
+<!-- Feed Section -->
+<section class="flex flex-col space-y-space-md">
+<div class="flex items-center justify-between">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Recent Memories</h3>
+<span class="font-label-sm text-label-sm text-outline">Organized by day</span>
+</div>
+<!-- Card 1: Maya's 5th Birthday (Voice & Pinned Heart) -->
+<article class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col space-y-space-sm hover:shadow-md transition-shadow relative overflow-hidden">
+<!-- Subtle top status bar -->
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="px-2.5 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm">
+            Family &amp; Kids
+          </span>
+<span class="font-label-sm text-label-sm text-outline">Today, 9:15 AM</span>
+</div>
+<div class="flex items-center gap-1 text-secondary">
+<button aria-label="Favorite note" class="p-1 rounded-full hover:bg-secondary-fixed/20 transition-colors">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">favorite</span>
+</button>
+<span class="material-symbols-outlined text-[16px] text-outline" title="Encrypted locally">lock</span>
+</div>
+</div>
+<div class="flex flex-col space-y-1">
+<h4 class="font-headline-sm text-headline-sm text-on-surface">Maya’s 5th Birthday Wishlist &amp; Size Chart</h4>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2">
+          “Maya wants the purple roller skates (size 11) and the illustrated ocean pop-up book. Reminded me that her favorite color changed from teal to lilac this month.”
+        </p>
+</div>
+<!-- Waveform Audio Player Component -->
+<div class="bg-surface-container-low rounded-lg p-2.5 flex items-center gap-3">
+<button aria-label="Play recording" class="audio-toggle-btn w-9 h-9 rounded-full bg-primary text-on-primary flex items-center justify-center shrink-0 shadow-sm active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[20px] play-icon">play_arrow</span>
+</button>
+<div class="flex-1 flex flex-col justify-center space-y-1 min-w-0">
+<!-- Stylized Audio Bars -->
+<div class="flex items-center gap-1 h-5 w-full">
+<span class="w-1 h-2 rounded-full bg-primary/40"></span>
+<span class="w-1 h-3.5 rounded-full bg-primary"></span>
+<span class="w-1 h-5 rounded-full bg-primary"></span>
+<span class="w-1 h-4 rounded-full bg-primary/70"></span>
+<span class="w-1 h-2 rounded-full bg-primary/40"></span>
+<span class="w-1 h-3 rounded-full bg-primary/60"></span>
+<span class="w-1 h-4.5 rounded-full bg-primary"></span>
+<span class="w-1 h-2.5 rounded-full bg-primary/50"></span>
+<span class="w-1 h-4 rounded-full bg-primary/70"></span>
+<span class="w-1 h-3.5 rounded-full bg-primary/80"></span>
+<span class="w-1 h-2 rounded-full bg-primary/40"></span>
+<span class="w-1 h-3 rounded-full bg-primary/50"></span>
+<span class="w-1 h-4 rounded-full bg-primary/70"></span>
+<span class="w-1 h-2.5 rounded-full bg-primary/40"></span>
+<span class="w-1 h-1.5 rounded-full bg-primary/30"></span>
+<span class="w-1 h-3 rounded-full bg-primary/60"></span>
+<span class="w-1 h-2 rounded-full bg-primary/40"></span>
+</div>
+<div class="flex justify-between items-center text-outline font-label-sm text-label-sm">
+<span>Voice Memo</span>
+<span>1:42</span>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center gap-1 text-primary font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px]">graphic_eq</span>
+<span>Audio transcribed locally</span>
+</div>
+<span class="font-label-sm text-label-sm text-outline">Kept close</span>
+</div>
+</article>
+<!-- Card 2: Contractor Notes & Kitchen Dimensions -->
+<article class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col space-y-space-sm hover:shadow-md transition-shadow">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="px-2.5 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label-sm text-label-sm">
+            Home Project
+          </span>
+<span class="font-label-sm text-label-sm text-outline">Yesterday, 4:40 PM</span>
+</div>
+<span class="material-symbols-outlined text-[16px] text-outline" title="Encrypted on device">lock</span>
+</div>
+<div class="flex flex-col space-y-1">
+<h4 class="font-headline-sm text-headline-sm text-on-surface">Contractor Meeting Notes &amp; Kitchen Dimensions</h4>
+</div>
+<div class="flex gap-3 items-start">
+<div class="w-24 h-24 rounded-lg bg-surface-container overflow-hidden shrink-0 shadow-inner">
+<img class="w-full h-full object-cover" data-alt="A warm, tactile architectural sketch of a cozy minimalist kitchen layout on cream linen paper with handwritten measurements and soft morning light casting gentle shadows." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB6x5E_F-x-qnrd8SxWrC0y_S8oSKudL3qAnH_TR6KFH2FDdgUr9CdDFCYtrnKIDDLLf-W48bnUf7XeenqxEnLT8v__hJHQBaRHQNeCo-TZYmqyCD6pvJEEUClo8I_hprf--M9_aJuUJhbYqqNqlrYmJHoUZ1hbH6YPAkLje8evtx_3HbxSE351KTYfKQith4epa4Lr-Tp8C0MTkv8xSHUqJTvNg27g9DYn2KcyRlyt"/>
+</div>
+<div class="flex-1 flex flex-col space-y-1 min-w-0">
+<div class="inline-flex items-center gap-1 font-label-sm text-label-sm text-secondary font-semibold">
+<span class="material-symbols-outlined text-[14px]">straighten</span>
+<span>Room size: 12' × 14'</span>
+</div>
+<ul class="space-y-1 font-body-sm text-body-sm text-on-surface-variant">
+<li class="flex items-start gap-1">
+<span class="text-primary font-bold">•</span>
+<span class="truncate">Cabinet quote due Friday morning</span>
+</li>
+<li class="flex items-start gap-1">
+<span class="text-primary font-bold">•</span>
+<span class="truncate">Water line hookup confirmed for sink island</span>
+</li>
+<li class="flex items-start gap-1">
+<span class="text-primary font-bold">•</span>
+<span class="truncate">Oak butcher block sample approved</span>
+</li>
+</ul>
+</div>
+</div>
+<div class="flex items-center justify-between pt-1">
+<span class="px-2 py-0.5 rounded bg-surface-container text-on-surface-variant font-label-sm text-label-sm">
+          1 Attachment • Sketch
+        </span>
+<div class="flex items-center gap-1 text-outline font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+<span>Saved on device</span>
+</div>
+</div>
+</article>
+<!-- Card 3: Work Strategy Brainstorm -->
+<article class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col space-y-space-sm hover:shadow-md transition-shadow">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="px-2.5 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm">
+            Work Ideas
+          </span>
+<span class="font-label-sm text-label-sm text-outline">Yesterday, 11:20 AM</span>
+</div>
+<span class="material-symbols-outlined text-[16px] text-outline" title="Private to this device">lock</span>
+</div>
+<div class="flex flex-col space-y-1">
+<h4 class="font-headline-sm text-headline-sm text-on-surface">Q3 Product Strategy Brainstorm</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">
+          Voice note converted to summary: <span class="text-on-surface font-medium">“Key takeaway: streamline onboarding flow to 3 simple steps. Follow up with Marcus on user telemetry draft.”</span>
+</p>
+</div>
+<div class="p-3 bg-surface-container-low rounded-lg flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-7 h-7 rounded-full bg-primary-container text-on-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]">auto_awesome</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Action item added to personal list</span>
+</div>
+<span class="font-label-sm text-label-sm text-primary font-semibold">Done</span>
+</div>
+<div class="flex items-center justify-between pt-1">
+<span class="font-label-sm text-label-sm text-outline">Transcribed offline</span>
+<div class="flex items-center gap-1 text-outline font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px]">shield</span>
+<span>Private only</span>
+</div>
+</div>
+</article>
+<!-- Card 4: Mom's Sourdough Recipe -->
+<article class="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col space-y-space-sm hover:shadow-md transition-shadow">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="px-2.5 py-0.5 rounded-full bg-secondary-fixed-dim text-on-secondary-fixed font-label-sm text-label-sm">
+            Family / Recipes
+          </span>
+<span class="font-label-sm text-label-sm text-outline">Oct 14</span>
+</div>
+<span class="material-symbols-outlined text-[16px] text-outline" title="Encrypted on device">lock</span>
+</div>
+<div class="flex gap-3">
+<div class="flex-1 flex flex-col space-y-1 min-w-0">
+<h4 class="font-headline-sm text-headline-sm text-on-surface">Mom’s Sourdough Bread Recipe &amp; Timing</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">
+            Hydration 72%, bulk ferment 4 hours at room temp. Golden crust secret: ice cubes inside Dutch oven base right before lid closure.
+          </p>
+</div>
+<div class="w-20 h-20 rounded-lg overflow-hidden shrink-0 bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="Artisanal freshly baked sourdough loaf with golden blistered crust resting on a rustic linen tea towel next to wheat stalks, bathed in soft afternoon kitchen glow." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDL2v-4gkQTUNpKTwLZTJJVmo3o57DN3O3x8no101NjjHOQVUOXWdVHEOcdoKIcsdUyow9UskmItdPgVMCq4uk6nsxbLCdsSLbKwoT6Ow80PEn_XUqv3KrZQxa7mOeZnt-hlltC8fZPVk5sY9b883Grx0KxZlRY3ogpoy2DsQwQ__KO4d1J84rTHSQUMarNI-FME-ynU-SX2xddVVFcYQ5JNN0X_BsZlwfIEnN2doZ2"/>
+</div>
+</div>
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center gap-1 text-secondary font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px]">restaurant_menu</span>
+<span>Prep time: 24h cycle</span>
+</div>
+<div class="flex items-center gap-1 text-outline font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px]">cloud_off</span>
+<span>Zero cloud trace</span>
+</div>
+</div>
+</article>
+</section>
+<!-- Reassurance Footnote Box -->
+<section class="rounded-xl p-4 bg-primary-fixed/20 flex items-start gap-3">
+<div class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[18px]">verified_user</span>
+</div>
+<div class="flex flex-col space-y-0.5">
+<span class="font-label-lg text-label-lg text-primary">Kept safe on this device</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+        No external servers or tracking. Your notes, voice memos, and photos live solely in your hands.
+      </p>
+</div>
+</section>
+</div>
+<script>
+  // Simple micro-interactions for audio preview and filter selection
+  document.querySelectorAll('.audio-toggle-btn').forEach(button => {
+    button.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const icon = this.querySelector('.play-icon');
+      if (icon.textContent === 'play_arrow') {
+        icon.textContent = 'pause';
+        this.classList.add('bg-secondary');
+      } else {
+        icon.textContent = 'play_arrow';
+        this.classList.remove('bg-secondary');
+      }
+    });
+  });
+
+  document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.addEventListener('click', function() {
+      document.querySelectorAll('.filter-chip').forEach(c => {
+        c.className = 'filter-chip px-3.5 py-1.5 rounded-full bg-surface-container text-on-surface-variant hover:bg-surface-container-high font-label-md text-label-md whitespace-nowrap transition-all';
+      });
+      this.className = 'filter-chip px-3.5 py-1.5 rounded-full bg-primary text-on-primary font-label-md text-label-md whitespace-nowrap shadow-sm transition-all';
+    });
+  });
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface/85 backdrop-blur-xl shadow-[0_-2px_12px_rgba(0,0,0,0.04)]" data-active-classes="text-primary font-semibold"><div class="flex justify-around items-center h-16 px-space-xs"><a aria-current="page" class="flex flex-col items-center justify-center w-16 h-12 transition-colors group text-primary font-semibold" data-path="vault" href="#"><span class="material-symbols-outlined text-[22px]">folder_special</span><span class="font-label-sm text-label-sm mt-0.5">Vault</span></a><a class="flex flex-col items-center justify-center w-16 h-12 text-on-surface-variant transition-colors group" data-path="search-&amp;-ask" href="#"><span class="material-symbols-outlined text-[22px]">auto_awesome</span><span class="font-label-sm text-label-sm mt-0.5">Search &amp; Ask</span></a><a class="flex flex-col items-center justify-center w-16 h-12 text-on-surface-variant transition-colors group" data-path="new-memory" href="#"><div class="w-10 h-10 -mt-2 rounded-full bg-primary-container text-on-primary flex items-center justify-center shadow-[0_4px_12px_rgba(47,93,80,0.25)] hover:scale-105 active:scale-95 transition-transform"><span class="material-symbols-outlined text-[22px]">add</span></div><span class="font-label-sm text-label-sm mt-0.5">Capture</span></a><a class="flex flex-col items-center justify-center w-16 h-12 text-on-surface-variant transition-colors group" data-path="settings" href="#"><span class="material-symbols-outlined text-[22px]">shield</span><span class="font-label-sm text-label-sm mt-0.5">Settings</span></a></div></nav></body></html>

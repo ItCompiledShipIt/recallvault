@@ -1027,3 +1027,40 @@ List-Unsubscribe header) needs a strong fact to get
 in, and newsletters and promos never do. Keepers land
 as notes with sender, subject and Extract facts.
 Suite 235/235. Sending mail is the next release.
+
+## v0.57.0 - and sending (Nov 2, 2026)
+
+Email runs both ways now. MailFetch.send goes out over
+SMTPS with the same stored app password. Sends are
+human-confirmed by design: ComposeMail is a plain sheet
+(To / Subject / Message / Send), opened from Settings
+("Write an email") or from any memory ("Email this
+memory", prefilled with the memory's title and text).
+Clio drafts; a person sends. Compose validation is
+JVM-tested (suite 239/239). Brain-initiated sending is
+deliberately not a thing yet.
+
+## v0.58.0 - the Sanctuary design (Nov 2, 2026)
+
+Chris picked a full design language (Stitch export
+"Sanctuary Notes & Memories", kept in design/) and the
+app now wears it: oat-linen canvas (#F9F6F0), white
+tactile cards with 20dp corners and a whisper of lift,
+forest sage #2F5D50, warm terracotta, espresso ink,
+and Plus Jakarta Sans throughout (variable font,
+bundled, OFL). Sanctuary is a fourth theme and the
+new default; Console/Paper/Aurora remain in Settings.
+
+Home is rebuilt to the design: greeting by time of
+day, the "Saved on this phone only" pill, Record
+Voice / Scan Doc / Quick Note tiles with tinted
+discs, the search field, category chips, memory
+cards with tinted category pills, voice cards with a
+play disc and waveform, a quiet "Kept close" footer,
+and the mint "Kept safe on this device" card. The
+bottom bar matches: Vault, Search & Ask, a raised
+forest Capture disc, Reminders, Settings - and
+Settings is now a full page (same builder as the
+dialog). Copy stays honest: the design's iOS-flavored
+claims (Face ID, Secure Enclave, AirDrop) are rendered
+as this app's truths, per the house rule.

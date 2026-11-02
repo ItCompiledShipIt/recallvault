@@ -92,6 +92,42 @@ public final class MailFetch {
         }
     }
 
+    /** Send one email over SMTPS (v0.57.0). "" on success,
+     *  else a plain-words error. Always human-initiated -
+     *  the compose sheet's Send tap is the only caller. */
+    public static String send(Context ctx, String to, String subject, String body) {
+        try {
+            Properties p = new Properties();
+            p.put("mail.transport.protocol", "smtps");
+            p.put("mail.smtps.host", "smtp.gmail.com");
+            p.put("mail.smtps.port", "465");
+            p.put("mail.smtps.ssl.enable", "true");
+            p.put("mail.smtps.connectiontimeout", "15000");
+            p.put("mail.smtps.timeout", "20000");
+            Session s = Session.getInstance(p);
+            javax.mail.internet.MimeMessage msg = new javax.mail.internet.MimeMessage(s);
+            String addr = prefs(ctx).getString(P_ADDR, "");
+            msg.setFrom(new InternetAddress(addr));
+            msg.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to.trim()));
+            msg.setSubject(subject == null ? "" : subject);
+            msg.setText(body == null ? "" : body);
+            javax.mail.Transport t = s.getTransport("smtps");
+            try {
+                t.connect("smtp.gmail.com", addr, VaultCrypto.dec(prefs(ctx).getString(P_PASS, "")));
+                t.sendMessage(msg, msg.getAllRecipients());
+            } finally {
+                try { t.close(); } catch (Exception ignored) {}
+            }
+            return "";
+        } catch (Exception e) {
+            if (e instanceof javax.mail.AuthenticationFailedException) {
+                return "Gmail refused the sign-in - the app password may have changed.";
+            }
+            String m = e.getMessage();
+            return "Sending failed (" + (m == null ? e.getClass().getSimpleName() : m) + ").";
+        }
+    }
+
     /** File new mail. Mirrors FileIngest.scanSms's contract:
      *  seen settled for every judged message, watermark only
      *  advances over messages actually seen. */

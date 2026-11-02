@@ -48,21 +48,116 @@ public final class Ui {
     private static final int RIPPLE_ON_ACCENT = 0x330B0E13;
     private static boolean LIGHT_BARS = false;
 
+    // ---------- Sanctuary (v0.58.0) ----------
+    // The warm-organic design language chris picked: oat
+    // linen canvas, white tactile cards, forest sage,
+    // terracotta, Plus Jakarta Sans. SANCTUARY switches the
+    // layout branches in MainActivity and the component
+    // shapes below; the extra tokens are only meaningful
+    // under that theme.
+    public static boolean SANCTUARY = false;
+    public static int MINT = 0xFFBCEDDC;       // primary-fixed
+    public static int MINT_TEXT = 0xFF204F42;
+    public static int TERRA = 0xFFD17D58;
+    public static int TERRA_BG = 0xFFFFDBCD;
+    public static int TERRA_TEXT = 0xFF773617;
+    public static int SAGE_BG = 0xFFD0E9CC;
+    public static int SAGE_TEXT = 0xFF374C36;
+    public static int FOREST = 0xFF154539;
+    private static int CARD_R = 8;
+    private static int BTN_R = 8;
+
+    // Plus Jakarta Sans (OFL), variable font in assets.
+    private static Typeface F_REG, F_SEMI, F_BOLD;
+
+    private static void loadFont(android.content.Context ctx) {
+        if (F_REG != null) return;
+        try {
+            Typeface base = Typeface.createFromAsset(ctx.getAssets(), "fonts/PlusJakartaSans.ttf");
+            F_REG = base;
+            if (android.os.Build.VERSION.SDK_INT >= 28) {
+                F_SEMI = Typeface.create(base, 600, false);
+                F_BOLD = Typeface.create(base, 700, false);
+            } else {
+                F_SEMI = Typeface.create(base, Typeface.BOLD);
+                F_BOLD = F_SEMI;
+            }
+        } catch (Exception e) {
+            F_REG = Typeface.DEFAULT;
+            F_SEMI = Typeface.DEFAULT_BOLD;
+            F_BOLD = Typeface.DEFAULT_BOLD;
+        }
+    }
+
+    /** The face for body text under the active theme. */
+    static Typeface face(android.content.Context ctx, boolean bold) {
+        if (!SANCTUARY) return bold ? Typeface.DEFAULT_BOLD : Typeface.DEFAULT;
+        loadFont(ctx);
+        return bold ? F_SEMI : F_REG;
+    }
+
+    /** Display face (headlines) under the active theme. */
+    static Typeface faceDisplay(android.content.Context ctx) {
+        if (!SANCTUARY) return Typeface.DEFAULT_BOLD;
+        loadFont(ctx);
+        return F_BOLD;
+    }
+
+    /** The design's mint pill: lock dot + label, forest text. */
+    public static TextView pill(Activity a, String label) {
+        TextView t = text(a, label, 11, MINT_TEXT, true);
+        t.setBackground(panelBg(MINT, 0, 999, a));
+        t.setPadding(dp(a, 10), dp(a, 4), dp(a, 10), dp(a, 4));
+        return t;
+    }
+
+    /** Soft tinted category pill (Sanctuary card headers). */
+    public static TextView catPill(Activity a, String label, int bg, int fg) {
+        TextView t = text(a, label, 11, fg, true);
+        t.setBackground(panelBg(bg, 0, 999, a));
+        t.setPadding(dp(a, 10), dp(a, 4), dp(a, 10), dp(a, 4));
+        return t;
+    }
+
+    /** The header avatar: a forest disc with a person glyph;
+     *  opens Settings, the design's profile entry. */
+    public static FrameLayout avatarDisc(Activity a, View.OnClickListener click) {
+        FrameLayout f = new FrameLayout(a);
+        GradientDrawable g = new GradientDrawable();
+        g.setShape(GradientDrawable.OVAL);
+        g.setColor(FOREST);
+        f.setBackground(g);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(a, 40), dp(a, 40));
+        f.setLayoutParams(lp);
+        ImageView iv = new ImageView(a);
+        iv.setImageResource(R.drawable.ic_person);
+        FrameLayout.LayoutParams ilp = new FrameLayout.LayoutParams(dp(a, 22), dp(a, 22));
+        ilp.gravity = Gravity.CENTER;
+        iv.setLayoutParams(ilp);
+        f.addView(iv);
+        f.setClickable(true);
+        f.setFocusable(true);
+        f.setOnClickListener(click);
+        return f;
+    }
+
     // ---------- themes (v0.49.0) ----------
 
     public static final String PREF_THEME = "ui_theme";
     public static final int THEME_CONSOLE = 0;
     public static final int THEME_PAPER = 1;
     public static final int THEME_AURORA = 2;
-    public static final String[] THEME_NAMES = {"Console", "Paper", "Aurora"};
+    public static final int THEME_SANCTUARY = 3;
+    public static final String[] THEME_NAMES = {"Console", "Paper", "Aurora", "Sanctuary"};
     public static final String[] THEME_BLURBS = {
         "Amber on black - the ship-console instrument look",
         "Warm paper and ink - a field journal, light theme",
-        "Periwinkle and teal on deep navy - gradient glass"};
+        "Periwinkle and teal on deep navy - gradient glass",
+        "Warm linen, forest sage and terracotta - a quiet sanctuary"};
 
     public static int theme(android.content.Context ctx) {
         return ctx.getSharedPreferences(Embed.PREFS, android.content.Context.MODE_PRIVATE)
-            .getInt(PREF_THEME, THEME_CONSOLE);
+            .getInt(PREF_THEME, THEME_SANCTUARY);
     }
 
     public static void setTheme(android.content.Context ctx, int t) {
@@ -73,7 +168,20 @@ public final class Ui {
 
     /** Load the chosen theme's palette into the fields above. */
     public static void applyTheme(android.content.Context ctx) {
+        SANCTUARY = theme(ctx) == THEME_SANCTUARY;
+        CARD_R = SANCTUARY ? 20 : 8;
+        BTN_R = SANCTUARY ? 14 : 8;
         switch (theme(ctx)) {
+            case THEME_SANCTUARY:
+                // DESIGN.md tokens: oat linen canvas, white
+                // cards, espresso ink, umber secondary, forest
+                // sage primary, terracotta warmth, stone lines.
+                BG = 0xFFF9F6F0; PANEL = 0xFFFFFFFF; PANEL_HI = 0xFFF0EEE8;
+                BORDER = 0xFFE7E2D8; TEXT = 0xFF221F1D; DIM = 0xFF69645E;
+                ACCENT = 0xFF2F5D50; ACCENT_DARK_TEXT = 0xFFFFFFFF;
+                ACCENT2 = 0xFFD17D58; WARN = 0xFF924B2A; DANGER = 0xFFBA1A1A;
+                RIPPLE_MAIN = 0x1F000000; LIGHT_BARS = true;
+                break;
             case THEME_CONSOLE:
                 BG = 0xFF0A0703; PANEL = 0xFF171208; PANEL_HI = 0xFF241A0D;
                 BORDER = 0xFF3D2E13; TEXT = 0xFFF7EBCE; DIM = 0xFFB3A284;
@@ -138,6 +246,15 @@ public final class Ui {
      *  colored text, 2 = panel with dim text. */
     public static TextView tag(Activity ctx, String label, int style, int color) {
         TextView t = text(ctx, label, 10, style == 0 ? ACCENT_DARK_TEXT : color, true);
+        if (SANCTUARY) {
+            // Soft pills in the Sanctuary register.
+            t.setLetterSpacing(0.02f);
+            t.setTypeface(face(ctx, true));
+            int bg = style == 0 ? ACCENT : PANEL_HI;
+            t.setBackground(panelBg(bg, 0, 999, ctx));
+            t.setPadding(dp(ctx, 10), dp(ctx, 4), dp(ctx, 10), dp(ctx, 4));
+            return t;
+        }
         t.setLetterSpacing(0.08f);
         t.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         int bg = style == 0 ? ACCENT : PANEL_HI;
@@ -148,6 +265,26 @@ public final class Ui {
 
     /** Big screen title: amber square + caps title + right tag. */
     public static LinearLayout screenTitle(Activity ctx, String title, String rightTag) {
+        if (SANCTUARY) {
+            // The design's headline: plain title case, Jakarta
+            // bold, with the privacy pill on the right.
+            LinearLayout row = new LinearLayout(ctx);
+            row.setOrientation(LinearLayout.HORIZONTAL);
+            row.setGravity(android.view.Gravity.CENTER_VERTICAL);
+            String pretty = title.isEmpty() ? title
+                : title.substring(0, 1).toUpperCase(java.util.Locale.US)
+                    + title.substring(1).toLowerCase(java.util.Locale.US);
+            TextView t = text(ctx, pretty, 24, TEXT, true);
+            t.setTypeface(faceDisplay(ctx));
+            row.addView(t);
+            if (rightTag != null) {
+                View sp = new View(ctx);
+                sp.setLayoutParams(new LinearLayout.LayoutParams(0, 1, 1f));
+                row.addView(sp);
+                row.addView(pill(ctx, "On-device only • Private"));
+            }
+            return row;
+        }
         LinearLayout row = new LinearLayout(ctx);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(android.view.Gravity.CENTER_VERTICAL);
@@ -218,18 +355,30 @@ public final class Ui {
         t.setText(s);
         t.setTextSize(sp);
         t.setTextColor(color);
-        if (bold) t.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
-        t.setLineSpacing(0, 1.12f);
+        if (SANCTUARY) {
+            t.setTypeface(face(a, bold));
+            t.setLineSpacing(0, 1.25f);
+        } else {
+            if (bold) t.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+            t.setLineSpacing(0, 1.12f);
+        }
         return t;
     }
 
     /** Small all-caps section label. */
     public static TextView sectionLabel(Activity a, String s) {
         TextView t = text(a, s.toUpperCase(java.util.Locale.US), 11, DIM, true);
-        t.setLetterSpacing(0.12f);
-        // Register match (v0.51.0): the design's micro-labels are
-        // monospace - telemetry, not prose.
-        t.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
+        if (SANCTUARY) {
+            // The Sanctuary eyebrows: Jakarta semibold, gentle
+            // positive tracking - labels, not telemetry.
+            t.setLetterSpacing(0.04f);
+            t.setTypeface(face(a, true));
+        } else {
+            t.setLetterSpacing(0.12f);
+            // Register match (v0.51.0): the design's micro-labels are
+            // monospace - telemetry, not prose.
+            t.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
+        }
         return t;
     }
 
@@ -237,9 +386,10 @@ public final class Ui {
         b.setTextColor(fg);
         b.setTextSize(15);
         b.setAllCaps(false);
-        b.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        if (SANCTUARY) b.setTypeface(face(a, true));
+        else b.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         int ripple = (bg == ACCENT || bg == ACCENT2) ? RIPPLE_ON_ACCENT : RIPPLE_MAIN;
-        b.setBackground(rippleBg(a, bg, bordered ? BORDER : 0, 8, ripple));
+        b.setBackground(rippleBg(a, bg, bordered && !SANCTUARY ? BORDER : 0, BTN_R, ripple));
         b.setPadding(dp(a, 16), dp(a, 12), dp(a, 16), dp(a, 12));
         b.setMinHeight(0);
         b.setMinimumHeight(0);
@@ -369,7 +519,8 @@ public final class Ui {
         b.setText(label);
         b.setTextSize(13);
         b.setAllCaps(false);
-        b.setTypeface(Typeface.DEFAULT, selected ? Typeface.BOLD : Typeface.NORMAL);
+        if (SANCTUARY) b.setTypeface(face(a, selected));
+        else b.setTypeface(Typeface.DEFAULT, selected ? Typeface.BOLD : Typeface.NORMAL);
         b.setTextColor(selected ? ACCENT_DARK_TEXT : TEXT);
         b.setBackground(rippleBg(a, selected ? ACCENT : PANEL_HI, selected ? 0 : BORDER, 999,
             selected ? RIPPLE_ON_ACCENT : RIPPLE_MAIN));
@@ -443,8 +594,11 @@ public final class Ui {
         c.setOrientation(LinearLayout.VERTICAL);
         // Tighter radius (v0.51.0): the design's panels are
         // near-rectangular registers, not soft cards.
-        c.setBackground(panelBg(PANEL, BORDER, 8, a));
-        c.setPadding(dp(a, 14), dp(a, DENSE ? 7 : 12), dp(a, 14), dp(a, DENSE ? 7 : 12));
+        // Sanctuary (v0.58.0): soft tactile cards - white,
+        // borderless, generously rounded, a whisper of lift.
+        c.setBackground(panelBg(PANEL, SANCTUARY ? 0 : BORDER, CARD_R, a));
+        if (SANCTUARY) c.setElevation(dp(a, 2));
+        c.setPadding(dp(a, SANCTUARY ? 18 : 14), dp(a, DENSE ? 7 : 12), dp(a, SANCTUARY ? 18 : 14), dp(a, DENSE ? 7 : 12));
         c.setLayoutParams(matchWrap(10, a));
         c.setGravity(Gravity.START);
         return c;
@@ -453,7 +607,7 @@ public final class Ui {
     /** Card with touch ripple (for tappable list items). */
     public static LinearLayout pressCard(Activity a) {
         LinearLayout c = card(a);
-        c.setBackground(rippleBg(a, PANEL, BORDER, 8, RIPPLE_MAIN));
+        c.setBackground(rippleBg(a, PANEL, SANCTUARY ? 0 : BORDER, CARD_R, RIPPLE_MAIN));
         c.setClickable(true);
         c.setFocusable(true);
         return c;

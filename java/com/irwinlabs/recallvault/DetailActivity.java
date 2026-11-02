@@ -414,6 +414,19 @@ public class DetailActivity extends Activity {
             root.addView(sumBtn);
         }
 
+        // Email this memory (v0.57.0): the compose sheet opens
+        // prefilled; the send itself is a human tap.
+        if (MailFetch.configured(this)) {
+            Button mailBtn = Ui.ghostButton(this, "Email this memory");
+            mailBtn.setLayoutParams(Ui.matchWrap(8, this));
+            mailBtn.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    ComposeMail.show(DetailActivity.this, item.title, detailText);
+                }
+            });
+            root.addView(mailBtn);
+        }
+
         // Listen (v0.19.0): the phone reads the memory aloud -
         // built-in text-to-speech, nothing leaves the device.
         listenBtn = Ui.ghostButton(this, "Listen - hear this memory");
