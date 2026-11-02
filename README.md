@@ -1114,3 +1114,12 @@ mic disc that works the same recording path. The scan
 screen is the system camera by design, so nothing
 there needed reskinning; its results land in Detail.
 With this, every screen speaks Sanctuary.
+
+## v0.61.1 - the category bar goes (Nov 2, 2026)
+
+Chris circled the scrolling category chip bar on the
+home screen: not a fan. Under Sanctuary it is removed,
+and any filter it had set is cleared with it so the
+home is never silently filtered. Search and Ask still
+find everything by category words. The other themes
+keep their bar.

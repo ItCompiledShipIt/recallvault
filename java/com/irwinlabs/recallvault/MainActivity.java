@@ -535,6 +535,14 @@ public class MainActivity extends Activity {
         });
         content.addView(search);
 
+        // The scrolling category bar is gone under Sanctuary
+        // (chris, Nov 2, 2026: not a fan of that bar) - and any
+        // filter it set goes with it, so the home is never
+        // silently filtered with no way back.
+        if (Ui.SANCTUARY) {
+            categoryFilter = "All";
+            vaultByMonth = false;
+        } else {
         HorizontalScrollView hsv = new HorizontalScrollView(this);
         hsv.setLayoutParams(Ui.matchWrap(10, this));
         LinearLayout chips = new LinearLayout(this);
@@ -554,6 +562,7 @@ public class MainActivity extends Activity {
         chips.addView(byMonth);
         hsv.addView(chips);
         content.addView(hsv);
+        }
 
         // Monthly report card (v0.36.0): last month's report, offered
         // once when a new month starts.
