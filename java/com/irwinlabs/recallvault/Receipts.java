@@ -143,6 +143,10 @@ public final class Receipts {
             if (c <= 0) continue;
             total += c;
             count++;
+            Ask.Line ln = new Ask.Line();
+            ln.item = it;
+            ln.cents = c;
+            s.lines.add(ln);
             if (biggest == null || c > Ask.principalCents(biggest)) biggest = it;
             String st = storeOf(it);
             Long cur = byStore.get(st);
@@ -182,6 +186,12 @@ public final class Receipts {
             }
         }
         s.text = sb.toString();
+        // Ledger order (v0.52.0): most recent spending first.
+        java.util.Collections.sort(s.lines, new java.util.Comparator<Ask.Line>() {
+            @Override public int compare(Ask.Line a, Ask.Line b) {
+                return Long.compare(b.item.createdAt, a.item.createdAt);
+            }
+        });
         return s;
     }
 

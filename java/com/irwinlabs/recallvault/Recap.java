@@ -45,31 +45,33 @@ public final class Recap {
         return out;
     }
 
-    /** The whole recap as display lines; empty when nothing was found. */
-    public static List<String> lines(String text) {
-        List<String> out = new ArrayList<String>();
-        if (text == null || text.trim().isEmpty()) return out;
-        List<String> dec = decisions(text);
-        if (!dec.isEmpty()) {
-            out.add("Decided:");
-            for (String d : dec) out.add("- " + d);
+    /**
+     * The recap in parts (v0.52.0): the detail screen renders
+     * to-dos as checkable rows, so it needs them structured -
+     * lines() below is built from this, one source of truth.
+     */
+    public static final class Parts {
+        public final List<String> decisions = new ArrayList<String>();
+        public final List<Actions.Action> todos = new ArrayList<Actions.Action>();
+        public String datesLine;  // null when no dates
+        public String moneyLine;  // null when no money
+        public boolean isEmpty() {
+            return decisions.isEmpty() && todos.isEmpty()
+                && datesLine == null && moneyLine == null;
         }
+    }
+
+    public static Parts parts(String text) {
+        Parts p = new Parts();
+        if (text == null || text.trim().isEmpty()) return p;
+        p.decisions.addAll(decisions(text));
         List<Actions.Action> acts = Actions.extract(text);
         // A sentence that already ran as a decision ("We decided to
         // renew...") is not also a to-do - the recap never repeats.
         Set<String> decidedLow = new HashSet<String>();
-        for (String d : dec) decidedLow.add(d.toLowerCase(Locale.US));
-        List<Actions.Action> todos = new ArrayList<Actions.Action>();
+        for (String d : p.decisions) decidedLow.add(d.toLowerCase(Locale.US));
         for (Actions.Action a : acts) {
-            if (!decidedLow.contains(a.text.toLowerCase(Locale.US))) todos.add(a);
-        }
-        if (!todos.isEmpty()) {
-            out.add("To do:");
-            int shown = 0;
-            for (Actions.Action a : todos) {
-                if (shown++ >= 6) { out.add("- ...and " + (todos.size() - 6) + " more"); break; }
-                out.add("- " + a.text + (a.dueMs > 0 ? " (due " + Extract.formatDate(a.dueMs) + ")" : ""));
-            }
+            if (!decidedLow.contains(a.text.toLowerCase(Locale.US))) p.todos.add(a);
         }
         Extract.Facts f = Extract.analyze(text);
         if (!f.dates.isEmpty()) {
@@ -80,7 +82,7 @@ public final class Recap {
                 if (i > 0) db.append(", ");
                 db.append(Extract.formatDate(dates.get(i)));
             }
-            out.add(db.toString());
+            p.datesLine = db.toString();
         }
         if (!f.amounts.isEmpty()) {
             StringBuilder mb = new StringBuilder("Money mentioned: ");
@@ -88,8 +90,29 @@ public final class Recap {
                 if (i > 0) mb.append(", ");
                 mb.append(f.amounts.get(i));
             }
-            out.add(mb.toString());
+            p.moneyLine = mb.toString();
         }
+        return p;
+    }
+
+    /** The whole recap as display lines; empty when nothing was found. */
+    public static List<String> lines(String text) {
+        List<String> out = new ArrayList<String>();
+        Parts p = parts(text);
+        if (!p.decisions.isEmpty()) {
+            out.add("Decided:");
+            for (String d : p.decisions) out.add("- " + d);
+        }
+        if (!p.todos.isEmpty()) {
+            out.add("To do:");
+            int shown = 0;
+            for (Actions.Action a : p.todos) {
+                if (shown++ >= 6) { out.add("- ...and " + (p.todos.size() - 6) + " more"); break; }
+                out.add("- " + a.text + (a.dueMs > 0 ? " (due " + Extract.formatDate(a.dueMs) + ")" : ""));
+            }
+        }
+        if (p.datesLine != null) out.add(p.datesLine);
+        if (p.moneyLine != null) out.add(p.moneyLine);
         return out;
     }
 

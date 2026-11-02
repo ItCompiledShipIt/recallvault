@@ -439,18 +439,76 @@ public class DetailActivity extends Activity {
         });
         root.addView(linkBtn);
 
-        // Meeting recap (v0.38.0): decided / to do / key dates /
-        // money, at the top of the meeting's page.
+        // Meeting recap (v0.38.0; checkable to-dos v0.52.0):
+        // decided / to do / key dates / money, at the top of
+        // the meeting's page. To-do checks persist per meeting
+        // in prefs - the transcript itself is never rewritten.
         if ("Meetings".equals(item.category)) {
             String rtext = (item.extracted != null && !item.extracted.isEmpty())
                 ? item.extracted : (item.body != null ? item.body : "");
-            String recap = Recap.recapText(rtext);
-            if (recap != null) {
+            final Recap.Parts rp = Recap.parts(rtext);
+            if (!rp.isEmpty()) {
                 LinearLayout rCard = Ui.card(this);
-                rCard.addView(Ui.sectionLabel(this, "Meeting recap"));
-                TextView rt = Ui.text(this, recap, 13, Ui.TEXT, false);
-                rt.setLayoutParams(Ui.matchWrap(4, this));
-                rCard.addView(rt);
+                rCard.addView(Ui.sectionLabel(this, "// Meeting ledger"));
+                if (!rp.decisions.isEmpty()) {
+                    TextView dh = Ui.text(this, "DECIDED", 11, Ui.ACCENT2, true);
+                    dh.setLayoutParams(Ui.matchWrap(6, this));
+                    rCard.addView(dh);
+                    for (String d : rp.decisions) {
+                        TextView dt = Ui.text(this, "- " + d, 13, Ui.TEXT, false);
+                        dt.setLayoutParams(Ui.matchWrap(2, this));
+                        rCard.addView(dt);
+                    }
+                }
+                if (!rp.todos.isEmpty()) {
+                    final android.content.SharedPreferences rprefs =
+                        getSharedPreferences(Embed.PREFS, MODE_PRIVATE);
+                    LinearLayout headRow = new LinearLayout(this);
+                    headRow.setOrientation(LinearLayout.HORIZONTAL);
+                    headRow.setLayoutParams(Ui.matchWrap(8, this));
+                    TextView th = Ui.text(this, "TO DO", 11, Ui.ACCENT2, true);
+                    th.setLayoutParams(new LinearLayout.LayoutParams(0,
+                        LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+                    headRow.addView(th);
+                    final TextView tcount = Ui.text(this, "", 11, Ui.DIM, true);
+                    headRow.addView(tcount);
+                    rCard.addView(headRow);
+                    final int[] doneCount = {0};
+                    for (final Actions.Action a : rp.todos) {
+                        final String key = "recap_done_" + item.id + "_" + a.text.hashCode();
+                        boolean done = rprefs.getBoolean(key, false);
+                        if (done) doneCount[0]++;
+                        final android.widget.CheckBox cb = new android.widget.CheckBox(this);
+                        cb.setText(a.text + (a.dueMs > 0
+                            ? " (due " + Extract.formatDate(a.dueMs) + ")" : ""));
+                        cb.setTextColor(done ? Ui.DIM : Ui.TEXT);
+                        cb.setTextSize(13);
+                        cb.setChecked(done);
+                        cb.setLayoutParams(Ui.matchWrap(2, this));
+                        cb.setOnCheckedChangeListener(
+                            new android.widget.CompoundButton.OnCheckedChangeListener() {
+                                @Override public void onCheckedChanged(
+                                        android.widget.CompoundButton b, boolean on) {
+                                    rprefs.edit().putBoolean(key, on).apply();
+                                    cb.setTextColor(on ? Ui.DIM : Ui.TEXT);
+                                    doneCount[0] += on ? 1 : -1;
+                                    tcount.setText(doneCount[0] + "/" + rp.todos.size() + " DONE");
+                                }
+                            });
+                        rCard.addView(cb);
+                    }
+                    tcount.setText(doneCount[0] + "/" + rp.todos.size() + " DONE");
+                }
+                if (rp.datesLine != null) {
+                    TextView dl = Ui.text(this, rp.datesLine, 12, Ui.DIM, false);
+                    dl.setLayoutParams(Ui.matchWrap(6, this));
+                    rCard.addView(dl);
+                }
+                if (rp.moneyLine != null) {
+                    TextView ml = Ui.text(this, rp.moneyLine, 12, Ui.DIM, false);
+                    ml.setLayoutParams(Ui.matchWrap(2, this));
+                    rCard.addView(ml);
+                }
                 root.addView(rCard);
             }
         }

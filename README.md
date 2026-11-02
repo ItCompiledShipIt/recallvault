@@ -801,3 +801,47 @@ what I sent you".
   (8dp radius), section labels and tags are monospace.
 - Verified on the S24 Ultra in the Console theme (the
   design's register): Vault, Ask, Reminders, capture sheet.
+
+## v0.52.0 - the design's missing features (Nov 1, 2026)
+
+Everything the Stitch screens showed that the app did not
+have yet, built honestly on the engines already here:
+
+- Ask answers that add up now carry their ledger: one row
+  per item behind the total (date, title, amount, due-first
+  for owed answers, newest-first for spending), tap a row
+  to open the memory. Applies to Ask.summarize and to
+  receipt spending answers.
+- Bill actions on answers: a summary's next open bill and
+  any result whose memory still has an open reminder get
+  DONE - PAID / SNOOZE +24H right on the answer card; the
+  answer refreshes in place. Follow-up chips sit under the
+  results (owe / spending / due-this-week, or a
+  higher-than-usual verdict chip for a recurring bill).
+- Hardening found by the device proof: an amount with no
+  due date (reminderAt 0) no longer counts toward "what do
+  I owe" - a receipt staged with 0 briefly inflated a total.
+- Meeting recaps render from Recap.parts (one source of
+  truth with the text lines): decisions as text, to-dos as
+  checkboxes with a n/m DONE counter, checked state kept
+  per meeting in prefs - the transcript is never rewritten.
+- Settings: Re-index vault (runs the same pending-embed
+  pass used at save time, with a live unindexed count);
+  Dense mode switch in Appearance (compact card padding,
+  app-wide via Ui.DENSE); Backups on this phone - the
+  automatic backups actually in the folder, tap one to
+  decrypt-and-parse verify it; Danger zone ERASE
+  EVERYTHING behind two confirmations (memories, files,
+  trash, ingest seen-log, and the automatic backups).
+- Export scope: the backup password dialog now offers All
+  memories / Last 30 days only; freshness bookkeeping only
+  advances on full exports, so Settings never overstates
+  what a scoped export covers.
+- JVM suite 200/200. Device-verified on the S24 Ultra:
+  ledger + totals ($186.20 across two bills; a raw receipt
+  no longer counted), DONE - PAID dropping the total to
+  $145.20, chips after scroll, recap checkbox ticking to
+  1/2 DONE and persisting, the real 20261101-0935 backup
+  verifying from the list, dense pref toggling on/off,
+  export scope radios rendering. The erase flow was
+  verified up to its button only - never run.

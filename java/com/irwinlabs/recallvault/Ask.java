@@ -163,6 +163,18 @@ public final class Ask {
         public long totalCents;
         public long earliestDue; // 0 when none of the items carries a date
         public String text;
+        /**
+         * The items that make up the total, when the summary is a
+         * literal sum (v0.52.0): the Ask screen renders them as a
+         * ledger under the answer. Empty for verdict-style summaries.
+         */
+        public final List<Line> lines = new ArrayList<Line>();
+    }
+
+    /** One ledger row of a Summary: an item and what it contributed. */
+    public static final class Line {
+        public Item item;
+        public long cents;
     }
 
     private static final java.util.regex.Pattern P_MONEY =
@@ -350,6 +362,7 @@ public final class Ask {
         int count = 0;
         long total = 0;
         long earliest = 0;
+        List<Line> lines = new ArrayList<Line>();
         for (Item it : items) {
             if (it.handledAt > 0) continue; // paid/done no longer counts as owed
             // Relevance: no topic -> in-frame is enough; else keyword
@@ -362,19 +375,35 @@ public final class Ask {
             }
             if (!relevant) continue;
             if (dueFrame) {
-                if (it.reminderAt < from || it.reminderAt >= to) continue;
+                // A due answer only counts items that carry a due
+                // date at all (reminderAt <= 0 means none - a stray
+                // 0 must not slip past the from=0 no-window case).
+                if (it.reminderAt <= 0 || it.reminderAt < from || it.reminderAt >= to) continue;
             }
             long cents = principalCents(it);
             if (cents < 0) continue;
             count++;
             total += cents;
+            Line ln = new Line();
+            ln.item = it;
+            ln.cents = cents;
+            lines.add(ln);
             if (it.reminderAt > 0 && (earliest == 0 || it.reminderAt < earliest)) earliest = it.reminderAt;
         }
         if (count < 2) return null;
+        // Ledger order: what is due first (undated last), so the
+        // answer reads like a bill list, not a search ranking.
+        lines.sort((a, b) -> {
+            long da = a.item.reminderAt > 0 ? a.item.reminderAt : Long.MAX_VALUE;
+            long db2 = b.item.reminderAt > 0 ? b.item.reminderAt : Long.MAX_VALUE;
+            if (da != db2) return Long.compare(da, db2);
+            return Long.compare(a.item.createdAt, b.item.createdAt);
+        });
         Summary s = new Summary();
         s.count = count;
         s.totalCents = total;
         s.earliestDue = earliest;
+        s.lines.addAll(lines);
         StringBuilder sb = new StringBuilder();
         sb.append(count).append(dueFrame ? " due" : " matching");
         if (monthLabel != null) {

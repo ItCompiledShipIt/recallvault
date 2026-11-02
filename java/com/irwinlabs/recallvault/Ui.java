@@ -103,8 +103,14 @@ public final class Ui {
     }
 
     /** Theme + status/navigation bar colors for the chosen theme. */
+    /** Dense mode (v0.52.0): compact card padding, set from the
+     *  ui_dense pref on every activity start. */
+    public static boolean DENSE = false;
+
     public static void applyChrome(Activity a) {
         applyTheme(a);
+        DENSE = a.getSharedPreferences(Embed.PREFS, android.content.Context.MODE_PRIVATE)
+            .getBoolean("ui_dense", false);
         a.getWindow().setStatusBarColor(BG);
         a.getWindow().setNavigationBarColor(PANEL);
         // Light themes need dark system-bar icons to stay readable.
@@ -438,7 +444,7 @@ public final class Ui {
         // Tighter radius (v0.51.0): the design's panels are
         // near-rectangular registers, not soft cards.
         c.setBackground(panelBg(PANEL, BORDER, 8, a));
-        c.setPadding(dp(a, 14), dp(a, 12), dp(a, 14), dp(a, 12));
+        c.setPadding(dp(a, 14), dp(a, DENSE ? 7 : 12), dp(a, 14), dp(a, DENSE ? 7 : 12));
         c.setLayoutParams(matchWrap(10, a));
         c.setGravity(Gravity.START);
         return c;

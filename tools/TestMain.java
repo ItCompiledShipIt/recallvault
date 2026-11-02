@@ -244,6 +244,13 @@ public class TestMain {
                 "how much do I owe this month", null, nowA);
             check("aggregate: month window sums 2 bills",
                 sMonth != null && sMonth.count == 2 && sMonth.totalCents == 12412);
+            // v0.52.0: the summary carries its ledger lines, due-first.
+            check("ledger: lines match the counted items",
+                sMonth != null && sMonth.lines.size() == 2
+                    && sMonth.lines.get(0).cents + sMonth.lines.get(1).cents == 12412);
+            check("ledger: earliest due first",
+                sMonth != null && sMonth.lines.size() == 2
+                    && sMonth.lines.get(0).item.reminderAt == Extract.parseIso("2026-11-05"));
             check("aggregate: earliest due picked",
                 sMonth != null && sMonth.earliestDue == Extract.parseIso("2026-11-05"));
 
@@ -257,6 +264,17 @@ public class TestMain {
                 java.util.Arrays.asList(billA, noteX),
                 "how much do I owe this month", null, nowA);
             check("aggregate: single match -> no summary", sSingle == null);
+
+            // v0.52.0 hardening: an amount with reminderAt 0 (no due
+            // date) never counts toward what is owed.
+            Item receipt0 = new Item();
+            receipt0.title = "Corner store receipt"; receipt0.category = "Receipts";
+            receipt0.amounts = "$9.99"; receipt0.reminderAt = 0;
+            Ask.Summary sZero = Ask.summarize(
+                java.util.Arrays.asList(billA, billB, receipt0),
+                "how much do I owe this month", null, nowA);
+            check("aggregate: undated amount excluded from owed",
+                sZero != null && sZero.count == 2 && sZero.totalCents == 12412);
 
             Ask.Summary sPlain = Ask.summarize(
                 java.util.Arrays.asList(billA, billB), "electricity", null, nowA);
@@ -760,6 +778,20 @@ public class TestMain {
             int todoAt = joined.indexOf("To do:");
             check("recap: a decision is not repeated as a to-do",
                 todoAt < 0 || !joined.substring(todoAt).contains("renew the lease"));
+            // v0.52.0: structured parts agree with the text lines.
+            Recap.Parts rp = Recap.parts(mtg);
+            check("recap parts: decisions + todos structured",
+                !rp.decisions.isEmpty() && rp.todos.size() >= 2
+                    && rp.datesLine != null && rp.moneyLine != null);
+            boolean partsDedupe = true;
+            for (Actions.Action act52 : rp.todos) {
+                for (String d : rp.decisions) {
+                    if (act52.text.equalsIgnoreCase(d)) partsDedupe = false;
+                }
+            }
+            check("recap parts: todos never repeat decisions", partsDedupe);
+            check("recap parts: empty text is empty",
+                Recap.parts("").isEmpty() && Recap.parts(null).isEmpty());
         }
 
         // ---------- v0.39.0: bills forecast ----------
@@ -877,6 +909,11 @@ public class TestMain {
             check("receipt: store-scoped spending", rb != null && rb.text.contains("$114.40"));
             check("receipt: non-spending question ignored",
                 Receipts.answer(rv, "when is my bill due", rnow) == null);
+            // v0.52.0: spending answers carry a ledger, newest first.
+            check("receipt ledger: october lines sum to the total",
+                ra != null && ra.lines.size() == 2
+                    && ra.lines.get(0).cents + ra.lines.get(1).cents == 10650
+                    && ra.lines.get(0).item == r2);
             String csv = Receipts.csv(rv);
             check("receipt: csv has header + rows", csv.startsWith("date,store,total,tax")
                 && csv.contains("WALMART SUPERCENTER") && csv.contains("84.40"));

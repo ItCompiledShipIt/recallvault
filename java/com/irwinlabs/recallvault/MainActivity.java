@@ -1093,8 +1093,17 @@ public class MainActivity extends Activity {
     }
 
     /** mode: 2 = semantic on this phone, 0 = keyword only. */
+    // Last shown Ask state, so answer actions can refresh in
+    // place (v0.52.0) instead of bouncing out to a full render.
+    private String lastAskShownQ;
+    private float[] lastAskVec;
+    private int lastAskMode;
+
     private void showAskResults(String q, float[] vec, int mode) {
         if (askResults == null) return;
+        lastAskShownQ = q;
+        lastAskVec = vec;
+        lastAskMode = mode;
         askResults.removeAllViews();
         // Conversation shape (v0.48.0): the question sits in its
         // own bubble above the answer, and the previous question
@@ -1142,6 +1151,53 @@ public class MainActivity extends Activity {
             TextView st = Ui.text(this, sum.text, 16, Ui.TEXT, true);
             st.setLayoutParams(Ui.matchWrap(6, this));
             sumCard.addView(st);
+            // Ledger (v0.52.0): the items behind the total, one
+            // row each - date, title, amount - tap opens it.
+            if (!sum.lines.isEmpty()) {
+                int shownL = 0;
+                for (final Ask.Line ln : sum.lines) {
+                    if (shownL++ >= 8) {
+                        TextView more = Ui.text(this,
+                            "+ " + (sum.lines.size() - 8) + " more below",
+                            11, Ui.DIM, false);
+                        more.setLayoutParams(Ui.matchWrap(4, this));
+                        sumCard.addView(more);
+                        break;
+                    }
+                    LinearLayout lrow = new LinearLayout(this);
+                    lrow.setOrientation(LinearLayout.HORIZONTAL);
+                    lrow.setGravity(Gravity.CENTER_VERTICAL);
+                    lrow.setPadding(0, Ui.dp(this, 5), 0, Ui.dp(this, 5));
+                    lrow.setLayoutParams(Ui.matchWrap(2, this));
+                    lrow.setClickable(true);
+                    TextView ld = Ui.text(this,
+                        Ui.dateLine(ln.item.reminderAt > 0 ? ln.item.reminderAt : ln.item.createdAt),
+                        11, Ui.DIM, false);
+                    ld.setLayoutParams(new LinearLayout.LayoutParams(
+                        Ui.dp(this, 92), LinearLayout.LayoutParams.WRAP_CONTENT));
+                    lrow.addView(ld);
+                    TextView lt = Ui.text(this, ln.item.title, 13, Ui.TEXT, false);
+                    lt.setLayoutParams(new LinearLayout.LayoutParams(0,
+                        LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+                    lt.setMaxLines(1);
+                    lt.setEllipsize(android.text.TextUtils.TruncateAt.END);
+                    lrow.addView(lt);
+                    TextView la = Ui.text(this, Ask.formatMoney(ln.cents), 13, Ui.ACCENT, true);
+                    lrow.addView(la);
+                    lrow.setOnClickListener(new View.OnClickListener() {
+                        @Override public void onClick(View v) { openDetail(ln.item.id); }
+                    });
+                    sumCard.addView(lrow);
+                }
+                // The next bill in the ledger gets its actions
+                // right here: done / snooze a day.
+                for (Ask.Line ln : sum.lines) {
+                    if (ln.item.reminderAt > 0 && ln.item.handledAt == 0) {
+                        sumCard.addView(askActionRow(ln.item));
+                        break;
+                    }
+                }
+            }
             askResults.addView(sumCard);
         }
 
@@ -1180,11 +1236,108 @@ public class MainActivity extends Activity {
             srcRow.addView(src);
             srcRow.addView(Ui.text(this, ">", 14, Ui.DIM, true));
             card.addView(srcRow);
+            // Bill actions on the answer itself (v0.52.0): a
+            // source with a still-open reminder can be finished
+            // or pushed a day without leaving Ask.
+            if (r.item.reminderAt > 0 && r.item.handledAt == 0) {
+                card.addView(askActionRow(r.item));
+            }
             card.setOnClickListener(new View.OnClickListener() {
                 @Override public void onClick(View v) { openDetail(r.item.id); }
             });
             askResults.addView(card);
         }
+        addAskChips(q, results);
+    }
+
+    /** Done / +24H buttons for an Ask answer (v0.52.0). */
+    private LinearLayout askActionRow(final Item it) {
+        LinearLayout actions = new LinearLayout(this);
+        actions.setOrientation(LinearLayout.HORIZONTAL);
+        actions.setLayoutParams(Ui.matchWrap(8, this));
+        Button done = new Button(this);
+        done.setText("Bills".equals(it.category) ? "DONE - PAID" : "DONE");
+        done.setTextSize(13);
+        done.setAllCaps(true);
+        done.setTypeface(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD);
+        done.setTextColor(Ui.ACCENT_DARK_TEXT);
+        done.setBackground(Ui.rippleBg(this, Ui.ACCENT2, 0, 8, 0x330B0E13));
+        done.setLayoutParams(Ui.weight1(0, this));
+        done.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                it.handledAt = System.currentTimeMillis();
+                db.update(it);
+                Toast.makeText(MainActivity.this, "Done - " + it.title, Toast.LENGTH_SHORT).show();
+                showAskResults(lastAskShownQ, lastAskVec, lastAskMode);
+                renderTabs();
+            }
+        });
+        actions.addView(done);
+        Button snz = Ui.ghostButton(this, "SNOOZE +24H");
+        LinearLayout.LayoutParams slp = Ui.weight1(8, this);
+        snz.setLayoutParams(slp);
+        snz.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                it.reminderAt = Snooze.snoozedUntil(it.reminderAt, 1);
+                db.update(it);
+                Toast.makeText(MainActivity.this,
+                    "Snoozed to " + Extract.formatDate(it.reminderAt), Toast.LENGTH_SHORT).show();
+                showAskResults(lastAskShownQ, lastAskVec, lastAskMode);
+            }
+        });
+        actions.addView(snz);
+        return actions;
+    }
+
+    /** Follow-up chips under an answer (v0.52.0): questions the
+     *  vault can already answer, one tap away. */
+    private void addAskChips(final String q, List<Ask.Result> results) {
+        String ql = q == null ? "" : q.toLowerCase(java.util.Locale.US);
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setLayoutParams(Ui.matchWrap(10, this));
+        int added = 0;
+        if (!ql.contains("owe")) added += askChip(row, "[ WHAT DO I OWE THIS MONTH? ]",
+            "what do i owe this month");
+        if (!ql.contains("spend")) added += askChip(row, "[ SPENDING THIS MONTH ]",
+            "how much did i spend this month");
+        if (!ql.contains("due this week") && !ql.contains("due this month")) {
+            // A recurring-bill verdict chip when the top answer is
+            // a bill the vault has seen more than once.
+            String patternQ = null;
+            if (!results.isEmpty()) {
+                for (Patterns.Recurring rec : Patterns.analyze(
+                        Privacy.visible(db.all()), System.currentTimeMillis())) {
+                    if (rec.count >= 2 && results.get(0).item.title != null
+                            && results.get(0).item.title.toLowerCase(java.util.Locale.US)
+                                .contains(rec.stem.split(" ")[0])) {
+                        patternQ = "is " + rec.displayTitle + " higher than usual";
+                        break;
+                    }
+                }
+            }
+            if (patternQ != null) added += askChip(row, "[ HIGHER THAN USUAL? ]", patternQ);
+            else added += askChip(row, "[ WHAT'S DUE THIS WEEK? ]", "what is due this week");
+        }
+        if (added > 0) askResults.addView(row);
+    }
+
+    private int askChip(LinearLayout row, String label, final String question) {
+        TextView chip = Ui.tag(this, label, 1, Ui.ACCENT);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lp.setMargins(0, 0, Ui.dp(this, 8), 0);
+        chip.setLayoutParams(lp);
+        chip.setPadding(Ui.dp(this, 10), Ui.dp(this, 8), Ui.dp(this, 10), Ui.dp(this, 8));
+        chip.setClickable(true);
+        chip.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                if (askInput != null) askInput.setText(question);
+                runAsk();
+            }
+        });
+        row.addView(chip);
+        return 1;
     }
 
     // ---------- REMINDERS ----------
@@ -2211,6 +2364,25 @@ public class MainActivity extends Activity {
             });
             themeCard.addView(tb);
         }
+        // Dense mode (v0.52.0): compact cards across the app.
+        final android.widget.Switch denseSwitch = new android.widget.Switch(this);
+        denseSwitch.setText("Dense mode (compact cards)");
+        denseSwitch.setTextColor(Ui.TEXT);
+        denseSwitch.setTextSize(13);
+        denseSwitch.setChecked(getSharedPreferences(Embed.PREFS, MODE_PRIVATE)
+            .getBoolean("ui_dense", false));
+        denseSwitch.setLayoutParams(Ui.matchWrap(8, this));
+        denseSwitch.setOnCheckedChangeListener(new android.widget.CompoundButton.OnCheckedChangeListener() {
+            @Override public void onCheckedChanged(android.widget.CompoundButton b, boolean on) {
+                getSharedPreferences(Embed.PREFS, MODE_PRIVATE).edit()
+                    .putBoolean("ui_dense", on).apply();
+                Ui.DENSE = on;
+                render();
+                Toast.makeText(MainActivity.this, on ? "Dense mode on" : "Dense mode off",
+                    Toast.LENGTH_SHORT).show();
+            }
+        });
+        themeCard.addView(denseSwitch);
         box.addView(themeCard);
 
         LinearLayout mCard = Ui.card(this);
@@ -2587,6 +2759,93 @@ public class MainActivity extends Activity {
         bCard.addView(trashBtn);
         box.addView(bCard);
 
+        // Vault index (v0.52.0): rebuild the meaning index for
+        // anything missing one, without re-downloading the model.
+        LinearLayout xCard = Ui.card(this);
+        xCard.addView(Ui.sectionLabel(this, "Vault index"));
+        final java.util.List<Item> unindexedNow = Checkup.unindexed(db.all());
+        TextView xStatus = Ui.text(this, unindexedNow.isEmpty()
+                ? "Every memory carries a meaning index."
+                : unindexedNow.size() + (unindexedNow.size() == 1
+                    ? " memory has" : " memories have") + " no meaning index yet.",
+            12, Ui.DIM, false);
+        xStatus.setLayoutParams(Ui.matchWrap(6, this));
+        xCard.addView(xStatus);
+        Button reindexBtn = Ui.ghostButton(this, "Re-index vault");
+        reindexBtn.setLayoutParams(Ui.matchWrap(6, this));
+        reindexBtn.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                if (!LocalEmbed.isModelPresent(MainActivity.this)) {
+                    Toast.makeText(MainActivity.this,
+                        "The semantic model is not downloaded - see Semantic search above",
+                        Toast.LENGTH_LONG).show();
+                    return;
+                }
+                Toast.makeText(MainActivity.this, "Re-indexing...", Toast.LENGTH_SHORT).show();
+                new Thread(new Runnable() {
+                    @Override public void run() {
+                        LocalEmbed.embedPendingLocal(MainActivity.this, db);
+                        ui.post(new Runnable() {
+                            @Override public void run() {
+                                Toast.makeText(MainActivity.this, "Index rebuilt",
+                                    Toast.LENGTH_SHORT).show();
+                                refreshSettings();
+                            }
+                        });
+                    }
+                }, "reindex").start();
+            }
+        });
+        xCard.addView(reindexBtn);
+        box.addView(xCard);
+
+        // Backups on this phone (v0.52.0): what the automatic
+        // backup has actually written, tap one to verify it opens.
+        LinearLayout bkCard = Ui.card(this);
+        bkCard.addView(Ui.sectionLabel(this, "Backups on this phone"));
+        final Uri bkTree = AutoBackup.folder(this);
+        if (bkTree == null) {
+            TextView nb = Ui.text(this, "No backup folder chosen yet.", 12, Ui.DIM, false);
+            nb.setLayoutParams(Ui.matchWrap(6, this));
+            bkCard.addView(nb);
+        } else {
+            java.util.List<String[]> bkDocs = autoBackupDocs(bkTree);
+            if (bkDocs.isEmpty()) {
+                TextView nb = Ui.text(this, "No automatic backups written yet.", 12, Ui.DIM, false);
+                nb.setLayoutParams(Ui.matchWrap(6, this));
+                bkCard.addView(nb);
+            }
+            for (final String[] doc : bkDocs) {
+                // doc = {documentId, displayName, sizeBytes, modifiedMs}
+                String when = doc[3] != null && !doc[3].isEmpty()
+                    ? Extract.formatDate(Long.parseLong(doc[3])) : "";
+                long kb = 0;
+                try { kb = Long.parseLong(doc[2]) / 1024; } catch (Exception ignored) { }
+                Button brow2 = Ui.ghostButton(this,
+                    doc[1].replace(AutoBackup.FILE_PREFIX, "").replace(".rvbackup", "")
+                        + "  •  " + when + "  •  " + kb + " KB  -  tap to verify");
+                brow2.setLayoutParams(Ui.matchWrap(6, this));
+                brow2.setOnClickListener(new View.OnClickListener() {
+                    @Override public void onClick(View v) { verifyAutoBackup(bkTree, doc[0], doc[1]); }
+                });
+                bkCard.addView(brow2);
+            }
+        }
+        box.addView(bkCard);
+
+        // Danger zone (v0.52.0): erase the whole vault from this
+        // phone - memories, their files, and the automatic
+        // backups. Two explicit confirmations stand in front.
+        LinearLayout dCard = Ui.card(this);
+        dCard.addView(Ui.sectionLabel(this, "Danger zone"));
+        Button wipeBtn = Ui.button(this, "ERASE EVERYTHING", Ui.PANEL_HI, Ui.DANGER);
+        wipeBtn.setLayoutParams(Ui.matchWrap(8, this));
+        wipeBtn.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { confirmWipe(); }
+        });
+        dCard.addView(wipeBtn);
+        box.addView(dCard);
+
         // Automatic ingest (v0.27.0): watched folders and, optionally,
         // the whole phone's new photos and audio file themselves.
         LinearLayout iCard = Ui.card(this);
@@ -2929,6 +3188,8 @@ public class MainActivity extends Activity {
     // ---------- backup & restore ----------
 
     private char[] pendingExportPassword;
+    /** Export scope (v0.52.0): 0 = everything, 1 = last 30 days. */
+    private int pendingExportScope = 0;
     private byte[] pendingImportBytes;
 
     private EditText passwordField(String hint) {
@@ -2950,6 +3211,24 @@ public class MainActivity extends Activity {
         final EditText p2 = passwordField("Type it again");
         box.addView(p1);
         box.addView(p2);
+        // Scope (v0.52.0): everything, or only the last 30 days.
+        final android.widget.RadioGroup scopeGroup = new android.widget.RadioGroup(this);
+        scopeGroup.setOrientation(LinearLayout.VERTICAL);
+        scopeGroup.setLayoutParams(Ui.matchWrap(8, this));
+        android.widget.RadioButton scopeAll = new android.widget.RadioButton(this);
+        scopeAll.setText("All memories");
+        scopeAll.setTextColor(Ui.TEXT);
+        scopeAll.setTextSize(13);
+        scopeAll.setId(1);
+        android.widget.RadioButton scope30 = new android.widget.RadioButton(this);
+        scope30.setText("Last 30 days only");
+        scope30.setTextColor(Ui.TEXT);
+        scope30.setTextSize(13);
+        scope30.setId(2);
+        scopeGroup.addView(scopeAll);
+        scopeGroup.addView(scope30);
+        scopeGroup.check(1);
+        box.addView(scopeGroup);
         new AlertDialog.Builder(this)
             .setTitle("Export backup")
             .setView(box)
@@ -2967,6 +3246,7 @@ public class MainActivity extends Activity {
                         return;
                     }
                     pendingExportPassword = a.toCharArray();
+                    pendingExportScope = scopeGroup.getCheckedRadioButtonId() == 2 ? 1 : 0;
                     Intent i = new Intent(Intent.ACTION_CREATE_DOCUMENT);
                     i.addCategory(Intent.CATEGORY_OPENABLE);
                     i.setType("application/octet-stream");
@@ -3055,12 +3335,165 @@ public class MainActivity extends Activity {
         return db.count() != p.getInt("backup_item_count", 0);
     }
 
+    /** Automatic-backup files in the chosen folder (v0.52.0):
+     *  {documentId, displayName, sizeBytes, modifiedMs}, newest
+     *  first. Same DocumentsContract walk AutoBackup.prune uses. */
+    private java.util.List<String[]> autoBackupDocs(Uri tree) {
+        java.util.List<String[]> docs = new java.util.ArrayList<String[]>();
+        try {
+            android.content.ContentResolver cr = getContentResolver();
+            Uri children = android.provider.DocumentsContract.buildChildDocumentsUriUsingTree(
+                tree, android.provider.DocumentsContract.getTreeDocumentId(tree));
+            android.database.Cursor c = cr.query(children,
+                new String[]{android.provider.DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                             android.provider.DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                             android.provider.DocumentsContract.Document.COLUMN_SIZE,
+                             android.provider.DocumentsContract.Document.COLUMN_LAST_MODIFIED},
+                null, null, null);
+            if (c != null) {
+                while (c.moveToNext()) {
+                    String name = c.getString(1);
+                    if (name != null && name.startsWith(AutoBackup.FILE_PREFIX)) {
+                        docs.add(new String[]{c.getString(0), name,
+                            c.isNull(2) ? "" : String.valueOf(c.getLong(2)),
+                            c.isNull(3) ? "" : String.valueOf(c.getLong(3))});
+                    }
+                }
+                c.close();
+            }
+        } catch (Exception ignored) { }
+        java.util.Collections.sort(docs, new java.util.Comparator<String[]>() {
+            @Override public int compare(String[] a, String[] b) { return b[1].compareTo(a[1]); }
+        });
+        return docs;
+    }
+
+    /** Tap-to-verify an automatic backup (v0.52.0): decrypt with
+     *  this phone's key and parse the archive - proof it opens. */
+    private void verifyAutoBackup(final Uri tree, final String docId, final String name) {
+        Toast.makeText(this, "Checking backup...", Toast.LENGTH_SHORT).show();
+        new Thread(new Runnable() {
+            @Override public void run() {
+                String msg;
+                try {
+                    Uri doc = android.provider.DocumentsContract.buildDocumentUriUsingTree(tree, docId);
+                    java.io.InputStream in = getContentResolver().openInputStream(doc);
+                    if (in == null) throw new Exception("Could not open the file");
+                    byte[] blob = Backup.readAll(in);
+                    Backup.Restored r = Backup.parseZip(AutoBackup.decrypt(blob));
+                    msg = "Backup verified - it opens and holds " + r.items.size()
+                        + (r.items.size() == 1 ? " memory." : " memories.");
+                } catch (final Exception e) {
+                    msg = "This backup does not open: " + e.getMessage();
+                }
+                final String out = msg;
+                ui.post(new Runnable() {
+                    @Override public void run() {
+                        new AlertDialog.Builder(MainActivity.this)
+                            .setTitle(name)
+                            .setMessage(out)
+                            .setPositiveButton("OK", null)
+                            .show();
+                    }
+                });
+            }
+        }, "verify-backup").start();
+    }
+
+    /** Danger zone, step one of two (v0.52.0). */
+    private void confirmWipe() {
+        final int n = db.count() + db.trashed().size();
+        new AlertDialog.Builder(this)
+            .setTitle("Erase everything?")
+            .setMessage("This permanently deletes " + n + (n == 1 ? " memory" : " memories")
+                + " from this phone - the memories, their photos, recordings and files, "
+                + "the trash, and the automatic backups in the backup folder. "
+                + "Anything you exported with a password stays wherever you saved it. "
+                + "This cannot be undone.")
+            .setNegativeButton("Cancel", null)
+            .setPositiveButton("Continue", new android.content.DialogInterface.OnClickListener() {
+                @Override public void onClick(android.content.DialogInterface d, int w) {
+                    new AlertDialog.Builder(MainActivity.this)
+                        .setTitle("Really erase?")
+                        .setMessage("Last check. Erase the whole vault from this phone now?")
+                        .setNegativeButton("Cancel", null)
+                        .setPositiveButton("ERASE", new android.content.DialogInterface.OnClickListener() {
+                            @Override public void onClick(android.content.DialogInterface d2, int w2) {
+                                doWipe();
+                            }
+                        })
+                        .show();
+                }
+            })
+            .show();
+    }
+
+    /** The erase itself (v0.52.0): rows, files, seen-log, backups. */
+    private void doWipe() {
+        Toast.makeText(this, "Erasing...", Toast.LENGTH_SHORT).show();
+        new Thread(new Runnable() {
+            @Override public void run() {
+                java.util.List<Item> all = new java.util.ArrayList<Item>(db.all());
+                all.addAll(db.trashed());
+                int n = 0;
+                for (Item it : all) {
+                    if (it.filePath != null && !it.filePath.isEmpty()) {
+                        new java.io.File(it.filePath).delete();
+                    }
+                    if (it.pages != null) {
+                        for (String p : it.pages.split("\n")) {
+                            if (!p.isEmpty()) new java.io.File(p).delete();
+                        }
+                    }
+                    db.delete(it.id);
+                    n++;
+                }
+                new java.io.File(getFilesDir(), "ingest_seen.txt").delete();
+                Uri tree = AutoBackup.folder(MainActivity.this);
+                if (tree != null) {
+                    try {
+                        android.content.ContentResolver cr = getContentResolver();
+                        for (String[] doc : autoBackupDocs(tree)) {
+                            android.provider.DocumentsContract.deleteDocument(cr,
+                                android.provider.DocumentsContract.buildDocumentUriUsingTree(tree, doc[0]));
+                        }
+                    } catch (Exception ignored) { }
+                }
+                getSharedPreferences(Embed.PREFS, MODE_PRIVATE).edit()
+                    .remove("backup_last_at").remove("backup_item_count").apply();
+                final int erased = n;
+                ui.post(new Runnable() {
+                    @Override public void run() {
+                        if (settingsDialog != null) settingsDialog.dismiss();
+                        tab = "VAULT";
+                        render();
+                        Toast.makeText(MainActivity.this,
+                            "Erased " + erased + (erased == 1 ? " memory" : " memories")
+                                + " - the vault is empty",
+                            Toast.LENGTH_LONG).show();
+                    }
+                });
+            }
+        }, "wipe").start();
+    }
+
     private void writeExport(final Uri uri, final char[] password) {
         Toast.makeText(this, "Building encrypted backup...", Toast.LENGTH_SHORT).show();
         new Thread(new Runnable() {
             @Override public void run() {
                 try {
                     java.util.List<Item> all = db.all();
+                    // Scope (v0.52.0): a last-30-days export leaves
+                    // older memories out on purpose; freshness
+                    // bookkeeping below only counts full exports,
+                    // so Settings never overstates coverage.
+                    final boolean fullScope = pendingExportScope == 0;
+                    if (!fullScope) {
+                        long since = System.currentTimeMillis() - 30L * 24 * 3600 * 1000;
+                        java.util.List<Item> scoped = new java.util.ArrayList<Item>();
+                        for (Item it : all) if (it.createdAt >= since) scoped.add(it);
+                        all = scoped;
+                    }
                     byte[] zip = Backup.buildZip(all);
                     final byte[] enc = Backup.encrypt(zip, password);
                     java.io.OutputStream out = getContentResolver().openOutputStream(uri);
@@ -3070,10 +3503,12 @@ public class MainActivity extends Activity {
                     // Backup-freshness bookkeeping (v0.11.0): when this
                     // backup was made and how many memories it holds,
                     // so Settings can say whether it is still current.
-                    getSharedPreferences(Embed.PREFS, MODE_PRIVATE).edit()
-                        .putLong("backup_last_at", System.currentTimeMillis())
-                        .putInt("backup_item_count", all.size())
-                        .apply();
+                    if (fullScope) {
+                        getSharedPreferences(Embed.PREFS, MODE_PRIVATE).edit()
+                            .putLong("backup_last_at", System.currentTimeMillis())
+                            .putInt("backup_item_count", all.size())
+                            .apply();
+                    }
                     ui.post(new Runnable() {
                         @Override public void run() {
                             Toast.makeText(MainActivity.this,
