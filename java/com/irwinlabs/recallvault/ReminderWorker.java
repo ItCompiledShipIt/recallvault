@@ -159,6 +159,49 @@ public class ReminderWorker extends Worker {
             notified.add(HeadsUp.key(it));
             changed = true;
         }
+        // Contact birthdays (v0.63.0): one ping when a birthday
+        // is tomorrow, one on the day - per contact, per year,
+        // in the same notified set as everything else.
+        try {
+            java.time.LocalDate todayB = java.time.LocalDate.now();
+            int bIdx = 0;
+            for (Contacts.Contact c : Contacts.load(ctx)) {
+                bIdx++;
+                java.time.LocalDate nb = Contacts.nextBirthday(c, todayB);
+                if (nb == null) continue;
+                long days = java.time.temporal.ChronoUnit.DAYS.between(todayB, nb);
+                if (days < 0 || days > 1) continue;
+                String key = "bday:" + c.id + ":" + nb.getYear() + ":" + days;
+                if (notified.contains(key)) continue;
+                String whenB = days == 0 ? "today" : "tomorrow";
+                String text = "Birthday " + whenB + " - "
+                    + nb.format(java.time.format.DateTimeFormatter.ofPattern("EEE, MMM d", java.util.Locale.US));
+                int age = Contacts.turningAge(c, todayB);
+                if (age > 0) text += " - turns " + age;
+                Intent open = new Intent(ctx, ContactsActivity.class);
+                open.putExtra("contact_id", c.id);
+                open.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                PendingIntent pi = PendingIntent.getActivity(ctx, 61000 + bIdx, open,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+                NotificationCompat.Builder b = new NotificationCompat.Builder(ctx, Remind.CHANNEL)
+                    .setSmallIcon(android.R.drawable.ic_dialog_info)
+                    .setContentTitle(c.name)
+                    .setContentText(text)
+                    .setStyle(new NotificationCompat.BigTextStyle().bigText(text))
+                    .setContentIntent(pi)
+                    .setAutoCancel(true)
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+                try {
+                    nm.notify(61000 + bIdx, b.build());
+                } catch (SecurityException e) {
+                    continue;
+                }
+                notified.add(key);
+                changed = true;
+            }
+        } catch (Throwable ignored) {
+            // Contacts never break the reminder pass.
+        }
         if (changed) {
             prefs.edit().putStringSet(PREF_NOTIFIED, notified).apply();
         }

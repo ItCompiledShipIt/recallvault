@@ -1141,3 +1141,47 @@ note; add, edit, delete). Verified on the phone: steps
 1-3 render, all five permissions show their real
 granted state, the profile card and the empty contact
 library open from Settings.
+
+## v0.63.0 - contacts grow up; other themes removed (Nov 2, 2026)
+
+The contact library becomes people pages. Rich intake:
+name, relationship chips, phone, email, address,
+birthday (date picker), workplace/clinic, notes,
+favorite - in a full-screen form. A contact's page
+gathers everything the vault holds about them (name,
+phone and email matching over visible memories) behind
+category filters, with one-tap Call, Text and Email
+and an "Ask Clio about ..." shortcut into Ask. Ask
+itself answers with a contact card when a question is
+about someone in the library, the brain gains a
+read-only lookup_contact tool, and birthdays feed both
+the Reminders screen (30-day block) and the daily
+reminder pass (a ping the day before and on the day).
+Contacts and the profile get photos: picked images are
+copied into private storage, scaled and drawn as round
+discs. The Contacts list also suggests people found in
+the vault's photos - a phone or email in a photo's
+text, one tap into a prefilled form, never added
+without say-so. And the other themes are gone:
+Sanctuary is the only theme; Console, Paper and Aurora
+are removed from Ui and from Settings.
+
+## v0.64.0 - Clio gets a mind: AGENTS.md + MEMORY.md (Nov 2, 2026)
+
+Chris's ask: give Clio an AGENTS.md in the backend,
+make her save important info and update her memory
+files - self-improvement. ClioMind keeps three files
+in files/brain/: AGENTS.md (her standing instructions,
+seeded with a default written for her: answer from the
+vault, save durable facts, never secrets, correct
+yourself in the open), MEMORY.md (dated, deduplicated
+facts she saves), and memory/<day>.md (the raw daily
+trail). Her system prompts - Ask's brain and Detail's
+summarize - now carry both files, so what she saves
+shapes what she knows. One new brain tool, remember,
+is her only writing tool, granted at chris's explicit
+instruction; its rules live in her AGENTS.md. Settings
+gains a "Clio's mind" card: fact count, read/edit
+either file, reset the instructions, clear the memory.
+Everything is plain markdown on the phone, and the
+user's edits win over the seed.

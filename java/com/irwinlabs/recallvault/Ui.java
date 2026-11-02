@@ -145,65 +145,31 @@ public final class Ui {
 
     public static final String PREF_THEME = "ui_theme";
     public static final int THEME_CONSOLE = 0;
-    public static final int THEME_PAPER = 1;
-    public static final int THEME_AURORA = 2;
     public static final int THEME_SANCTUARY = 3;
-    public static final String[] THEME_NAMES = {"Console", "Paper", "Aurora", "Sanctuary"};
-    public static final String[] THEME_BLURBS = {
-        "Amber on black - the ship-console instrument look",
-        "Warm paper and ink - a field journal, light theme",
-        "Periwinkle and teal on deep navy - gradient glass",
-        "Warm linen, forest sage and terracotta - a quiet sanctuary"};
 
+    /**
+     * Sanctuary is the only theme (v0.63.0, chris's word:
+     * the Console, Paper and Aurora themes are removed).
+     * The constant stays so older call sites keep meaning
+     * what they always meant.
+     */
     public static int theme(android.content.Context ctx) {
-        return ctx.getSharedPreferences(Embed.PREFS, android.content.Context.MODE_PRIVATE)
-            .getInt(PREF_THEME, THEME_SANCTUARY);
+        return THEME_SANCTUARY;
     }
 
-    public static void setTheme(android.content.Context ctx, int t) {
-        ctx.getSharedPreferences(Embed.PREFS, android.content.Context.MODE_PRIVATE)
-            .edit().putInt(PREF_THEME, t).apply();
-        applyTheme(ctx);
-    }
-
-    /** Load the chosen theme's palette into the fields above. */
+    /** Load the Sanctuary palette into the fields above. */
     public static void applyTheme(android.content.Context ctx) {
-        SANCTUARY = theme(ctx) == THEME_SANCTUARY;
-        CARD_R = SANCTUARY ? 20 : 8;
-        BTN_R = SANCTUARY ? 14 : 8;
-        switch (theme(ctx)) {
-            case THEME_SANCTUARY:
-                // DESIGN.md tokens: oat linen canvas, white
-                // cards, espresso ink, umber secondary, forest
-                // sage primary, terracotta warmth, stone lines.
-                BG = 0xFFF9F6F0; PANEL = 0xFFFFFFFF; PANEL_HI = 0xFFF0EEE8;
-                BORDER = 0xFFE7E2D8; TEXT = 0xFF221F1D; DIM = 0xFF69645E;
-                ACCENT = 0xFF2F5D50; ACCENT_DARK_TEXT = 0xFFFFFFFF;
-                ACCENT2 = 0xFFD17D58; WARN = 0xFF924B2A; DANGER = 0xFFBA1A1A;
-                RIPPLE_MAIN = 0x1F000000; LIGHT_BARS = true;
-                break;
-            case THEME_CONSOLE:
-                BG = 0xFF0A0703; PANEL = 0xFF171208; PANEL_HI = 0xFF241A0D;
-                BORDER = 0xFF3D2E13; TEXT = 0xFFF7EBCE; DIM = 0xFFB3A284;
-                ACCENT = 0xFFFFB224; ACCENT_DARK_TEXT = 0xFF1D1305;
-                ACCENT2 = 0xFFFF7A29; WARN = 0xFFFF6B4A; DANGER = 0xFFFF5252;
-                RIPPLE_MAIN = 0x2EFFFFFF; LIGHT_BARS = false;
-                break;
-            case THEME_PAPER:
-                BG = 0xFFF6F1E7; PANEL = 0xFFFFFDF6; PANEL_HI = 0xFFEFE7D6;
-                BORDER = 0xFFD9CDB2; TEXT = 0xFF241E12; DIM = 0xFF7D7462;
-                ACCENT = 0xFFA85B12; ACCENT_DARK_TEXT = 0xFFFFF7E8;
-                ACCENT2 = 0xFF2E6E5E; WARN = 0xFFC2410C; DANGER = 0xFFB3261E;
-                RIPPLE_MAIN = 0x1F000000; LIGHT_BARS = true;
-                break;
-            default: // THEME_AURORA - the original palette
-                BG = 0xFF0B0E13; PANEL = 0xFF141922; PANEL_HI = 0xFF1C232F;
-                BORDER = 0xFF273040; TEXT = 0xFFF2F4F8; DIM = 0xFF98A2B3;
-                ACCENT = 0xFF6C8CFF; ACCENT_DARK_TEXT = 0xFF0B0E13;
-                ACCENT2 = 0xFF2DD4BF; WARN = 0xFFF5A524; DANGER = 0xFFF2555A;
-                RIPPLE_MAIN = 0x2EFFFFFF; LIGHT_BARS = false;
-                break;
-        }
+        SANCTUARY = true;
+        CARD_R = 20;
+        BTN_R = 14;
+        // DESIGN.md tokens: oat linen canvas, white cards,
+        // espresso ink, umber secondary, forest sage
+        // primary, terracotta warmth, stone lines.
+        BG = 0xFFF9F6F0; PANEL = 0xFFFFFFFF; PANEL_HI = 0xFFF0EEE8;
+        BORDER = 0xFFE7E2D8; TEXT = 0xFF221F1D; DIM = 0xFF69645E;
+        ACCENT = 0xFF2F5D50; ACCENT_DARK_TEXT = 0xFFFFFFFF;
+        ACCENT2 = 0xFFD17D58; WARN = 0xFF924B2A; DANGER = 0xFFBA1A1A;
+        RIPPLE_MAIN = 0x1F000000; LIGHT_BARS = true;
     }
 
     public static int dp(Activity a, int v) {

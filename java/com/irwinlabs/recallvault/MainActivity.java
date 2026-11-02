@@ -68,6 +68,7 @@ public class MainActivity extends Activity {
     public static final String EXTRA_ASK_VOICE = "open_ask_voice";
     private boolean pendingQuickVoice = false;
     private boolean pendingAskVoice = false;
+    private String pendingAskQuery = null;
 
     private LinearLayout content;
     private String tab = "VAULT"; // VAULT | ASK | REMINDERS
@@ -81,6 +82,7 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         db = new Db(this);
+        ClioMind.ensureSeeded(this);
         PdfText.init(this);
         handleShareIntent(getIntent());
         if (getIntent() != null
@@ -89,6 +91,9 @@ public class MainActivity extends Activity {
         }
         if (getIntent() != null && getIntent().getBooleanExtra(EXTRA_ASK_VOICE, false)) {
             pendingAskVoice = true;
+        }
+        if (getIntent() != null && getIntent().getStringExtra("ask_query") != null) {
+            pendingAskQuery = getIntent().getStringExtra("ask_query");
         }
         buildShell();
         render();
@@ -166,6 +171,18 @@ public class MainActivity extends Activity {
                 i.putExtra("mode", "ask");
                 startActivityForResult(i, 301);
             }
+            // Contact page shortcut (v0.63.0): "Ask Clio about
+            // <name>" lands here with the question already run.
+            if (pendingAskQuery != null) {
+                String q = pendingAskQuery;
+                pendingAskQuery = null;
+                tab = "ASK";
+                render();
+                if (askInput != null) {
+                    askInput.setText(q);
+                    runAsk();
+                }
+            }
         }
         render();
         Remind.checkNow(this);
@@ -186,6 +203,9 @@ public class MainActivity extends Activity {
         }
         if (intent != null && intent.getBooleanExtra(EXTRA_ASK_VOICE, false)) {
             pendingAskVoice = true;
+        }
+        if (intent != null && intent.getStringExtra("ask_query") != null) {
+            pendingAskQuery = intent.getStringExtra("ask_query");
         }
     }
 
@@ -256,7 +276,21 @@ public class MainActivity extends Activity {
             header.addView(hsp);
             String hdrName = getSharedPreferences(Embed.PREFS, MODE_PRIVATE)
                 .getString("user_name", "").trim();
-            if (!hdrName.isEmpty()) {
+            android.graphics.Bitmap profB = ContactPhotos.profileRound(this, Ui.dp(this, 44));
+            if (profB != null) {
+                // Your profile photo wears the disc (v0.63.0).
+                FrameLayout pdiscH = new FrameLayout(this);
+                pdiscH.setLayoutParams(new LinearLayout.LayoutParams(Ui.dp(this, 44), Ui.dp(this, 44)));
+                ImageView pivH = new ImageView(this);
+                pivH.setImageBitmap(profB);
+                pdiscH.addView(pivH, new FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+                pdiscH.setClickable(true);
+                pdiscH.setOnClickListener(new View.OnClickListener() {
+                    @Override public void onClick(View v) { tab = "SETTINGS"; render(); }
+                });
+                header.addView(pdiscH);
+            } else if (!hdrName.isEmpty()) {
                 // The profile disc wears your initial (v0.62.0).
                 FrameLayout idisc = new FrameLayout(this);
                 android.graphics.drawable.GradientDrawable idg = new android.graphics.drawable.GradientDrawable();
@@ -1805,6 +1839,41 @@ public class MainActivity extends Activity {
         qt.setLayoutParams(Ui.matchWrap(4, this));
         bubble.addView(qt);
         askResults.addView(bubble);
+        // Contact cards (v0.63.0): when the question is about
+        // someone in the contact library, their card answers
+        // first - phone, birthday, notes, straight from the
+        // library, no model involved.
+        for (final Contacts.Contact cc : Contacts.matchQuery(Contacts.load(this), q)) {
+            LinearLayout cCard = Ui.pressCard(this);
+            cCard.addView(Ui.tag(this, "FROM YOUR CONTACTS", 1, Ui.ACCENT2));
+            TextView cn = Ui.text(this,
+                cc.name + (cc.rel.trim().isEmpty() ? "" : "  •  " + cc.rel.trim()),
+                16, Ui.TEXT, true);
+            cn.setLayoutParams(Ui.matchWrap(6, this));
+            cCard.addView(cn);
+            StringBuilder cl = new StringBuilder();
+            java.time.LocalDate todayC = java.time.LocalDate.now();
+            if (!Contacts.birthdayPretty(cc).isEmpty()) {
+                cl.append("Birthday ").append(Contacts.birthdayPretty(cc));
+                long dd = Contacts.daysToNextBirthday(cc, todayC);
+                if (dd >= 0) cl.append(" - ").append(Contacts.whenText(dd));
+                cl.append(". ");
+            }
+            if (!cc.phone.trim().isEmpty()) cl.append("Phone ").append(cc.phone.trim()).append(". ");
+            if (!cc.email.trim().isEmpty()) cl.append("Email ").append(cc.email.trim()).append(". ");
+            if (!cc.note.trim().isEmpty()) cl.append(cc.note.trim());
+            TextView cd = Ui.text(this, cl.toString().trim(), 13, Ui.DIM, false);
+            cd.setLayoutParams(Ui.matchWrap(4, this));
+            cCard.addView(cd);
+            cCard.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    Intent ci = new Intent(MainActivity.this, ContactsActivity.class);
+                    ci.putExtra("contact_id", cc.id);
+                    startActivity(ci);
+                }
+            });
+            askResults.addView(cCard);
+        }
         if (Ui.SANCTUARY) {
             LinearLayout ah = Ui.sectionHead(this, "Latest Answer", "Synthesized locally");
             ah.setLayoutParams(Ui.matchWrap(14, this));
@@ -2077,7 +2146,10 @@ public class MainActivity extends Activity {
             titleRow.addView(Ui.pill(this, "On-device only • Private"));
             content.addView(titleRow);
             content.addView(remSegments(items));
-            if (remSeg == 0) content.addView(remDiscovery(items));
+            if (remSeg == 0) {
+                content.addView(remDiscovery(items));
+                content.addView(remBirthdays());
+            }
         } else {
             LinearLayout title = Ui.screenTitle(this, "REMINDERS", "ON-DEVICE");
             title.setLayoutParams(Ui.matchWrap(6, this));
@@ -2404,6 +2476,57 @@ public class MainActivity extends Activity {
 
     /** The discovery card (Sanctuary reminders): what the
      *  vault noticed, in the design's gentle register. */
+    /** Contact birthdays within 30 days (v0.63.0) - the
+     *  people half of Reminders, fed by the contact
+     *  library. Empty layout when none are close. */
+    private LinearLayout remBirthdays() {
+        LinearLayout wrap = new LinearLayout(this);
+        wrap.setOrientation(LinearLayout.VERTICAL);
+        java.time.LocalDate today = java.time.LocalDate.now();
+        List<Contacts.Contact> soon = new java.util.ArrayList<Contacts.Contact>();
+        for (Contacts.Contact c : Contacts.load(this)) {
+            long d = Contacts.daysToNextBirthday(c, today);
+            if (d >= 0 && d <= 30) soon.add(c);
+        }
+        if (soon.isEmpty()) return wrap;
+        java.util.Collections.sort(soon, new java.util.Comparator<Contacts.Contact>() {
+            @Override public int compare(Contacts.Contact a, Contacts.Contact b) {
+                return Long.compare(Contacts.daysToNextBirthday(a, today),
+                    Contacts.daysToNextBirthday(b, today));
+            }
+        });
+        LinearLayout card = Ui.card(this);
+        card.addView(Ui.sectionLabel(this, "Birthdays"));
+        for (final Contacts.Contact c : soon) {
+            long d = Contacts.daysToNextBirthday(c, today);
+            java.time.LocalDate nb = Contacts.nextBirthday(c, today);
+            String when = nb.format(java.time.format.DateTimeFormatter.ofPattern("EEE, MMM d", java.util.Locale.US))
+                + " - " + Contacts.whenText(d);
+            int age = Contacts.turningAge(c, today);
+            if (age > 0) when += ", turns " + age;
+            LinearLayout row = new LinearLayout(this);
+            row.setOrientation(LinearLayout.HORIZONTAL);
+            row.setGravity(Gravity.CENTER_VERTICAL);
+            row.setLayoutParams(Ui.matchWrap(6, this));
+            TextView nm = Ui.text(this, c.name, 14, Ui.TEXT, true);
+            nm.setLayoutParams(new LinearLayout.LayoutParams(0,
+                LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+            row.addView(nm);
+            row.addView(Ui.text(this, when, 12, d <= 1 ? Ui.WARN : Ui.DIM, d <= 1));
+            row.setClickable(true);
+            row.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    Intent ci = new Intent(MainActivity.this, ContactsActivity.class);
+                    ci.putExtra("contact_id", c.id);
+                    startActivity(ci);
+                }
+            });
+            card.addView(row);
+        }
+        wrap.addView(card);
+        return wrap;
+    }
+
     private LinearLayout remDiscovery(List<Item> items) {
         LinearLayout wrap = new LinearLayout(this);
         int open = 0;
@@ -3008,6 +3131,17 @@ public class MainActivity extends Activity {
     @Override
     protected void onActivityResult(int req, int result, Intent data) {
         super.onActivityResult(req, result, data);
+        if (req == 777) { // profile photo pick (v0.63.0)
+            if (result == RESULT_OK && data != null && data.getData() != null) {
+                if (ContactPhotos.saveProfile(this, data.getData())) {
+                    buildShell();
+                    render();
+                } else {
+                    Toast.makeText(this, "That photo could not be read", Toast.LENGTH_SHORT).show();
+                }
+            }
+            return;
+        }
         if (req == REQ_PICK_SKILL) {
             if (result == RESULT_OK && data != null && data.getData() != null) {
                 importSkill(data.getData());
@@ -3349,15 +3483,54 @@ public class MainActivity extends Activity {
         startActivity(e);
     }
 
-    /** Apply a theme everywhere at once (v0.49.0). */
-    private void pickTheme(int t) {
-        boolean wasDialog = settingsDialog != null && settingsDialog.isShowing();
-        Ui.setTheme(this, t);
-        if (settingsDialog != null) settingsDialog.dismiss();
-        buildShell();
-        render();
-        Toast.makeText(this, "Theme: " + Ui.THEME_NAMES[t], Toast.LENGTH_SHORT).show();
-        if (wasDialog) showSettings();
+    /** Read/edit Clio's own files (v0.64.0): AGENTS.md is
+     *  her standing instructions, MEMORY.md what she has
+     *  saved. Both are the user's files - Clio only reads
+     *  and appends; every word here wins over her seed. */
+    private void showMindEditor(final boolean agents) {
+        final EditText ed = new EditText(this);
+        ed.setText(agents ? ClioMind.readAgents(this) : ClioMind.readMemory(this));
+        ed.setTextColor(Ui.TEXT);
+        ed.setTextSize(13);
+        ed.setTypeface(android.graphics.Typeface.MONOSPACE);
+        ed.setGravity(Gravity.TOP | Gravity.START);
+        ed.setMinLines(14);
+        ed.setPadding(Ui.dp(this, 16), Ui.dp(this, 12), Ui.dp(this, 16), Ui.dp(this, 12));
+        ScrollView sv = new ScrollView(this);
+        sv.addView(ed);
+        AlertDialog.Builder b = new AlertDialog.Builder(this)
+            .setTitle(agents ? "AGENTS.md - her instructions" : "MEMORY.md - what she remembers")
+            .setView(sv)
+            .setPositiveButton("Save", new android.content.DialogInterface.OnClickListener() {
+                @Override public void onClick(android.content.DialogInterface d, int w) {
+                    boolean ok = agents
+                        ? ClioMind.writeAgents(MainActivity.this, ed.getText().toString())
+                        : ClioMind.writeMemory(MainActivity.this, ed.getText().toString());
+                    Toast.makeText(MainActivity.this, ok ? "Saved" : "Could not save",
+                        Toast.LENGTH_SHORT).show();
+                    refreshSettings();
+                }
+            })
+            .setNegativeButton("Cancel", null);
+        if (agents) {
+            b.setNeutralButton("Reset to default", new android.content.DialogInterface.OnClickListener() {
+                @Override public void onClick(android.content.DialogInterface d, int w) {
+                    ClioMind.resetAgents(MainActivity.this);
+                    Toast.makeText(MainActivity.this, "Instructions reset", Toast.LENGTH_SHORT).show();
+                    refreshSettings();
+                }
+            });
+        } else {
+            b.setNeutralButton("Clear memory", new android.content.DialogInterface.OnClickListener() {
+                @Override public void onClick(android.content.DialogInterface d, int w) {
+                    ClioMind.writeMemory(MainActivity.this,
+                        "# MEMORY.md - what Clio remembers\n\nDurable facts Clio has saved about the user, newest last.\nShe reads this every time she thinks. It can be edited\nor cleared in Settings at any time.\n");
+                    Toast.makeText(MainActivity.this, "Her memory is cleared", Toast.LENGTH_SHORT).show();
+                    refreshSettings();
+                }
+            });
+        }
+        b.show();
     }
 
     private void showSettings() {
@@ -3393,7 +3566,13 @@ public class MainActivity extends Activity {
             pdg.setColor(Ui.FOREST);
             pdisc.setBackground(pdg);
             pdisc.setLayoutParams(new LinearLayout.LayoutParams(Ui.dp(this, 48), Ui.dp(this, 48)));
-            if (!myName.isEmpty()) {
+            android.graphics.Bitmap profSet = ContactPhotos.profileRound(this, Ui.dp(this, 48));
+            if (profSet != null) {
+                ImageView pivS = new ImageView(this);
+                pivS.setImageBitmap(profSet);
+                pdisc.addView(pivS, new FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+            } else if (!myName.isEmpty()) {
                 TextView ini = Ui.text(this,
                     myName.substring(0, 1).toUpperCase(java.util.Locale.US), 19, 0xFFFFFFFF, true);
                 ini.setGravity(Gravity.CENTER);
@@ -3438,6 +3617,36 @@ public class MainActivity extends Activity {
                 }
             });
             prow.addView(editName);
+            Button photoBtn = Ui.ghostButton(this, "Photo");
+            photoBtn.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    boolean has = ContactPhotos.profileFile(MainActivity.this).exists();
+                    AlertDialog.Builder pb = new AlertDialog.Builder(MainActivity.this)
+                        .setTitle("Profile photo")
+                        .setPositiveButton(has ? "Change photo" : "Choose photo",
+                            new android.content.DialogInterface.OnClickListener() {
+                                @Override public void onClick(android.content.DialogInterface d, int w) {
+                                    Intent pi2 = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                                    pi2.addCategory(Intent.CATEGORY_OPENABLE);
+                                    pi2.setType("image/*");
+                                    startActivityForResult(pi2, 777);
+                                }
+                            })
+                        .setNegativeButton("Cancel", null);
+                    if (has) {
+                        pb.setNeutralButton("Remove", new android.content.DialogInterface.OnClickListener() {
+                            @Override public void onClick(android.content.DialogInterface d, int w) {
+                                ContactPhotos.profileFile(MainActivity.this).delete();
+                                buildShell();
+                                refreshSettings();
+                                render();
+                            }
+                        });
+                    }
+                    pb.show();
+                }
+            });
+            prow.addView(photoBtn);
             pCard.addView(prow);
             Button contactsBtn = Ui.ghostButton(this,
                 "Contacts (" + Contacts.load(this).size() + ") - the people who matter");
@@ -3451,20 +3660,36 @@ public class MainActivity extends Activity {
             box.addView(pCard);
         }
 
-        // Appearance (v0.49.0): three full themes, applied live.
+        // Clio's mind (v0.64.0): her AGENTS.md instructions
+        // and MEMORY.md, both readable and editable here.
+        {
+            LinearLayout mindCard = Ui.card(this);
+            mindCard.addView(Ui.sectionLabel(this, "Clio's mind"));
+            TextView mindStatus = Ui.text(this,
+                "She reads her instructions and her memory every time she thinks. "
+                + "Facts saved: " + ClioMind.factCount(this) + ".",
+                13, Ui.DIM, false);
+            mindStatus.setLayoutParams(Ui.matchWrap(6, this));
+            mindCard.addView(mindStatus);
+            Button agentsBtn = Ui.ghostButton(this, "Her instructions (AGENTS.md)");
+            agentsBtn.setLayoutParams(Ui.matchWrap(6, this));
+            agentsBtn.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) { showMindEditor(true); }
+            });
+            mindCard.addView(agentsBtn);
+            Button memBtn = Ui.ghostButton(this, "What she remembers (MEMORY.md)");
+            memBtn.setLayoutParams(Ui.matchWrap(6, this));
+            memBtn.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) { showMindEditor(false); }
+            });
+            mindCard.addView(memBtn);
+            box.addView(mindCard);
+        }
+
+        // Appearance: Sanctuary is the only theme (v0.63.0);
+        // what remains here is card density.
         LinearLayout themeCard = Ui.card(this);
         themeCard.addView(Ui.sectionLabel(this, "Appearance"));
-        int curTheme = Ui.theme(this);
-        for (int ti = 0; ti < Ui.THEME_NAMES.length; ti++) {
-            final int t = ti;
-            Button tb = Ui.ghostButton(this,
-                (t == curTheme ? "●  " : "○  ") + Ui.THEME_NAMES[t] + " - " + Ui.THEME_BLURBS[t]);
-            tb.setLayoutParams(Ui.matchWrap(6, this));
-            tb.setOnClickListener(new View.OnClickListener() {
-                @Override public void onClick(View v) { pickTheme(t); }
-            });
-            themeCard.addView(tb);
-        }
         // Dense mode (v0.52.0): compact cards across the app.
         final android.widget.Switch denseSwitch = new android.widget.Switch(this);
         denseSwitch.setText("Dense mode (compact cards)");
@@ -5153,7 +5378,9 @@ public class MainActivity extends Activity {
                         + "Answer using ONLY the memories provided and what your tools return. "
                         + "Say plainly when the vault does not hold the answer. Be direct and brief. "
                         + "Never invent dates, amounts or names. "
-                        + "When a question needs facts that are not in the vault, you may use search_web; say clearly when an answer comes from the web instead of the memories.\n\n"
+                        + "When a question needs facts that are not in the vault, you may use search_web; say clearly when an answer comes from the web instead of the memories."
+                        + ClioMind.promptBlock(MainActivity.this)
+                        + "\n\n"
                         + Skills.catalogBlock(on);
                     String prompt = "Question: " + question + "\n\nMemories already found:\n"
                         + GemmaBrain.groundingBlock(hits, 900)

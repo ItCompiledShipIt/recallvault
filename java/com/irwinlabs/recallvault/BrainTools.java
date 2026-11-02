@@ -41,6 +41,8 @@ public final class BrainTools {
                 tools.put("read_memory", new ReadMemory(db));
                 tools.put("vault_due", new VaultDue(db));
                 tools.put("search_web", new SearchWeb(ctx));
+                tools.put("lookup_contact", new LookupContact(ctx));
+                tools.put("remember", new Remember(ctx));
                 return tools;
             }
         };
@@ -218,6 +220,65 @@ public final class BrainTools {
                 sb.append("\n");
             }
             return sb.toString().trim();
+        }
+    }
+
+    /** The contact library (v0.63.0): birthdays, phone
+     *  numbers, addresses and notes about the people who
+     *  matter - the brain answers "when is Gina's
+     *  birthday" or "what's the landlord's number" from
+     *  here. Read-only, like every brain tool. */
+    private static final class LookupContact implements InternalJsonTool {
+        private final Context ctx;
+        LookupContact(Context ctx) { this.ctx = ctx; }
+
+        @Override public JsonObject getToolDescription() {
+            return desc("lookup_contact",
+                "Look up a person in the user's contact library by name. Returns their relationship, phone, email, address, birthday (and when it comes next), workplace and notes. With no name, lists every contact briefly.",
+                params(new String[][]{{"name", "string", "The person's name, or empty to list all contacts"}}));
+        }
+
+        @Override public Object execute(JsonObject args) {
+            String name = args != null && args.has("name") ? args.get("name").getAsString() : "";
+            List<Contacts.Contact> all = Contacts.load(ctx);
+            if (all.isEmpty()) return "The contact library is empty.";
+            java.time.LocalDate today = java.time.LocalDate.now();
+            if (name == null || name.trim().isEmpty()) {
+                StringBuilder sb = new StringBuilder();
+                for (Contacts.Contact c : all) {
+                    sb.append(Contacts.describe(c, today)).append("\n");
+                }
+                return sb.toString().trim();
+            }
+            List<Contacts.Contact> hits = Contacts.matchQuery(all, name);
+            if (hits.isEmpty()) return "No contact matches \"" + name + "\".";
+            StringBuilder sb = new StringBuilder();
+            for (Contacts.Contact c : hits) {
+                sb.append(Contacts.describe(c, today)).append("\n");
+            }
+            return sb.toString().trim();
+        }
+    }
+
+    /** The one writing tool (v0.64.0, chris's explicit
+     *  ask): save a durable fact about the user into
+     *  Clio's own MEMORY.md, so she keeps it across
+     *  conversations. The rules for what qualifies live
+     *  in her AGENTS.md; the file itself is the user's -
+     *  readable, editable and clearable in Settings. */
+    private static final class Remember implements InternalJsonTool {
+        private final Context ctx;
+        Remember(Context ctx) { this.ctx = ctx; }
+
+        @Override public JsonObject getToolDescription() {
+            return desc("remember",
+                "Save ONE durable fact about the user to your long-term memory (preferences they state, corrections, people facts, decisions with dates, anything they ask you to remember). Short, dated by the tool. Never save passwords, codes, or one-off chatter. The user can read and edit everything you save, in Settings.",
+                params(new String[][]{{"fact", "string", "The fact to save, one short sentence"}}, "fact"));
+        }
+
+        @Override public Object execute(JsonObject args) {
+            String fact = args != null && args.has("fact") ? args.get("fact").getAsString() : "";
+            return ClioMind.remember(ctx, fact);
         }
     }
 }

@@ -1141,7 +1141,8 @@ public class DetailActivity extends Activity {
                     String clipped = text.length() > 6000 ? text.substring(0, 6000) : text;
                     final String answer = GemmaBrain.generate(DetailActivity.this,
                         "You are Clio, keeper of this person's memories. You summarize their saved memories. Plain words, the key facts first, "
-                        + "dates and amounts kept exact. Never add anything that is not in the text.",
+                        + "dates and amounts kept exact. Never add anything that is not in the text."
+                        + ClioMind.promptBlock(DetailActivity.this),
                         "Summarize this memory in 2-4 short sentences, then a line starting with "
                         + "\"Key points:\" listing the facts that matter.\n\n" + clipped);
                     runOnUiThread(new Runnable() {
