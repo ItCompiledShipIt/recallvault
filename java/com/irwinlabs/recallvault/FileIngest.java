@@ -51,6 +51,7 @@ public final class FileIngest {
     private static final String P_WATERMARK = "ingest_media_watermark"; // seconds
     private static final String P_SMS = "ingest_sms";
     private static final String P_SMS_WATERMARK = "ingest_sms_watermark"; // millis
+    private static final String P_MAIL = "ingest_mail";
     private static final int MAX_PER_SCAN = 100;
 
     // ---------- settings ----------
@@ -95,6 +96,16 @@ public final class FileIngest {
         e.apply();
     }
 
+    /** Email ingest (v0.56.0): the UID watermark stamps
+     *  lazily inside MailFetch, so enabling is instant. */
+    public static boolean mailMode(Context ctx) {
+        return prefs(ctx).getBoolean(P_MAIL, false);
+    }
+
+    public static void setMailMode(Context ctx, boolean on) {
+        prefs(ctx).edit().putBoolean(P_MAIL, on).apply();
+    }
+
     public static boolean smsGranted(Context ctx) {
         return ctx.checkSelfPermission(android.Manifest.permission.READ_SMS)
             == android.content.pm.PackageManager.PERMISSION_GRANTED;
@@ -134,7 +145,7 @@ public final class FileIngest {
     /** Worker/open hook: scan only when chris turned it on. */
     public static void runIfEnabled(Context ctx) {
         if (!isEnabled(ctx)) return;
-        if (folders(ctx).isEmpty() && !phoneMode(ctx) && !smsMode(ctx)) return;
+        if (folders(ctx).isEmpty() && !phoneMode(ctx) && !smsMode(ctx) && !mailMode(ctx)) return;
         try { scan(ctx); } catch (Exception e) { /* next pass tries again */ }
     }
 
@@ -178,6 +189,14 @@ public final class FileIngest {
         }
         if (smsMode(ctx) && budget[0] > 0) {
             filed += scanSms(ctx, db, seen, budget);
+        }
+        if (mailMode(ctx) && budget[0] > 0) {
+            try {
+                filed += MailFetch.fetchNew(ctx, db, seen, budget);
+            } catch (Throwable t) {
+                // Mail library missing or broken must never
+                // sink the rest of the scan.
+            }
         }
         saveSeen(ctx, seen);
         prefs(ctx).edit()

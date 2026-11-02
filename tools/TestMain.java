@@ -1099,6 +1099,29 @@ public class TestMain {
             check("web: snippet tags stripped",
                 hits.size() == 2 && hits.get(0).snippet.equals("The manual for the camera & lens."));
             check("web: empty page parses to none", WebSearch.parseResults("<html>blocked</html>", 5).isEmpty());
+
+            // v0.56.0: mail filter.
+            check("mail: utility bill kept",
+                MailFilter.judge("Your City Utilities statement is ready",
+                    "Your bill of $41.00 is due Nov 3, 2026. View it at https://city.example", false).keep);
+            check("mail: appointment confirm kept",
+                MailFilter.judge("Appointment confirmed",
+                    "Your appointment is on Nov 9, 2026 at 2:30 pm at Cheney Health Center.", false).keep);
+            check("mail: order shipped kept",
+                MailFilter.judge("Your order has shipped",
+                    "Order 8841 shipped. Track it: https://track.example/8841", false).keep);
+            check("mail: newsletter skipped despite facts-free bulk",
+                !MailFilter.judge("Weekly newsletter: 10 tips",
+                    "This week we talk about gardens, plus a sale on seeds.", true).keep);
+            check("mail: bulk bill still kept (strong fact wins)",
+                MailFilter.judge("Statement ready",
+                    "Your payment of $120.50 is due Dec 1, 2026.", true).keep);
+            check("mail: promo blast skipped",
+                !MailFilter.judge("50% OFF EVERYTHING",
+                    "Biggest sale of the year, shop now at https://shop.example", false).keep);
+            check("mail: personal note with a plan kept",
+                MailFilter.judge("Saturday",
+                    "Dont forget to bring the chairs on Saturday, we eat at 6.", false).keep);
         }
 
         System.out.println("RESULT: " + pass + " pass, " + fail + " fail");

@@ -1007,3 +1007,23 @@ An empty result now still offers her card (with no
 pre-found memories), so "what's the price of gold"
 reaches her and the web. Card construction factored
 into buildBrainCard.
+
+## v0.56.0 - email joins the vault (Nov 2, 2026)
+
+First half of email: Gmail over IMAP (JavaMail for
+Android), filed with the same judgment as texts. The
+Settings "Email - Gmail" card takes the address and a
+Google app password - stored VaultCrypto-encrypted on
+the phone, decrypted only in memory to sign in, never
+in plain text and never in chat. A Save runs a real
+sign-in test so a bad password fails on the spot.
+
+MailFetch mirrors the text pipeline: UID watermark
+(new mail only, stamped lazily on first run), a
+seen-index so each message is judged once, and
+MailFilter deciding - due dates, bills with amounts,
+dated appointments and orders file; bulk mail (a
+List-Unsubscribe header) needs a strong fact to get
+in, and newsletters and promos never do. Keepers land
+as notes with sender, subject and Extract facts.
+Suite 235/235. Sending mail is the next release.

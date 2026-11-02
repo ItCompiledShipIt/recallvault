@@ -20,8 +20,8 @@ android {
         applicationId 'com.irwinlabs.recallvault'
         minSdk 26
         targetSdk 34
-        versionCode 66
-        versionName "0.55.1"
+        versionCode 67
+        versionName "0.56.0"
         multiDexEnabled true
     }
 
@@ -57,6 +57,14 @@ android {
         }
     }
 
+    // v0.56.0: the two JavaMail jars both ship the same
+    // META-INF notices - keep one copy.
+    packaging {
+        resources {
+            excludes += ['META-INF/NOTICE.md', 'META-INF/LICENSE.md']
+        }
+    }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
@@ -75,6 +83,10 @@ android {
 }
 
 dependencies {
+    // Email (v0.56.0): JavaMail for Android - IMAP/SMTP with
+    // app passwords. Pinned; artifacts verified on Maven Central.
+    implementation 'com.sun.mail:android-mail:1.6.7'
+    implementation 'com.sun.mail:android-activation:1.6.7'
     implementation 'com.google.mlkit:text-recognition:16.0.1'
     implementation 'com.tom-roush:pdfbox-android:2.0.27.0'
     // v0.3.0 additions, pinned from live Google Maven metadata (Oct 31, 2026):

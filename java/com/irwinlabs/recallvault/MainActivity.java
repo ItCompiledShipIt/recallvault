@@ -3130,6 +3130,99 @@ public class MainActivity extends Activity {
         iCard.addView(nowBtn);
         box.addView(iCard);
 
+        // Email (v0.56.0): Gmail over IMAP with an app password,
+        // stored encrypted on the phone; meaningful mail files
+        // itself like texts do.
+        LinearLayout mCard2 = Ui.card(this);
+        mCard2.addView(Ui.sectionLabel(this, "Email - Gmail"));
+        final boolean mailSet = MailFetch.configured(this);
+        TextView mailStatus = Ui.text(this, mailSet
+            ? "Connected as " + MailFetch.address(this) + ". New mail is checked whenever the vault scans."
+            : "Not connected. Use a Google app password (Google Account, Security, App passwords - it needs 2-step verification turned on). The password is stored encrypted on this phone, never in plain text.",
+            12, Ui.DIM, false);
+        mailStatus.setLayoutParams(Ui.matchWrap(4, this));
+        mCard2.addView(mailStatus);
+        final android.widget.EditText addrIn = new android.widget.EditText(this);
+        addrIn.setHint("Gmail address");
+        addrIn.setTextColor(Ui.TEXT);
+        addrIn.setHintTextColor(Ui.DIM);
+        addrIn.setSingleLine(true);
+        addrIn.setText(MailFetch.address(this));
+        addrIn.setLayoutParams(Ui.matchWrap(4, this));
+        mCard2.addView(addrIn);
+        final android.widget.EditText passIn = new android.widget.EditText(this);
+        passIn.setHint(mailSet ? "App password (blank keeps the saved one)" : "App password");
+        passIn.setTextColor(Ui.TEXT);
+        passIn.setHintTextColor(Ui.DIM);
+        passIn.setSingleLine(true);
+        passIn.setInputType(android.text.InputType.TYPE_CLASS_TEXT
+            | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        passIn.setLayoutParams(Ui.matchWrap(4, this));
+        mCard2.addView(passIn);
+        Button saveMail = Ui.button(this, mailSet ? "Update account" : "Connect", Ui.ACCENT, Ui.ACCENT_DARK_TEXT);
+        saveMail.setLayoutParams(Ui.matchWrap(6, this));
+        saveMail.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                final String addr = addrIn.getText().toString().trim();
+                String pass = passIn.getText().toString().trim();
+                if (!addr.contains("@")) {
+                    Toast.makeText(MainActivity.this, "That does not look like an email address", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                if (pass.isEmpty() && MailFetch.configured(MainActivity.this)) {
+                    // Keep the saved password; address-only update.
+                    String kept = VaultCrypto.dec(getSharedPreferences(Embed.PREFS, MODE_PRIVATE)
+                        .getString(MailFetch.P_PASS, ""));
+                    MailFetch.saveCreds(MainActivity.this, addr, kept);
+                } else if (pass.isEmpty()) {
+                    Toast.makeText(MainActivity.this, "Enter the app password", Toast.LENGTH_SHORT).show();
+                    return;
+                } else {
+                    MailFetch.saveCreds(MainActivity.this, addr, pass);
+                }
+                Toast.makeText(MainActivity.this, "Checking the sign-in...", Toast.LENGTH_SHORT).show();
+                new Thread(new Runnable() {
+                    @Override public void run() {
+                        final String err = MailFetch.testLogin(MainActivity.this);
+                        ui.post(new Runnable() {
+                            @Override public void run() {
+                                Toast.makeText(MainActivity.this,
+                                    err.isEmpty() ? "Gmail connected" : err,
+                                    Toast.LENGTH_LONG).show();
+                                refreshSettings();
+                            }
+                        });
+                    }
+                }, "mail-test").start();
+            }
+        });
+        mCard2.addView(saveMail);
+        final android.widget.Switch mailSwitch = new android.widget.Switch(this);
+        mailSwitch.setText("File meaningful email (bills, appointments, orders)");
+        mailSwitch.setTextColor(Ui.TEXT);
+        mailSwitch.setChecked(FileIngest.mailMode(this));
+        mailSwitch.setOnCheckedChangeListener(new android.widget.CompoundButton.OnCheckedChangeListener() {
+            @Override public void onCheckedChanged(android.widget.CompoundButton b, boolean on) {
+                FileIngest.setMailMode(MainActivity.this, on);
+                if (on) FileIngest.setEnabled(MainActivity.this, true);
+            }
+        });
+        mCard2.addView(mailSwitch);
+        if (mailSet) {
+            Button forgetMail = Ui.ghostButton(this, "Forget this account");
+            forgetMail.setLayoutParams(Ui.matchWrap(4, this));
+            forgetMail.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    MailFetch.clearCreds(MainActivity.this);
+                    FileIngest.setMailMode(MainActivity.this, false);
+                    Toast.makeText(MainActivity.this, "Email account forgotten", Toast.LENGTH_SHORT).show();
+                    refreshSettings();
+                }
+            });
+            mCard2.addView(forgetMail);
+        }
+        box.addView(mCard2);
+
         // The settings stack outgrew one screen (v0.12.0): scroll it,
         // or the bottom cards are clipped and unreachable.
         ScrollView settingsScroll = new ScrollView(this);
