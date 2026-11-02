@@ -20,7 +20,7 @@ public final class PlainExport {
 
     public static String buildMarkdown(List<Item> items, long nowMs) {
         StringBuilder sb = new StringBuilder();
-        sb.append("# RecallVault export\n\n");
+        sb.append("# Clio export\n\n");
         sb.append("Exported ").append(Extract.formatDate(nowMs)).append(" - ")
           .append(items.size()).append(items.size() == 1 ? " memory" : " memories")
           .append(".\n\n");

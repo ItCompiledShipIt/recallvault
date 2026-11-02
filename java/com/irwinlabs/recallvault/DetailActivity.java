@@ -406,7 +406,7 @@ public class DetailActivity extends Activity {
         final String detailText = (item.body != null && !item.body.isEmpty())
             ? item.body : (item.extracted != null ? item.extracted : "");
         if (GemmaBrain.isModelPresent(this) && !detailText.trim().isEmpty()) {
-            Button sumBtn = Ui.ghostButton(this, "Summarize with the brain");
+            Button sumBtn = Ui.ghostButton(this, "Summarize with Clio");
             sumBtn.setLayoutParams(Ui.matchWrap(8, this));
             sumBtn.setOnClickListener(new View.OnClickListener() {
                 @Override public void onClick(View v) { summarizeWithBrain(detailText); }
@@ -747,7 +747,7 @@ public class DetailActivity extends Activity {
     /** Brain summary dialog (v0.53.0): generation on a worker
      *  thread, the dialog fills in when the words land. */
     private void summarizeWithBrain(final String text) {
-        final TextView out = Ui.text(this, "The brain is thinking...", 14, Ui.TEXT, false);
+        final TextView out = Ui.text(this, "Clio is thinking...", 14, Ui.TEXT, false);
         out.setPadding(Ui.dp(this, 20), Ui.dp(this, 16), Ui.dp(this, 20), Ui.dp(this, 8));
         final android.app.AlertDialog dlg = new android.app.AlertDialog.Builder(this)
             .setTitle("Summary")
@@ -760,7 +760,7 @@ public class DetailActivity extends Activity {
                 try {
                     String clipped = text.length() > 6000 ? text.substring(0, 6000) : text;
                     final String answer = GemmaBrain.generate(DetailActivity.this,
-                        "You summarize the user's saved memories. Plain words, the key facts first, "
+                        "You are Clio, keeper of this person's memories. You summarize their saved memories. Plain words, the key facts first, "
                         + "dates and amounts kept exact. Never add anything that is not in the text.",
                         "Summarize this memory in 2-4 short sentences, then a line starting with "
                         + "\"Key points:\" listing the facts that matter.\n\n" + clipped);
@@ -770,7 +770,7 @@ public class DetailActivity extends Activity {
                 } catch (final Exception e) {
                     runOnUiThread(new Runnable() {
                         @Override public void run() {
-                            if (dlg.isShowing()) out.setText("Brain unavailable: " + e.getMessage());
+                            if (dlg.isShowing()) out.setText("Clio unavailable: " + e.getMessage());
                         }
                     });
                 }

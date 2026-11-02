@@ -907,3 +907,50 @@ is check-then-insert. Three fixes:
 Device-verified cleanup in the same visit: staged test rows
 and the three dupe copies removed, their files deleted, the
 app lock restored on (readback-checked).
+
+## v0.54.0 - smart text ingest (Nov 2, 2026)
+
+Texts join automatic ingest, but only the ones with data
+worth keeping - Chris's criteria: plans, dates, meetings,
+appointments, times, things to remember. SmsFilter (pure,
+JVM-tested) builds on Extract's facts: a text files when it
+carries a due date, a plan (day/time next to a plan word),
+an explicit remember-signal (don't-forget, gate codes,
+addresses), an amount WITH bill context or a date, two
+go/do/get keywords (prescription + pickup, flight +
+boarding), or an action keyword with a link. One-time
+verification codes are vetoed. Filed texts become notes
+under the sender, stamped with the message's own time,
+facts extracted like everything else. New texts only
+(watermark), settled ids in the seen-index, READ_SMS behind
+a Settings switch and the runtime permission.
+
+Device reality (S24 Ultra): Samsung's provider refuses
+shell-injected rows, so synthetic staging was impossible;
+the pipeline was proven against his real inbox instead.
+His provider store holds nothing newer than Apr 2023, and
+a deliberate 2023-window run exposed the first filter as
+too loose (100 automated alerts filed, hitting the scan
+cap) - every one removed again, and the rules tightened
+(v0.54.1) before the feature ever saw a live text: bare
+amounts no longer file, the score catch-all is gone, and
+keyword pairs count only from the go/do/get set. Suite
+224/224.
+
+## v0.54.1 - her name is Clio (Nov 2, 2026)
+
+RecallVault is retired as the display name. Chris picked
+Clio - the muse of history - as the app's character, and
+supplied her mark: a bold C that is also a vault door.
+Launcher label, header, lock screen, exports and backup
+messages now say Clio; her glyph (his image, unmodified)
+is the launcher icon and the header mark. The package
+stays com.irwinlabs.recallvault, so the vault, models and
+settings carry over untouched. The brain speaks as Clio:
+the Ask system prompt and the summary prompt introduce
+her as the keeper of the vault, first person, same
+grounding rules - only facts from the memories, no
+invention. The Settings card is "Clio - Gemma 4", the
+Ask card is tagged CLIO, and the Detail button reads
+"Summarize with Clio". Includes the v0.54.0 filter
+tightening above. Header verified on device.

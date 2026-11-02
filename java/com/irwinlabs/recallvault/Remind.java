@@ -30,7 +30,7 @@ public final class Remind {
             if (nm != null && nm.getNotificationChannel(CHANNEL) == null) {
                 NotificationChannel ch = new NotificationChannel(
                     CHANNEL, "Due dates", NotificationManager.IMPORTANCE_DEFAULT);
-                ch.setDescription("Bills and deadlines saved in RecallVault");
+                ch.setDescription("Bills and deadlines saved in Clio");
                 nm.createNotificationChannel(ch);
             }
         }

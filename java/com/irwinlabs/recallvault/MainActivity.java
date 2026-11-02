@@ -55,6 +55,7 @@ public class MainActivity extends Activity {
     private static final int REQ_IMPORT_FOLDER = 906;
     private static final int REQ_TREE_INGEST = 907;
     private static final int REQ_PERM_MEDIA = 204;
+    private static final int REQ_PERM_SMS = 205;
     private static final int REQ_PICK_SKILL = 908;
 
     private Db db;
@@ -243,7 +244,7 @@ public class MainActivity extends Activity {
             LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         tlp.setMargins(Ui.dp(this, 12), 0, 0, 0);
         titles.setLayoutParams(tlp);
-        titles.addView(Ui.text(this, "RecallVault", 18, Ui.TEXT, true));
+        titles.addView(Ui.text(this, "Clio", 18, Ui.TEXT, true));
         headerCount = Ui.text(this, "", 12, Ui.DIM, false);
         titles.addView(headerCount);
         header.addView(titles);
@@ -1255,7 +1256,7 @@ public class MainActivity extends Activity {
             final java.util.List<Item> hitItems = new java.util.ArrayList<Item>();
             for (Ask.Result r : results) hitItems.add(r.item);
             LinearLayout brainCard = Ui.pressCard(this);
-            brainCard.addView(Ui.tag(this, "BRAIN", 1, Ui.ACCENT2));
+            brainCard.addView(Ui.tag(this, "CLIO", 1, Ui.ACCENT2));
             final TextView brainOut = Ui.text(this, "", 14, Ui.TEXT, false);
             brainOut.setLayoutParams(Ui.matchWrap(6, this));
             Button writeBtn = Ui.ghostButton(this, "[ WRITE IT UP ]");
@@ -2002,6 +2003,17 @@ public class MainActivity extends Activity {
         boolean ok = grants.length > 0 && grants[0] == PackageManager.PERMISSION_GRANTED;
         if (req == REQ_PERM_AUDIO && ok) startVoiceMode(pendingVoiceMode);
         if (req == REQ_PERM_CAMERA && ok) startCamera(pendingCaptureType);
+        if (req == REQ_PERM_SMS) {
+            if (ok) {
+                FileIngest.setSmsMode(this, true);
+                FileIngest.setEnabled(this, true);
+                Toast.makeText(this, "Texts on - only ones with real data will be filed", Toast.LENGTH_LONG).show();
+            } else {
+                Toast.makeText(this, "Permission needed to read texts", Toast.LENGTH_SHORT).show();
+            }
+            refreshSettings();
+            return;
+        }
         if (req == REQ_PERM_MEDIA) {
             boolean any = false;
             for (int g : grants) if (g == PackageManager.PERMISSION_GRANTED) any = true;
@@ -2446,7 +2458,7 @@ public class MainActivity extends Activity {
 
         // Brain (v0.53.0): Gemma 4 E4B, the generative model.
         LinearLayout brCard = Ui.card(this);
-        brCard.addView(Ui.sectionLabel(this, "Brain - Gemma 4"));
+        brCard.addView(Ui.sectionLabel(this, "Clio - Gemma 4"));
         final TextView brainStatus = Ui.text(this, brainStatusText(), 13, Ui.TEXT, false);
         brainStatus.setLayoutParams(Ui.matchWrap(6, this));
         brCard.addView(brainStatus);
@@ -3042,6 +3054,25 @@ public class MainActivity extends Activity {
             }
         });
         iCard.addView(phoneSwitch);
+        final android.widget.Switch smsSwitch = new android.widget.Switch(this);
+        smsSwitch.setText("File meaningful texts (plans, appointments, bills)");
+        smsSwitch.setTextColor(Ui.TEXT);
+        smsSwitch.setChecked(FileIngest.smsMode(this));
+        smsSwitch.setOnCheckedChangeListener(new android.widget.CompoundButton.OnCheckedChangeListener() {
+            @Override public void onCheckedChanged(android.widget.CompoundButton b, boolean on) {
+                if (on) {
+                    if (FileIngest.smsGranted(MainActivity.this)) {
+                        FileIngest.setSmsMode(MainActivity.this, true);
+                        FileIngest.setEnabled(MainActivity.this, true);
+                    } else {
+                        requestPermissions(new String[]{Manifest.permission.READ_SMS}, REQ_PERM_SMS);
+                    }
+                } else {
+                    FileIngest.setSmsMode(MainActivity.this, false);
+                }
+            }
+        });
+        iCard.addView(smsSwitch);
         TextView iStatus = Ui.text(this, FileIngest.statusText(this), 12, Ui.DIM, false);
         iStatus.setLayoutParams(Ui.matchWrap(4, this));
         iCard.addView(iStatus);
@@ -3151,7 +3182,7 @@ public class MainActivity extends Activity {
                     } else {
                         ui.post(new Runnable() {
                             @Override public void run() {
-                                Toast.makeText(MainActivity.this, "That is not a RecallVault backup file", Toast.LENGTH_LONG).show();
+                                Toast.makeText(MainActivity.this, "That is not a Clio backup file", Toast.LENGTH_LONG).show();
                             }
                         });
                     }
@@ -3861,13 +3892,13 @@ public class MainActivity extends Activity {
     private String brainStatusText() {
         if (GemmaBrain.isModelPresent(this)) {
             long mb = GemmaBrain.modelFile(this).length() / (1024 * 1024);
-            return "Brain model: ready (" + mb + " MB). Summaries, written Ask answers and skills run on this phone.";
+            return "Clio is ready (" + mb + " MB). Summaries, written Ask answers and skills run on this phone.";
         }
-        return "Brain model: not downloaded. Summaries, written answers and skills stay off.";
+        return "Clio is not downloaded. Summaries, written answers and skills stay off.";
     }
 
     private void downloadBrain(final TextView status) {
-        status.setText("Downloading brain model... 0%");
+        status.setText("Downloading Clio... 0%");
         new Thread(new Runnable() {
             @Override public void run() {
                 try {
@@ -3946,7 +3977,7 @@ public class MainActivity extends Activity {
                 try {
                     java.util.List<Skills.Skill> all = Skills.loadAll(MainActivity.this);
                     java.util.List<Skills.Skill> on = Skills.enabled(MainActivity.this, all);
-                    String system = "You are the brain of RecallVault, the user's private memory vault. "
+                    String system = "You are Clio, the muse who keeps this person's private memory vault - everything you know lives on this phone, in these memories. "
                         + "Answer using ONLY the memories provided and what your tools return. "
                         + "Say plainly when the vault does not hold the answer. Be direct and brief. "
                         + "Never invent dates, amounts or names.\n\n"

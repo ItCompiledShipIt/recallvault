@@ -175,10 +175,10 @@ public final class Backup {
             else r.files.put(e.getName(), out.toByteArray());
         }
         zin.close();
-        if (json == null) throw new Exception("Not a RecallVault backup (vault.json missing)");
+        if (json == null) throw new Exception("Not a Clio backup (vault.json missing)");
         JSONObject root = new JSONObject(json);
         if (!"recallvault-backup".equals(root.optString("format"))) {
-            throw new Exception("Not a RecallVault backup");
+            throw new Exception("Not a Clio backup");
         }
         JSONArray arr = root.getJSONArray("items");
         for (int i = 0; i < arr.length(); i++) {
@@ -245,7 +245,7 @@ public final class Backup {
 
     public static byte[] decrypt(byte[] blob, char[] password) throws Exception {
         if (blob == null || blob.length < MAGIC.length + SALT_LEN + IV_LEN + 16) {
-            throw new Exception("Not a RecallVault backup file");
+            throw new Exception("Not a Clio backup file");
         }
         for (int i = 0; i < MAGIC.length; i++) {
             if (blob[i] != MAGIC[i]) throw new Exception("Not a RecallVault backup file");

@@ -1,6 +1,0 @@
-<!-- Adaptive-icon foreground: vault lock, pre-scaled into the 108-unit canvas. -->
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp" android:height="108dp"
-    android:viewportWidth="108" android:viewportHeight="108">
-    <path android:fillColor="#FFFFFFFF" android:pathData="M 70.2 43.2 h -2.7 V 37.8 c 0 -7.45 -6.05 -13.5 -13.5 -13.5 S 40.5 30.35 40.5 37.8 v 5.4 H 37.8 c -2.97 0 -5.4 2.43 -5.4 5.4 v 27 c 0 2.97 2.43 5.4 5.4 5.4 h 32.4 c 2.97 0 5.4 -2.43 5.4 -5.4 V 48.6 c 0 -2.97 -2.43 -5.4 -5.4 -5.4 z m -16.2 24.3 c -2.97 0 -5.4 -2.43 -5.4 -5.4 s 2.43 -5.4 5.4 -5.4 5.4 2.43 5.4 5.4 -2.43 5.4 -5.4 5.4 z m 8.37 -24.3 H 45.63 V 37.8 c 0 -4.62 3.75 -8.37 8.37 -8.37 4.62 0 8.37 3.75 8.37 8.37 v 5.4 z"/>
-</vector>

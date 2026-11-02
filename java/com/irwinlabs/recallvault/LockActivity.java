@@ -51,7 +51,7 @@ public class LockActivity extends Activity {
         mark.setLayoutParams(mlp);
         root.addView(mark);
 
-        TextView title = Ui.text(this, "RecallVault is locked", 20, Ui.TEXT, true);
+        TextView title = Ui.text(this, "Clio is locked", 20, Ui.TEXT, true);
         title.setLayoutParams(Ui.matchWrap(20, this));
         title.setGravity(Gravity.CENTER);
         root.addView(title);
@@ -80,7 +80,7 @@ public class LockActivity extends Activity {
         AppLock.setPromptOpen(true);
         try {
             BiometricPrompt.Builder b = new BiometricPrompt.Builder(this)
-                .setTitle("Unlock RecallVault")
+                .setTitle("Unlock Clio")
                 .setSubtitle("Your vault, your fingerprint or PIN");
             if (Build.VERSION.SDK_INT >= 30) {
                 b.setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG

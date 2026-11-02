@@ -1043,6 +1043,48 @@ public class TestMain {
                     && Skills.catalogBlock(two).contains("morning briefing"));
         }
 
+        // ---------- v0.54.0: smart text filter ----------
+        {
+            check("sms: utility bill kept",
+                SmsFilter.judge("Your City Utilities bill of $41.00 is due on Nov 3, 2026. Pay online to avoid late fees.").keep);
+            check("sms: appointment reminder kept",
+                SmsFilter.judge("CHAS Cheney: Reminder - you have an appointment on Tuesday, Nov 4, 2026 at 11:30 AM. Reply C to confirm.").keep);
+            check("sms: shipped + tracking link kept",
+                SmsFilter.judge("Good news - your order has shipped! Track it here: https://track.example.com/abc123").keep);
+            check("sms: prescription pickup kept",
+                SmsFilter.judge("Your prescription is ready for pickup at Walgreens Cheney.").keep);
+            check("sms: bank payment alert kept",
+                SmsFilter.judge("Alert: a payment of $1,600.00 to your card ending 4417 has posted.").keep);
+            check("sms: verification code skipped",
+                !SmsFilter.judge("Your verification code is 482910. It expires in 10 minutes. Do not share it.").keep);
+            check("sms: casual chat skipped",
+                !SmsFilter.judge("lol yeah that was wild, call me later").keep);
+            check("sms: plan with time kept (chris criteria)",
+                SmsFilter.judge("see you at 5, bring the thing").keep);
+            check("sms: meeting moved kept",
+                SmsFilter.judge("Meeting moved to Nov 6, 2026, bring the papers").keep);
+            check("sms: saturday meetup kept",
+                SmsFilter.judge("Lets meet at the lake Saturday at noon").keep);
+            check("sms: tomorrow dinner kept",
+                SmsFilter.judge("Dinner at Rosas tomorrow at 7pm, dont be late").keep);
+            check("sms: gate code is a remember-thing",
+                SmsFilter.judge("Dont forget the gate code is 4521 for Saturday").keep);
+            check("sms: bare reaction skipped",
+                !SmsFilter.judge("omw").keep);
+            check("sms: promo blast skipped",
+                !SmsFilter.judge("SALE! 50% off everything this weekend only!! Do not miss out - shop now!").keep);
+            check("sms: long fact-free chat skipped",
+                !SmsFilter.judge("Hey man the game last night was absolutely insane, we should totally do that again next weekend for sure").keep);
+            check("sms: empty skipped",
+                !SmsFilter.judge("   ").keep);
+            check("sms: bare spend alert skipped (v2 rules)",
+                !SmsFilter.judge("Alert: $5.00 spent at COFFEE SHOP. Reply STOP to end.").keep);
+            check("sms: balance status ping skipped (v2 rules)",
+                !SmsFilter.judge("Your account balance is $2,341.00 as of today.").keep);
+            check("sms: dateless order-shipped chatter skipped (v2 rules)",
+                !SmsFilter.judge("Great news, your order has shipped and is on its way!").keep);
+        }
+
         System.out.println("RESULT: " + pass + " pass, " + fail + " fail");
         if (fail > 0) System.exit(1);
     }

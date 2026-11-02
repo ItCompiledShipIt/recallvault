@@ -121,7 +121,7 @@ public final class AutoBackup {
 
     public static byte[] decrypt(byte[] blob) throws Exception {
         if (!isAutoBackup(blob) || blob.length < MAGIC2.length + IV_LEN + 16) {
-            throw new Exception("Not an automatic RecallVault backup");
+            throw new Exception("Not an automatic Clio backup");
         }
         int off = MAGIC2.length;
         byte[] iv = new byte[IV_LEN];

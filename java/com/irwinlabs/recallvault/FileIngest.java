@@ -49,6 +49,8 @@ public final class FileIngest {
     private static final String P_LAST_AT = "ingest_last_at";
     private static final String P_LAST_COUNT = "ingest_last_count";
     private static final String P_WATERMARK = "ingest_media_watermark"; // seconds
+    private static final String P_SMS = "ingest_sms";
+    private static final String P_SMS_WATERMARK = "ingest_sms_watermark"; // millis
     private static final int MAX_PER_SCAN = 100;
 
     // ---------- settings ----------
@@ -77,6 +79,25 @@ public final class FileIngest {
             e.putLong(P_WATERMARK, System.currentTimeMillis() / 1000L);
         }
         e.apply();
+    }
+
+    public static boolean smsMode(Context ctx) {
+        return prefs(ctx).getBoolean(P_SMS, false);
+    }
+
+    public static void setSmsMode(Context ctx, boolean on) {
+        SharedPreferences.Editor e = prefs(ctx).edit();
+        e.putBoolean(P_SMS, on);
+        if (on) {
+            // New texts only - never the backlog (same rule as media).
+            e.putLong(P_SMS_WATERMARK, System.currentTimeMillis());
+        }
+        e.apply();
+    }
+
+    public static boolean smsGranted(Context ctx) {
+        return ctx.checkSelfPermission(android.Manifest.permission.READ_SMS)
+            == android.content.pm.PackageManager.PERMISSION_GRANTED;
     }
 
     public static List<Uri> folders(Context ctx) {
@@ -113,7 +134,7 @@ public final class FileIngest {
     /** Worker/open hook: scan only when chris turned it on. */
     public static void runIfEnabled(Context ctx) {
         if (!isEnabled(ctx)) return;
-        if (folders(ctx).isEmpty() && !phoneMode(ctx)) return;
+        if (folders(ctx).isEmpty() && !phoneMode(ctx) && !smsMode(ctx)) return;
         try { scan(ctx); } catch (Exception e) { /* next pass tries again */ }
     }
 
@@ -154,6 +175,9 @@ public final class FileIngest {
         }
         if (phoneMode(ctx) && budget[0] > 0) {
             filed += scanMedia(ctx, db, seen, budget);
+        }
+        if (smsMode(ctx) && budget[0] > 0) {
+            filed += scanSms(ctx, db, seen, budget);
         }
         saveSeen(ctx, seen);
         prefs(ctx).edit()
@@ -253,6 +277,77 @@ public final class FileIngest {
             }
         }
         prefs(ctx).edit().putLong(P_WATERMARK, highWater).apply();
+        return filed;
+    }
+
+    /**
+     * Text messages (v0.54.0): only new inbox texts, and only the
+     * ones SmsFilter judges to carry real data - bills,
+     * appointments, deliveries, amounts. Everything else stays
+     * in the messaging app. Filed as notes under the sender,
+     * stamped with the message's own time, facts extracted the
+     * same way as everything else, so bills land in Reminders
+     * and Ask can answer from them.
+     */
+    private static int scanSms(Context ctx, Db db, Map<String, long[]> seen, int[] budget) {
+        if (!smsGranted(ctx)) return 0;
+        long watermark = prefs(ctx).getLong(P_SMS_WATERMARK, System.currentTimeMillis());
+        long highWater = watermark;
+        int filed = 0;
+        Cursor c = null;
+        try {
+            c = ctx.getContentResolver().query(
+                android.provider.Telephony.Sms.Inbox.CONTENT_URI,
+                new String[]{android.provider.Telephony.Sms._ID,
+                    android.provider.Telephony.Sms.ADDRESS,
+                    android.provider.Telephony.Sms.BODY,
+                    android.provider.Telephony.Sms.DATE},
+                android.provider.Telephony.Sms.DATE + " > ?",
+                new String[]{String.valueOf(watermark)},
+                android.provider.Telephony.Sms.DATE + " ASC");
+            if (c == null) return 0;
+            while (c.moveToNext() && budget[0] > 0) {
+                long id = c.getLong(0);
+                String address = c.getString(1);
+                String body = c.getString(2);
+                long date = c.getLong(3);
+                if (date > highWater) highWater = date;
+                String key = "sms:" + id;
+                if (seen.containsKey(key)) continue;
+                // Settled either way: judged once, never re-judged.
+                seen.put(key, new long[]{date, 0});
+                if (body == null || !SmsFilter.judge(body).keep) continue;
+                budget[0]--;
+                Extract.Facts f = Extract.analyze(body);
+                Item it = new Item();
+                it.type = "NOTE";
+                it.title = "Text from " + (address == null || address.isEmpty() ? "unknown sender" : address);
+                it.body = body;
+                it.extracted = "";
+                it.filePath = "";
+                it.mime = "";
+                it.fileHash = "";
+                it.embedding = "";
+                it.createdAt = date > 0 ? date : System.currentTimeMillis();
+                it.reminderAt = f.dueDate > 0 ? f.dueDate : -1;
+                StringBuilder am = new StringBuilder();
+                for (int i = 0; i < f.amounts.size(); i++) {
+                    if (i > 0) am.append(',');
+                    am.append(f.amounts.get(i));
+                }
+                it.amounts = am.toString();
+                it.category = f.category;
+                db.insert(it);
+                filed++;
+            }
+        } catch (Exception e) {
+            // Provider hiccup or a race with permission changes:
+            // the next pass retries from the same watermark.
+            return filed;
+        } finally {
+            if (c != null) c.close();
+        }
+        prefs(ctx).edit().putLong(P_SMS_WATERMARK, highWater).apply();
         return filed;
     }
 
