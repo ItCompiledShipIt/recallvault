@@ -439,7 +439,8 @@ public class MainActivity extends Activity {
                 + "  •  " + vaultSizeText() + " on this phone");
         }
         renderTabs();
-        if (askBar != null) askBar.setVisibility("ASK".equals(tab) ? View.VISIBLE : View.GONE);
+        if (askBar != null) askBar.setVisibility(
+            "ASK".equals(tab) && !Ui.SANCTUARY ? View.VISIBLE : View.GONE);
         content.removeAllViews();
         if ("ASK".equals(tab)) renderAsk();
         else if ("REMINDERS".equals(tab)) renderReminders();
@@ -1374,7 +1375,243 @@ public class MainActivity extends Activity {
     private final java.util.List<String> askEarlier = new java.util.ArrayList<String>();
     private String lastAnsweredQuery = null;
 
+    /** The Ask screen in the Sanctuary design (v0.59.0):
+     *  eyebrow, headline, the ask card with its own field
+     *  and Speak/Ask row, suggestion chips from what's
+     *  actually in the vault, then the conversation. */
+    private void renderAskSanctuary() {
+        LinearLayout titleRow = new LinearLayout(this);
+        titleRow.setOrientation(LinearLayout.HORIZONTAL);
+        titleRow.setGravity(Gravity.CENTER_VERTICAL);
+        titleRow.setLayoutParams(Ui.matchWrap(6, this));
+        TextView tt = Ui.text(this, "Search & Ask", 24, Ui.TEXT, true);
+        tt.setTypeface(Ui.faceDisplay(this));
+        titleRow.addView(tt);
+        View tsp = new View(this);
+        tsp.setLayoutParams(new LinearLayout.LayoutParams(0, 1, 1f));
+        titleRow.addView(tsp);
+        titleRow.addView(Ui.pill(this, "On-device only • Private"));
+        content.addView(titleRow);
+
+        TextView eb = Ui.text(this, "NATURAL RECALL", 11, Ui.WARN, true);
+        eb.setLetterSpacing(0.06f);
+        eb.setLayoutParams(Ui.matchWrap(14, this));
+        content.addView(eb);
+        TextView hl = Ui.text(this, "Ask Your Vault", 28, Ui.TEXT, true);
+        hl.setTypeface(Ui.faceDisplay(this));
+        hl.setLayoutParams(Ui.matchWrap(2, this));
+        content.addView(hl);
+        TextView sub = Ui.text(this,
+            "Search everything you've spoken, noted, or captured. Powered 100% on this phone.",
+            14, Ui.DIM, false);
+        sub.setLayoutParams(Ui.matchWrap(4, this));
+        content.addView(sub);
+
+        // The ask card: the field lives here now (the bottom
+        // bar stays for the other themes).
+        LinearLayout askCard = Ui.card(this);
+        askCard.setLayoutParams(Ui.matchWrap(14, this));
+        askInput = new EditText(this);
+        askInput.setHint("What did I note about the dentist appointment?");
+        askInput.setTextColor(Ui.TEXT);
+        askInput.setHintTextColor(Ui.DIM);
+        askInput.setTextSize(16);
+        askInput.setTypeface(Ui.face(this, false));
+        askInput.setBackgroundColor(0x00000000);
+        askInput.setGravity(Gravity.TOP);
+        askInput.setMinLines(3);
+        askInput.setInputType(android.text.InputType.TYPE_CLASS_TEXT
+            | android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+        askCard.addView(askInput);
+        LinearLayout arow = new LinearLayout(this);
+        arow.setOrientation(LinearLayout.HORIZONTAL);
+        arow.setGravity(Gravity.CENTER_VERTICAL);
+        arow.setLayoutParams(Ui.matchWrap(8, this));
+        Button speak = Ui.ghostButton(this, "Speak query");
+        speak.setCompoundDrawablesWithIntrinsicBounds(
+            Ui.iconDrawable(this, R.drawable.ic_mic, Ui.TEXT), null, null, null);
+        speak.setCompoundDrawablePadding(Ui.dp(this, 6));
+        speak.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                Intent i = new Intent(MainActivity.this, VoiceActivity.class);
+                i.putExtra("mode", "ask");
+                startActivityForResult(i, 301);
+            }
+        });
+        arow.addView(speak);
+        View asp = new View(this);
+        asp.setLayoutParams(new LinearLayout.LayoutParams(0, 1, 1f));
+        arow.addView(asp);
+        Button go = Ui.button(this, "Ask", Ui.ACCENT, Ui.ACCENT_DARK_TEXT);
+        go.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { runAsk(); }
+        });
+        arow.addView(go);
+        askCard.addView(arow);
+        content.addView(askCard);
+
+        // Suggestions, drawn from the vault itself.
+        java.util.List<String> sugs = new java.util.ArrayList<String>();
+        boolean anyDue = false, anyMoney = false;
+        for (Item it : Privacy.visible(db.all())) {
+            if (it.reminderAt > 0 && it.handledAt == 0) anyDue = true;
+            if (Ask.principalCents(it) > 0) anyMoney = true;
+        }
+        if (anyMoney) sugs.add("What do I owe?");
+        if (anyDue) sugs.add("What's due this week?");
+        java.util.List<Entities.Entity> tops = Entities.top(Privacy.visible(db.all()), 1);
+        if (!tops.isEmpty()) sugs.add("What do I have on " + tops.get(0).name + "?");
+        sugs.add("What did I save most recently?");
+        LinearLayout sHead = new LinearLayout(this);
+        sHead.setOrientation(LinearLayout.HORIZONTAL);
+        sHead.setGravity(Gravity.CENTER_VERTICAL);
+        sHead.setLayoutParams(Ui.matchWrap(16, this));
+        sHead.addView(Ui.text(this, "Try asking about your recent notes", 14, Ui.TEXT, true));
+        View ssp = new View(this);
+        ssp.setLayoutParams(new LinearLayout.LayoutParams(0, 1, 1f));
+        sHead.addView(ssp);
+        sHead.addView(Ui.text(this, "Tap to ask", 11, Ui.DIM, false));
+        content.addView(sHead);
+        for (int i = 0; i < sugs.size(); i += 2) {
+            LinearLayout pair = new LinearLayout(this);
+            pair.setOrientation(LinearLayout.HORIZONTAL);
+            pair.setLayoutParams(Ui.matchWrap(8, this));
+            for (int j = i; j < Math.min(i + 2, sugs.size()); j++) {
+                final String sq = sugs.get(j);
+                Button chip = Ui.chip(this, sq, false);
+                chip.setLayoutParams(new LinearLayout.LayoutParams(0,
+                    LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+                chip.setOnClickListener(new View.OnClickListener() {
+                    @Override public void onClick(View v) {
+                        askInput.setText(sq);
+                        runAsk();
+                    }
+                });
+                pair.addView(chip);
+            }
+            if (pair.getChildCount() == 1) {
+                View fill = new View(this);
+                fill.setLayoutParams(new LinearLayout.LayoutParams(0, 1, 1f));
+                pair.addView(fill);
+            }
+            content.addView(pair);
+        }
+
+        askResults = new LinearLayout(this);
+        askResults.setOrientation(LinearLayout.VERTICAL);
+        content.addView(askResults);
+
+        java.util.List<Entities.Entity> ents = Entities.top(Privacy.visible(db.all()), 8);
+        if (!ents.isEmpty()) {
+            TextView pl = Ui.sectionLabel(this, "People & places");
+            pl.setLayoutParams(Ui.matchWrap(14, this));
+            content.addView(pl);
+            for (final Entities.Entity e : ents) {
+                Button chip = Ui.ghostButton(this,
+                    e.name + "  (" + e.itemCount + (e.itemCount == 1 ? " memory)" : " memories)"));
+                chip.setLayoutParams(Ui.matchWrap(6, this));
+                chip.setOnClickListener(new View.OnClickListener() {
+                    @Override public void onClick(View v) { showPersonCard(e); }
+                });
+                content.addView(chip);
+            }
+        }
+
+        if (!askEarlier.isEmpty()) {
+            LinearLayout rHead = new LinearLayout(this);
+            rHead.setOrientation(LinearLayout.HORIZONTAL);
+            rHead.setGravity(Gravity.CENTER_VERTICAL);
+            rHead.setLayoutParams(Ui.matchWrap(16, this));
+            rHead.addView(Ui.text(this, "Recent Searches", 15, Ui.TEXT, true));
+            View rsp = new View(this);
+            rsp.setLayoutParams(new LinearLayout.LayoutParams(0, 1, 1f));
+            rHead.addView(rsp);
+            TextView clear = Ui.text(this, "Clear", 13, Ui.WARN, true);
+            clear.setClickable(true);
+            clear.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) { askEarlier.clear(); render(); }
+            });
+            rHead.addView(clear);
+            content.addView(rHead);
+            for (final String eq : askEarlier) {
+                LinearLayout row = new LinearLayout(this);
+                row.setOrientation(LinearLayout.HORIZONTAL);
+                row.setGravity(Gravity.CENTER_VERTICAL);
+                row.setBackground(Ui.rippleBg(this, Ui.PANEL, 0, 14, 0x1F000000));
+                row.setElevation(Ui.dp(this, 1));
+                row.setPadding(Ui.dp(this, 12), Ui.dp(this, 10), Ui.dp(this, 12), Ui.dp(this, 10));
+                row.setLayoutParams(Ui.matchWrap(8, this));
+                row.setClickable(true);
+                FrameLayout disc = new FrameLayout(this);
+                android.graphics.drawable.GradientDrawable dg = new android.graphics.drawable.GradientDrawable();
+                dg.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+                dg.setColor(Ui.PANEL_HI);
+                disc.setBackground(dg);
+                disc.setLayoutParams(new LinearLayout.LayoutParams(Ui.dp(this, 34), Ui.dp(this, 34)));
+                ImageView siv = Ui.icon(this, R.drawable.ic_search, 16, Ui.DIM);
+                FrameLayout.LayoutParams silp = new FrameLayout.LayoutParams(Ui.dp(this, 16), Ui.dp(this, 16));
+                silp.gravity = Gravity.CENTER;
+                siv.setLayoutParams(silp);
+                disc.addView(siv);
+                row.addView(disc);
+                TextView qt2 = Ui.text(this, eq, 14, Ui.TEXT, false);
+                LinearLayout.LayoutParams qlp = new LinearLayout.LayoutParams(0,
+                    LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+                qlp.setMargins(Ui.dp(this, 10), 0, 0, 0);
+                qt2.setLayoutParams(qlp);
+                qt2.setMaxLines(1);
+                qt2.setEllipsize(android.text.TextUtils.TruncateAt.END);
+                row.addView(qt2);
+                row.setOnClickListener(new View.OnClickListener() {
+                    @Override public void onClick(View v) {
+                        askInput.setText(eq);
+                        runAsk();
+                    }
+                });
+                content.addView(row);
+            }
+        }
+
+        // The closing assurance, same family as home's.
+        LinearLayout conf = new LinearLayout(this);
+        conf.setOrientation(LinearLayout.HORIZONTAL);
+        conf.setGravity(Gravity.CENTER_VERTICAL);
+        conf.setBackground(Ui.panelBg(0xFFE4F5EC, 0, 20, this));
+        conf.setPadding(Ui.dp(this, 16), Ui.dp(this, 14), Ui.dp(this, 16), Ui.dp(this, 14));
+        conf.setLayoutParams(Ui.matchWrap(16, this));
+        FrameLayout cdisc = new FrameLayout(this);
+        android.graphics.drawable.GradientDrawable cdg = new android.graphics.drawable.GradientDrawable();
+        cdg.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+        cdg.setColor(Ui.FOREST);
+        cdisc.setBackground(cdg);
+        cdisc.setLayoutParams(new LinearLayout.LayoutParams(Ui.dp(this, 40), Ui.dp(this, 40)));
+        ImageView civ = Ui.icon(this, R.drawable.ic_lock, 20, 0xFFFFFFFF);
+        FrameLayout.LayoutParams cilp = new FrameLayout.LayoutParams(Ui.dp(this, 20), Ui.dp(this, 20));
+        cilp.gravity = Gravity.CENTER;
+        civ.setLayoutParams(cilp);
+        cdisc.addView(civ);
+        conf.addView(cdisc);
+        LinearLayout ctexts = new LinearLayout(this);
+        ctexts.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout.LayoutParams ctlp = new LinearLayout.LayoutParams(0,
+            LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+        ctlp.setMargins(Ui.dp(this, 12), 0, 0, 0);
+        ctexts.setLayoutParams(ctlp);
+        ctexts.addView(Ui.text(this, "Completely Confidential", 14, Ui.TEXT, true));
+        TextView cbody = Ui.text(this,
+            "Asking happens entirely on this phone. Nothing you ask or save ever leaves it.",
+            12, Ui.DIM, false);
+        cbody.setLayoutParams(Ui.matchWrap(3, this));
+        ctexts.addView(cbody);
+        conf.addView(ctexts);
+        content.addView(conf);
+    }
+
     private void renderAsk() {
+        if (Ui.SANCTUARY) {
+            renderAskSanctuary();
+            return;
+        }
         LinearLayout title = Ui.screenTitle(this, "ASK", "ON-DEVICE");
         title.setLayoutParams(Ui.matchWrap(6, this));
         content.addView(title);
@@ -1496,19 +1733,31 @@ public class MainActivity extends Activity {
         // not a chat balloon - QUERY // time over the question.
         LinearLayout bubble = new LinearLayout(this);
         bubble.setOrientation(LinearLayout.VERTICAL);
-        bubble.setBackground(Ui.panelBg(Ui.PANEL_HI, Ui.ACCENT, 12, this));
-        bubble.setPadding(Ui.dp(this, 12), Ui.dp(this, 10), Ui.dp(this, 12), Ui.dp(this, 10));
+        if (Ui.SANCTUARY) {
+            bubble.setBackground(Ui.panelBg(Ui.PANEL, 0, 20, this));
+            bubble.setElevation(Ui.dp(this, 2));
+            bubble.setPadding(Ui.dp(this, 16), Ui.dp(this, 12), Ui.dp(this, 16), Ui.dp(this, 12));
+        } else {
+            bubble.setBackground(Ui.panelBg(Ui.PANEL_HI, Ui.ACCENT, 12, this));
+            bubble.setPadding(Ui.dp(this, 12), Ui.dp(this, 10), Ui.dp(this, 12), Ui.dp(this, 10));
+        }
         bubble.setLayoutParams(Ui.matchWrap(12, this));
         TextView qh = Ui.text(this,
-            "QUERY  //  " + new java.text.SimpleDateFormat("HH:mm:ss",
-                java.util.Locale.US).format(new java.util.Date()),
-            10, Ui.ACCENT, true);
-        qh.setLetterSpacing(0.08f);
+            Ui.SANCTUARY ? "You asked"
+                : "QUERY  //  " + new java.text.SimpleDateFormat("HH:mm:ss",
+                    java.util.Locale.US).format(new java.util.Date()),
+            Ui.SANCTUARY ? 11 : 10, Ui.SANCTUARY ? Ui.DIM : Ui.ACCENT, true);
+        if (!Ui.SANCTUARY) qh.setLetterSpacing(0.08f);
         bubble.addView(qh);
         TextView qt = Ui.text(this, q, 15, Ui.TEXT, true);
         qt.setLayoutParams(Ui.matchWrap(4, this));
         bubble.addView(qt);
         askResults.addView(bubble);
+        if (Ui.SANCTUARY) {
+            LinearLayout ah = Ui.sectionHead(this, "Latest Answer", "Synthesized locally");
+            ah.setLayoutParams(Ui.matchWrap(14, this));
+            askResults.addView(ah);
+        }
         List<Ask.Result> results = Ask.search(Privacy.visible(db.all()), q, vec, true);
 
         // Answers that add up: for set questions ("how much do I owe
@@ -1524,7 +1773,9 @@ public class MainActivity extends Activity {
         if (sum == null) sum = Ask.summarize(Privacy.visible(db.all()), q, vec, System.currentTimeMillis());
         if (sum != null) {
             LinearLayout sumCard = Ui.pressCard(this);
-            sumCard.setBackground(Ui.rippleBg(this, Ui.PANEL_HI, Ui.ACCENT2, 8, 0x2EFFFFFF));
+            if (!Ui.SANCTUARY) {
+                sumCard.setBackground(Ui.rippleBg(this, Ui.PANEL_HI, Ui.ACCENT2, 8, 0x2EFFFFFF));
+            }
             sumCard.addView(Ui.tag(this, "VAULT ANSWER", 1, Ui.ACCENT2));
             TextView st = Ui.text(this, sum.text, 16, Ui.TEXT, true);
             st.setLayoutParams(Ui.matchWrap(6, this));
@@ -1597,7 +1848,9 @@ public class MainActivity extends Activity {
         for (final Ask.Result r : results) {
             LinearLayout card = Ui.pressCard(this);
             if (first) {
-                card.setBackground(Ui.rippleBg(this, Ui.PANEL_HI, Ui.ACCENT, 8, 0x2EFFFFFF));
+                if (!Ui.SANCTUARY) {
+                    card.setBackground(Ui.rippleBg(this, Ui.PANEL_HI, Ui.ACCENT, 8, 0x2EFFFFFF));
+                }
                 TextView a = Ui.text(this, r.answer, 16, Ui.TEXT, true);
                 card.addView(a);
                 first = false;
@@ -1608,7 +1861,8 @@ public class MainActivity extends Activity {
             LinearLayout srcRow = new LinearLayout(this);
             srcRow.setOrientation(LinearLayout.HORIZONTAL);
             srcRow.setGravity(Gravity.CENTER_VERTICAL);
-            srcRow.setBackground(Ui.panelBg(Ui.PANEL, Ui.BORDER, 8, this));
+            srcRow.setBackground(Ui.panelBg(Ui.SANCTUARY ? Ui.PANEL_HI : Ui.PANEL,
+                Ui.SANCTUARY ? 0 : Ui.BORDER, 8, this));
             srcRow.setPadding(Ui.dp(this, 10), Ui.dp(this, 7), Ui.dp(this, 10), Ui.dp(this, 7));
             srcRow.setLayoutParams(Ui.matchWrap(8, this));
             TextView src = Ui.text(this,
@@ -1752,12 +2006,32 @@ public class MainActivity extends Activity {
 
     // ---------- REMINDERS ----------
 
-    private void renderReminders() {
-        LinearLayout title = Ui.screenTitle(this, "REMINDERS", "ON-DEVICE");
-        title.setLayoutParams(Ui.matchWrap(6, this));
-        content.addView(title);
+    /** Reminders segment (Sanctuary): 0 upcoming, 1 past, 2 completed. */
+    private int remSeg = 0;
 
+    private void renderReminders() {
         List<Item> items = db.withReminders();
+        if (Ui.SANCTUARY) {
+            LinearLayout titleRow = new LinearLayout(this);
+            titleRow.setOrientation(LinearLayout.HORIZONTAL);
+            titleRow.setGravity(Gravity.CENTER_VERTICAL);
+            titleRow.setLayoutParams(Ui.matchWrap(6, this));
+            TextView tt = Ui.text(this, "Reminders & Follow-ups", 24, Ui.TEXT, true);
+            tt.setTypeface(Ui.faceDisplay(this));
+            titleRow.addView(tt);
+            View tsp = new View(this);
+            tsp.setLayoutParams(new LinearLayout.LayoutParams(0, 1, 1f));
+            titleRow.addView(tsp);
+            titleRow.addView(Ui.pill(this, "On-device only • Private"));
+            content.addView(titleRow);
+            content.addView(remSegments(items));
+            if (remSeg == 0) content.addView(remDiscovery(items));
+        } else {
+            LinearLayout title = Ui.screenTitle(this, "REMINDERS", "ON-DEVICE");
+            title.setLayoutParams(Ui.matchWrap(6, this));
+            content.addView(title);
+        }
+        if (!Ui.SANCTUARY || remSeg == 0) {
         // Stat tiles (Stitch layout, v0.50.0): the register at a
         // glance - overdue, today, the week, and what's payable
         // across everything still open (due within 60 days or
@@ -2001,21 +2275,25 @@ public class MainActivity extends Activity {
                 content.addView(aCard);
             }
         }
+        }
         if (items.isEmpty()) {
-            if (actionItems.isEmpty()) {
+            if (db.byCategory("Actions").isEmpty()) {
                 content.addView(Ui.emptyState(this, R.drawable.ic_bell, "No reminders yet",
                     "Save a bill or a document with a due date and it will land here, "
                     + "with a notification before it is due."));
             }
             return;
         }
+        if (Ui.SANCTUARY && remSeg == 1) { renderRemSegList(items, true); content.addView(remQuickAdd()); return; }
+        if (Ui.SANCTUARY && remSeg == 2) { renderRemSegList(items, false); content.addView(remQuickAdd()); return; }
         long now = System.currentTimeMillis();
         // Bucketed register (Stitch layout, v0.50.0): critical
         // (overdue + next 24h), this week, later - then handled.
         long dayEnd = DayGroup.startOfDay(now) + 24L * 3600 * 1000;
         long weekEnd = now + 7L * 24 * 3600 * 1000;
         String[] bucketNames = {"Due in 24 hours", "This week", "Later", "Handled"};
-        for (int b = 0; b < 4; b++) {
+        int bucketCount = Ui.SANCTUARY ? 3 : 4;
+        for (int b = 0; b < bucketCount; b++) {
             java.util.List<Item> bucket = new java.util.ArrayList<Item>();
             for (Item it : items) {
                 boolean handled = it.handledAt > 0;
@@ -2034,10 +2312,165 @@ public class MainActivity extends Activity {
                 content.addView(reminderCard(it, handled, now));
             }
         }
+        if (Ui.SANCTUARY) content.addView(remQuickAdd());
+    }
+
+    /** The segmented control (Sanctuary reminders). */
+    private LinearLayout remSegments(List<Item> items) {
+        long todayStart = DayGroup.startOfDay(System.currentTimeMillis());
+        int upcoming = 0, past = 0, completed = 0;
+        for (Item it : items) {
+            if (it.handledAt > 0) completed++;
+            else upcoming++;
+            if (it.reminderAt > 0 && it.reminderAt < todayStart) past++;
+        }
+        LinearLayout bar = new LinearLayout(this);
+        bar.setOrientation(LinearLayout.HORIZONTAL);
+        bar.setBackground(Ui.panelBg(Ui.PANEL_HI, 0, 999, this));
+        bar.setPadding(Ui.dp(this, 4), Ui.dp(this, 4), Ui.dp(this, 4), Ui.dp(this, 4));
+        bar.setLayoutParams(Ui.matchWrap(12, this));
+        String[] labels = {"Upcoming (" + upcoming + ")", "Past", "Completed"};
+        for (int i = 0; i < 3; i++) {
+            final int seg = i;
+            TextView s = Ui.text(this, labels[i], 13, remSeg == i ? Ui.TEXT : Ui.DIM, remSeg == i);
+            s.setGravity(Gravity.CENTER);
+            if (remSeg == i) {
+                s.setBackground(Ui.panelBg(Ui.PANEL, 0, 999, this));
+                s.setElevation(Ui.dp(this, 1));
+            }
+            s.setPadding(Ui.dp(this, 8), Ui.dp(this, 8), Ui.dp(this, 8), Ui.dp(this, 8));
+            s.setLayoutParams(new LinearLayout.LayoutParams(0,
+                LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+            s.setClickable(true);
+            s.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) { remSeg = seg; render(); }
+            });
+            bar.addView(s);
+        }
+        return bar;
+    }
+
+    /** The discovery card (Sanctuary reminders): what the
+     *  vault noticed, in the design's gentle register. */
+    private LinearLayout remDiscovery(List<Item> items) {
+        LinearLayout wrap = new LinearLayout(this);
+        int open = 0;
+        for (Item it : items) if (it.handledAt == 0 && it.reminderAt > 0) open++;
+        if (open == 0) return wrap;
+        LinearLayout c = new LinearLayout(this);
+        c.setOrientation(LinearLayout.HORIZONTAL);
+        c.setGravity(Gravity.CENTER_VERTICAL);
+        c.setBackground(Ui.panelBg(Ui.SAGE_BG, 0, 20, this));
+        c.setPadding(Ui.dp(this, 16), Ui.dp(this, 14), Ui.dp(this, 16), Ui.dp(this, 14));
+        c.setLayoutParams(Ui.matchWrap(12, this));
+        FrameLayout disc = new FrameLayout(this);
+        android.graphics.drawable.GradientDrawable dg = new android.graphics.drawable.GradientDrawable();
+        dg.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+        dg.setColor(0xFFFFFFFF);
+        disc.setBackground(dg);
+        disc.setLayoutParams(new LinearLayout.LayoutParams(Ui.dp(this, 40), Ui.dp(this, 40)));
+        ImageView iv = Ui.icon(this, R.drawable.ic_bell, 20, Ui.FOREST);
+        FrameLayout.LayoutParams ilp = new FrameLayout.LayoutParams(Ui.dp(this, 20), Ui.dp(this, 20));
+        ilp.gravity = Gravity.CENTER;
+        iv.setLayoutParams(ilp);
+        disc.addView(iv);
+        c.addView(disc);
+        LinearLayout texts = new LinearLayout(this);
+        texts.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout.LayoutParams tlp = new LinearLayout.LayoutParams(0,
+            LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+        tlp.setMargins(Ui.dp(this, 12), 0, 0, 0);
+        texts.setLayoutParams(tlp);
+        texts.addView(Ui.text(this, "Found in your sanctuary", 14, Ui.TEXT, true));
+        TextView body = Ui.text(this,
+            open + (open == 1 ? " reminder" : " reminders") + " coming up - noticed in your notes, "
+            + "voice memos and scans. Kept private on this phone.",
+            12, Ui.DIM, false);
+        body.setLayoutParams(Ui.matchWrap(3, this));
+        texts.addView(body);
+        c.addView(texts);
+        wrap.addView(c);
+        return wrap;
+    }
+
+    /** Past / Completed segment lists, day-grouped. */
+    private void renderRemSegList(List<Item> items, boolean past) {
+        long now = System.currentTimeMillis();
+        long todayStart = DayGroup.startOfDay(now);
+        java.util.List<Item> sel = new java.util.ArrayList<Item>();
+        for (Item it : items) {
+            if (past) {
+                if (it.reminderAt > 0 && it.reminderAt < todayStart) sel.add(it);
+            } else {
+                if (it.handledAt > 0) sel.add(it);
+            }
+        }
+        java.util.Collections.sort(sel, new java.util.Comparator<Item>() {
+            @Override public int compare(Item a, Item b) {
+                return Long.compare(b.reminderAt, a.reminderAt);
+            }
+        });
+        if (sel.isEmpty()) {
+            content.addView(Ui.emptyState(this, R.drawable.ic_bell,
+                past ? "Nothing past" : "Nothing completed yet",
+                past ? "Reminders that pass their day will rest here."
+                     : "When you mark a reminder done, it will rest here."));
+            return;
+        }
+        long lastDay = -1;
+        for (final Item it : sel) {
+            long day = DayGroup.startOfDay(it.reminderAt);
+            if (day != lastDay) {
+                LinearLayout dh = Ui.sectionHead(this, DayGroup.label(it.reminderAt, now), "");
+                dh.setLayoutParams(Ui.matchWrap(12, this));
+                content.addView(dh);
+                lastDay = day;
+            }
+            content.addView(reminderCard(it, it.handledAt > 0, now));
+        }
+    }
+
+    /** The quick-add bar that closes the reminders page. */
+    private LinearLayout remQuickAdd() {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setBackground(Ui.panelBg(Ui.PANEL, 0, 999, this));
+        row.setElevation(Ui.dp(this, 2));
+        row.setPadding(Ui.dp(this, 16), Ui.dp(this, 8), Ui.dp(this, 8), Ui.dp(this, 8));
+        row.setLayoutParams(Ui.matchWrap(16, this));
+        TextView hint = Ui.text(this, "Add a reminder or follow-up...", 14, Ui.DIM, false);
+        hint.setLayoutParams(new LinearLayout.LayoutParams(0,
+            LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        row.addView(hint);
+        row.setClickable(true);
+        row.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                startActivity(new Intent(MainActivity.this, EditorActivity.class));
+            }
+        });
+        FrameLayout disc = new FrameLayout(this);
+        android.graphics.drawable.GradientDrawable dg = new android.graphics.drawable.GradientDrawable();
+        dg.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+        dg.setColor(Ui.FOREST);
+        disc.setBackground(dg);
+        disc.setLayoutParams(new LinearLayout.LayoutParams(Ui.dp(this, 40), Ui.dp(this, 40)));
+        ImageView iv = Ui.icon(this, R.drawable.ic_mic, 18, 0xFFFFFFFF);
+        FrameLayout.LayoutParams ilp = new FrameLayout.LayoutParams(Ui.dp(this, 18), Ui.dp(this, 18));
+        ilp.gravity = Gravity.CENTER;
+        iv.setLayoutParams(ilp);
+        disc.addView(iv);
+        disc.setClickable(true);
+        disc.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { startVoice(); }
+        });
+        row.addView(disc);
+        return row;
     }
 
     /** One register card for a reminder (Stitch layout, v0.50.0). */
     private LinearLayout reminderCard(final Item it, final boolean handled, long now) {
+        if (Ui.SANCTUARY) return sanctuaryReminderCard(it, handled, now);
         LinearLayout card = Ui.pressCard(this);
         if (handled) card.setAlpha(0.55f);
         boolean priv = Privacy.isPrivate(it);
@@ -2121,6 +2554,108 @@ public class MainActivity extends Activity {
             actions.addView(sm);
         }
         card.addView(actions);
+        card.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { openDetail(it.id); }
+        });
+        return card;
+    }
+
+    /** Sanctuary reminder card (v0.59.0): a checkbox that
+     *  settles it, the title and its source, and a due
+     *  chip - with quiet snoozes underneath while open. */
+    private LinearLayout sanctuaryReminderCard(final Item it, final boolean handled, long now) {
+        LinearLayout card = Ui.pressCard(this);
+        if (handled) card.setAlpha(0.6f);
+        boolean priv = Privacy.isPrivate(it);
+        boolean overdue = !handled && it.reminderAt < DayGroup.startOfDay(now);
+        boolean dueToday = !handled && !overdue
+            && it.reminderAt < DayGroup.startOfDay(now) + 24L * 3600 * 1000;
+
+        LinearLayout rowL = new LinearLayout(this);
+        rowL.setOrientation(LinearLayout.HORIZONTAL);
+        rowL.setGravity(Gravity.TOP);
+        // Checkbox: settles or reopens the reminder.
+        TextView box = Ui.text(this, handled ? "✓" : "", 15,
+            handled ? 0xFFFFFFFF : Ui.DIM, true);
+        box.setGravity(Gravity.CENTER);
+        box.setBackground(Ui.panelBg(handled ? Ui.ACCENT : 0x00000000,
+            handled ? 0 : 0xFFB9B2A4, 8, this));
+        LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(Ui.dp(this, 26), Ui.dp(this, 26));
+        blp.setMargins(0, Ui.dp(this, 2), 0, 0);
+        box.setLayoutParams(blp);
+        box.setClickable(true);
+        box.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                it.handledAt = handled ? 0 : System.currentTimeMillis();
+                db.update(it);
+                render();
+            }
+        });
+        rowL.addView(box);
+        LinearLayout mid = new LinearLayout(this);
+        mid.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout.LayoutParams mlp = new LinearLayout.LayoutParams(0,
+            LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+        mlp.setMargins(Ui.dp(this, 12), 0, Ui.dp(this, 8), 0);
+        mid.setLayoutParams(mlp);
+        TextView t = Ui.text(this, Privacy.displayTitle(it), 16, handled ? Ui.DIM : Ui.TEXT, true);
+        t.setMaxLines(2);
+        t.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        mid.addView(t);
+        TextView meta = Ui.text(this,
+            Ui.typeLabel(it.type) + " • " + cardTime(it.createdAt)
+                + (priv ? "" : (Ask.principalCents(it) > 0 ? " • " + Ask.formatMoney(Ask.principalCents(it)) : "")),
+            12, Ui.DIM, false);
+        meta.setLayoutParams(Ui.matchWrap(3, this));
+        mid.addView(meta);
+        rowL.addView(mid);
+        LinearLayout right = new LinearLayout(this);
+        right.setOrientation(LinearLayout.VERTICAL);
+        right.setGravity(Gravity.END);
+        String dueLabel = handled ? "Done"
+            : overdue ? "Overdue"
+            : dueToday ? "Due Today"
+            : "Due " + Extract.formatDate(it.reminderAt);
+        int[] dt = (overdue || dueToday) && !handled
+            ? new int[]{Ui.TERRA_BG, Ui.TERRA_TEXT}
+            : new int[]{Ui.PANEL_HI, Ui.DIM};
+        right.addView(Ui.catPill(this, dueLabel, dt[0], dt[1]));
+        int[] ct = catTint(it.category);
+        TextView cp = Ui.catPill(this, it.category, ct[0], ct[1]);
+        cp.setLayoutParams(Ui.matchWrap(6, this));
+        right.addView(cp);
+        rowL.addView(right);
+        card.addView(rowL);
+
+        if (!handled) {
+            LinearLayout actions = new LinearLayout(this);
+            actions.setOrientation(LinearLayout.HORIZONTAL);
+            actions.setLayoutParams(Ui.matchWrap(10, this));
+            Button s1 = Ui.ghostButton(this, "Snooze +1 day");
+            s1.setLayoutParams(Ui.weight1(0, this));
+            s1.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) { snoozeDirect(it, 1); }
+            });
+            actions.addView(s1);
+            Button s7 = Ui.ghostButton(this, "+7 days");
+            LinearLayout.LayoutParams s7lp = Ui.weight1(0, this);
+            s7lp.setMargins(Ui.dp(this, 6), 0, 0, 0);
+            s7.setLayoutParams(s7lp);
+            s7.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) { snoozeDirect(it, 7); }
+            });
+            actions.addView(s7);
+            Button sm = Ui.ghostButton(this, "...");
+            LinearLayout.LayoutParams smlp = new LinearLayout.LayoutParams(
+                Ui.dp(this, 44), LinearLayout.LayoutParams.MATCH_PARENT);
+            smlp.setMargins(Ui.dp(this, 6), 0, 0, 0);
+            sm.setLayoutParams(smlp);
+            sm.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) { showSnoozeChooser(it); }
+            });
+            actions.addView(sm);
+            card.addView(actions);
+        }
         card.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { openDetail(it.id); }
         });

@@ -1064,3 +1064,21 @@ Settings is now a full page (same builder as the
 dialog). Copy stays honest: the design's iOS-flavored
 claims (Face ID, Secure Enclave, AirDrop) are rendered
 as this app's truths, per the house rule.
+
+## v0.59.0 - Ask and Reminders wear Sanctuary (Nov 2, 2026)
+
+Ask, per the design: "Search & Ask" headline with the
+privacy pill, a NATURAL RECALL eyebrow, "Ask Your
+Vault", and the ask card itself - the field lives in
+the card now (the bottom ask bar stays for the other
+themes), with Speak query and a forest Ask button.
+Suggestion chips are drawn from the vault ("What do I
+owe?", "What's due this week?", the top person or
+place), answers open with a "You asked" card and a
+Latest Answer / Synthesized locally head, and recent
+searches list with a Clear. Reminders: "Reminders &
+Follow-ups", the Upcoming / Past / Completed segmented
+control, a sage "Found in your sanctuary" discovery
+card, checkbox reminder cards with due chips and
+quiet snoozes, and the quick-add bar. Verified on the
+phone, both screens.
