@@ -1194,3 +1194,21 @@ brain/MEMORY.md) alongside the memories, and a restore
 brings them home too. This is what lets Clio for
 Desktop - the new companion on bigpc - open a backup
 and show memories, people and mind together.
+
+## v0.66.0-v0.66.1 - self-review, Remember capture, people timelines, desktop photos (Nov 2, 2026)
+
+- **Nightly self-review**: the daily reminder pass has
+  Clio fold duplicate facts in MEMORY.md (newest wording
+  wins; distinct facts are never deleted), log the review
+  in her daily note, and show a one-line summary on the
+  Settings mind card.
+- **Remember this**: a fourth home tile and a capture-sheet
+  row open the editor in memory mode - the save goes to
+  Clio's MEMORY.md, not the vault ("Save to her memory").
+- **People timelines**: a contact's vault section reads
+  oldest to newest with month headers and a
+  first-saved / most-recent span line.
+- **Photos in backups**: full exports and auto-backups
+  now also carry the profile photo and contact photos;
+  restores bring them back, and Clio for Desktop shows
+  them as discs.

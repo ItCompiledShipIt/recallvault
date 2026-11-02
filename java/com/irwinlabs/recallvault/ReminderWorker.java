@@ -205,6 +205,10 @@ public class ReminderWorker extends Worker {
         if (changed) {
             prefs.edit().putStringSet(PREF_NOTIFIED, notified).apply();
         }
+        // Clio's nightly self-review of her own memory (v0.66.0).
+        try {
+            ClioMind.nightlyReview(ctx);
+        } catch (Throwable ignored) {}
         // Weekly self-maintaining backup rides the daily pass (v0.12.0).
         AutoBackup.runIfDue(ctx);
         // Morning digest, once a day (v0.28.0).

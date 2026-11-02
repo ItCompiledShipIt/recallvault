@@ -398,13 +398,23 @@ public class ContactsActivity extends Activity {
             String hayDigits = hay.replaceAll("[^0-9]", "");
             if (Contacts.matchesText(c, hay, hayDigits)) hits.add(it);
         }
+        // A timeline, not a pile (v0.66.0): oldest first, the
+        // story of the person in the order it happened.
         Collections.sort(hits, new Comparator<Item>() {
             @Override public int compare(Item a, Item b) {
-                return Long.compare(b.createdAt, a.createdAt);
+                return Long.compare(a.createdAt, b.createdAt);
             }
         });
         body.addView(Ui.sectionHead(this, "From your vault",
             hits.size() + (hits.size() == 1 ? " memory" : " memories")));
+        if (hits.size() >= 2) {
+            TextView span = Ui.text(this,
+                "First saved " + Extract.formatDate(hits.get(0).createdAt)
+                    + "  •  most recent " + Extract.formatDate(hits.get(hits.size() - 1).createdAt),
+                12, Ui.DIM, false);
+            span.setLayoutParams(Ui.matchWrap(4, this));
+            body.addView(span);
+        }
         if (hits.isEmpty()) {
             TextView none = Ui.text(this,
                 "Nothing in the vault mentions " + c.firstName() + " yet. "
@@ -435,9 +445,18 @@ public class ContactsActivity extends Activity {
         body.addView(hsv);
 
         int shown = 0;
+        String lastDay = "";
         for (final Item it : hits) {
             if (!"All".equals(vaultFilter) && !vaultFilter.equals(it.category)) continue;
             shown++;
+            String day = new java.text.SimpleDateFormat("MMMM yyyy", Locale.US)
+                .format(new java.util.Date(it.createdAt));
+            if (!day.equals(lastDay)) {
+                lastDay = day;
+                TextView dh = Ui.sectionLabel(this, day);
+                dh.setLayoutParams(Ui.matchWrap(10, this));
+                body.addView(dh);
+            }
             LinearLayout card = Ui.pressCard(this);
             LinearLayout top = new LinearLayout(this);
             top.setOrientation(LinearLayout.HORIZONTAL);

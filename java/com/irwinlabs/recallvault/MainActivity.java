@@ -760,6 +760,11 @@ public class MainActivity extends Activity {
         row.addView(quickTile(R.drawable.ic_note, Ui.SAGE_BG, Ui.SAGE_TEXT, "Quick Note", "Write a thought",
             new View.OnClickListener() { @Override public void onClick(View v) {
                 startActivity(new Intent(MainActivity.this, EditorActivity.class)); } }));
+        row.addView(quickTile(R.drawable.ic_spark, Ui.PANEL_HI, Ui.WARN, "Remember", "For her memory",
+            new View.OnClickListener() { @Override public void onClick(View v) {
+                Intent ri = new Intent(MainActivity.this, EditorActivity.class);
+                ri.putExtra("target", "memory");
+                startActivity(ri); } }));
         return row;
     }
 
@@ -1135,6 +1140,24 @@ public class MainActivity extends Activity {
             @Override public void onClick(View v) { startVoiceMode("meeting"); }
         });
         card.addView(meet);
+
+        LinearLayout rem = Ui.pressCard(this);
+        rem.setLayoutParams(Ui.matchWrap(10, this));
+        rem.addView(Ui.tag(this, "[ MEMORY ]", 1, Ui.ACCENT));
+        TextView rv = Ui.text(this, "REMEMBER THIS", 16, Ui.TEXT, true);
+        rv.setLayoutParams(Ui.matchWrap(6, this));
+        rem.addView(rv);
+        rem.addView(Ui.text(this,
+            "A fact for Clio's own memory - not a vault item. She carries it into every answer.",
+            12, Ui.DIM, false));
+        rem.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                Intent ri = new Intent(MainActivity.this, EditorActivity.class);
+                ri.putExtra("target", "memory");
+                startActivity(ri);
+            }
+        });
+        card.addView(rem);
 
         LinearLayout setRow = Ui.pressCard(this);
         setRow.setLayoutParams(Ui.matchWrap(8, this));
@@ -3665,9 +3688,12 @@ public class MainActivity extends Activity {
         {
             LinearLayout mindCard = Ui.card(this);
             mindCard.addView(Ui.sectionLabel(this, "Clio's mind"));
+            String reviewNote = getSharedPreferences(Embed.PREFS, MODE_PRIVATE)
+                .getString(ClioMind.PREF_REVIEW_NOTE, "");
             TextView mindStatus = Ui.text(this,
                 "She reads her instructions and her memory every time she thinks. "
-                + "Facts saved: " + ClioMind.factCount(this) + ".",
+                + "Facts saved: " + ClioMind.factCount(this) + "."
+                + (reviewNote.isEmpty() ? "" : " Last self-review " + reviewNote + "."),
                 13, Ui.DIM, false);
             mindStatus.setLayoutParams(Ui.matchWrap(6, this));
             mindCard.addView(mindStatus);
@@ -5055,11 +5081,7 @@ public class MainActivity extends Activity {
                     // phone gets the whole picture.
                     java.util.Map<String, java.io.File> extras = null;
                     if (fullScope) {
-                        extras = new java.util.LinkedHashMap<String, java.io.File>();
-                        extras.put("contacts.json",
-                            new java.io.File(getFilesDir(), "contacts.json"));
-                        extras.put("brain/AGENTS.md", ClioMind.agentsFile(MainActivity.this));
-                        extras.put("brain/MEMORY.md", ClioMind.memoryFile(MainActivity.this));
+                        extras = ClioMind.backupExtras(MainActivity.this);
                     }
                     byte[] zip = Backup.buildZip(all, extras);
                     final byte[] enc = Backup.encrypt(zip, password);
@@ -5279,6 +5301,20 @@ public class MainActivity extends Activity {
                                 ClioMind.memoryFile(MainActivity.this));
                             mf.write(r.files.get("brain/MEMORY.md"));
                             mf.close();
+                        }
+                        if (r.files.containsKey("profile.jpg")) {
+                            java.io.FileOutputStream pf = new java.io.FileOutputStream(
+                                ContactPhotos.profileFile(MainActivity.this));
+                            pf.write(r.files.get("profile.jpg"));
+                            pf.close();
+                        }
+                        for (String key : r.files.keySet()) {
+                            if (!key.startsWith("contact_photos/")) continue;
+                            String nm = new java.io.File(key).getName();
+                            java.io.FileOutputStream xf = new java.io.FileOutputStream(
+                                new java.io.File(ContactPhotos.dir(MainActivity.this), nm));
+                            xf.write(r.files.get(key));
+                            xf.close();
                         }
                     } catch (Exception ignored) {
                         // Memories are restored; extras are a bonus.

@@ -29,6 +29,9 @@ public class EditorActivity extends Activity {
     private TextView liveFacts;
     private TextView machineInfo;
     private long editId = -1;
+    /** "Remember this" mode (v0.66.0): the save goes to
+     *  Clio's own MEMORY.md, not the vault. */
+    private boolean memoryTarget = false;
     private String filePath = "";
     private String mime = "";
     private String type = "TEXT";
@@ -46,6 +49,7 @@ public class EditorActivity extends Activity {
 
         Intent in = getIntent();
         editId = in.getLongExtra("id", -1);
+        memoryTarget = "memory".equals(in.getStringExtra("target"));
         filePath = in.getStringExtra("file_path") != null ? in.getStringExtra("file_path") : "";
         mime = in.getStringExtra("mime") != null ? in.getStringExtra("mime") : "";
         type = in.getStringExtra("type") != null ? in.getStringExtra("type") : "TEXT";
@@ -56,8 +60,17 @@ public class EditorActivity extends Activity {
         root.setBackgroundColor(Ui.BG);
         root.setPadding(Ui.dp(this, 16), Ui.dp(this, 16), Ui.dp(this, 16), Ui.dp(this, 16));
 
-        root.addView(Ui.text(this, editId > 0 ? "Edit memory" : "New " + Ui.typeLabel(type).toLowerCase(),
+        root.addView(Ui.text(this, memoryTarget ? "Remember this"
+                : editId > 0 ? "Edit memory" : "New " + Ui.typeLabel(type).toLowerCase(),
             20, Ui.TEXT, true));
+        if (memoryTarget) {
+            TextView mh = Ui.text(this,
+                "A fact for Clio's own memory - a preference, a person, a decision. "
+                + "She carries it into every answer, and you can read or edit it in Settings.",
+                12, Ui.DIM, false);
+            mh.setLayoutParams(Ui.matchWrap(6, this));
+            root.addView(mh);
+        }
 
         if (!filePath.isEmpty() && mime.startsWith("image/")) {
             Bitmap bmp = BitmapFactory.decodeFile(filePath);
@@ -104,7 +117,8 @@ public class EditorActivity extends Activity {
         machineInfo.setLayoutParams(Ui.matchWrap(4, this));
         root.addView(machineInfo);
 
-        Button save = Ui.iconButton(this, "Save to vault", R.drawable.ic_check, Ui.ACCENT, Ui.ACCENT_DARK_TEXT);
+        Button save = Ui.iconButton(this, memoryTarget ? "Save to her memory" : "Save to vault",
+            R.drawable.ic_check, Ui.ACCENT, Ui.ACCENT_DARK_TEXT);
         save.setLayoutParams(Ui.matchWrap(12, this));
         save.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { save(); }
@@ -205,6 +219,17 @@ public class EditorActivity extends Activity {
     private void save() {
         String body = bodyInput.getText().toString().trim();
         String title = titleInput.getText().toString().trim();
+        if (memoryTarget) {
+            String fact = (title.isEmpty() ? "" : title + " - ") + body;
+            if (fact.trim().isEmpty()) {
+                Toast.makeText(this, "Write the fact first", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            String res = ClioMind.remember(this, fact);
+            Toast.makeText(this, res, Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
         if (body.isEmpty() && filePath.isEmpty() && machineText.isEmpty()) {
             Toast.makeText(this, "Write something first", Toast.LENGTH_SHORT).show();
             return;

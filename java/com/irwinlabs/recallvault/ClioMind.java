@@ -208,6 +208,97 @@ public class ClioMind {
         }
     }
 
+    /**
+     * The companion files a full backup carries (v0.65.0,
+     * photos added v0.66.0): the contact library, the mind
+     * files, the profile photo and every contact photo -
+     * entry name to file, ready for Backup.buildZip.
+     */
+    public static java.util.Map<String, File> backupExtras(Context ctx) {
+        java.util.Map<String, File> extras = new java.util.LinkedHashMap<String, File>();
+        extras.put("contacts.json", new File(ctx.getFilesDir(), "contacts.json"));
+        extras.put("brain/AGENTS.md", agentsFile(ctx));
+        extras.put("brain/MEMORY.md", memoryFile(ctx));
+        extras.put("profile.jpg", ContactPhotos.profileFile(ctx));
+        File[] photos = ContactPhotos.dir(ctx).listFiles();
+        if (photos != null) {
+            for (File p : photos) {
+                extras.put("contact_photos/" + p.getName(), p);
+            }
+        }
+        return extras;
+    }
+
+    public static final String PREF_REVIEW_DAY = "mind_review_day";
+    public static final String PREF_REVIEW_NOTE = "mind_review_note";
+
+    /**
+     * The nightly self-review (v0.66.0), run from the daily
+     * reminder pass: fold duplicate facts (the newest wording
+     * wins), keep every header and every distinct fact, log
+     * the review in today's daily note, and leave a one-line
+     * summary the Settings card can show. She never deletes
+     * a distinct fact on her own - tidying is folding, not
+     * forgetting. Runs at most once a day.
+     */
+    public static void nightlyReview(Context ctx) {
+        android.content.SharedPreferences prefs =
+            ctx.getSharedPreferences(Embed.PREFS, Context.MODE_PRIVATE);
+        String today = new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(new Date());
+        if (today.equals(prefs.getString(PREF_REVIEW_DAY, ""))) return;
+        prefs.edit().putString(PREF_REVIEW_DAY, today).apply();
+        ensureSeeded(ctx);
+        try {
+            String mem = readMemory(ctx);
+            String[] lines = mem.split("\n", -1);
+            java.util.Map<String, Integer> lastSeen = new java.util.HashMap<String, Integer>();
+            java.util.List<String> facts = new java.util.ArrayList<String>();
+            for (String ln : lines) {
+                if (ln.startsWith("- (")) facts.add(ln);
+            }
+            for (int i = 0; i < facts.size(); i++) {
+                lastSeen.put(normalize(facts.get(i)), i);
+            }
+            java.util.Set<Integer> keepIdx = new java.util.HashSet<Integer>(lastSeen.values());
+            StringBuilder out = new StringBuilder();
+            int factIdx = -1, folded = 0, kept = 0;
+            for (String ln : lines) {
+                if (ln.startsWith("- (")) {
+                    factIdx++;
+                    if (keepIdx.contains(factIdx)) {
+                        out.append(ln).append("\n");
+                        kept++;
+                    } else {
+                        folded++;
+                    }
+                } else {
+                    out.append(ln).append("\n");
+                }
+            }
+            String rebuilt = out.toString();
+            if (!rebuilt.equals(mem) && !rebuilt.equals(mem + "\n")) {
+                write(memoryFile(ctx), rebuilt);
+            }
+            String note = today + ": " + kept + " facts"
+                + (folded > 0 ? ", " + folded + " duplicate" + (folded == 1 ? "" : "s") + " folded" : ", no duplicates")
+                + (kept > 300 ? " - memory is getting long" : "");
+            prefs.edit().putString(PREF_REVIEW_NOTE, note).apply();
+            File daily = dailyFile(ctx, new Date());
+            String d = read(daily);
+            if (d.isEmpty()) d = "# " + today + "\n\n";
+            String hhmm = new SimpleDateFormat("HH:mm", Locale.US).format(new Date());
+            write(daily, d + "- " + hhmm + " self-review: " + note + "\n");
+        } catch (Exception ignored) {
+            // A failed review never breaks the reminder pass.
+        }
+    }
+
+    private static String normalize(String factLine) {
+        String s = factLine.toLowerCase(Locale.US).replaceAll("\\s+", " ").trim();
+        if (s.endsWith(".")) s = s.substring(0, s.length() - 1);
+        return s;
+    }
+
     private static String truncate(String s, int max) {
         if (s == null) return "";
         s = s.trim();
