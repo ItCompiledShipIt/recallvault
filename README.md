@@ -1082,3 +1082,17 @@ control, a sage "Found in your sanctuary" discovery
 card, checkbox reminder cards with due chips and
 quiet snoozes, and the quick-add bar. Verified on the
 phone, both screens.
+
+## v0.60.0 - the capsule logo, no scrollbar, a welcome (Nov 2, 2026)
+
+Chris's call on all three. The logo is now his capsule
+mark - the terracotta open ring - as the launcher icon
+(all densities + adaptive), beside the wordmark in the
+header, and as the onboarding hero; the original art
+is kept at assets/clio-capsule.png. The main page's
+scrollbar is gone (his words: not a fan). And a
+first-run welcome in the Sanctuary design: three steps
+(your sanctuary / just talk / bring her senses home),
+an honest app-lock offer on step two, real model
+status on step three, shown once after the lock
+clears, skippable throughout.

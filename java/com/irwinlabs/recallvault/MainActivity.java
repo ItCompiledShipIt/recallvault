@@ -132,6 +132,9 @@ public class MainActivity extends Activity {
         }
     }
 
+    /** Whether the welcome tour has been offered this run. */
+    private boolean onboardingLaunched = false;
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -139,6 +142,14 @@ public class MainActivity extends Activity {
             startActivity(new Intent(this, LockActivity.class));
         } else {
             AppLock.noteActivity();
+            // First run (v0.60.0): the welcome tour, once,
+            // after the lock has cleared.
+            if (!onboardingLaunched
+                    && !getSharedPreferences(Embed.PREFS, MODE_PRIVATE)
+                        .getBoolean("onboarded_v1", false)) {
+                onboardingLaunched = true;
+                startActivity(new Intent(this, OnboardingActivity.class));
+            }
             // Quick capture (v0.35.0): the recorder opens only once
             // the lock has cleared - the tile never bypasses it.
             if (pendingQuickVoice) {
@@ -225,6 +236,12 @@ public class MainActivity extends Activity {
             header.setOrientation(LinearLayout.HORIZONTAL);
             header.setGravity(Gravity.CENTER_VERTICAL);
             header.setPadding(Ui.dp(this, 20), Ui.dp(this, 14), Ui.dp(this, 20), Ui.dp(this, 6));
+            ImageView mark = new ImageView(this);
+            mark.setImageResource(R.drawable.clio_capsule);
+            LinearLayout.LayoutParams mlp = new LinearLayout.LayoutParams(Ui.dp(this, 30), Ui.dp(this, 30));
+            mlp.setMargins(0, 0, Ui.dp(this, 9), 0);
+            mark.setLayoutParams(mlp);
+            header.addView(mark);
             TextView wm = Ui.text(this, "Clio", 20, Ui.TEXT, true);
             wm.setTypeface(Ui.faceDisplay(this));
             header.addView(wm);
@@ -281,6 +298,7 @@ public class MainActivity extends Activity {
         }
 
         ScrollView scroll = new ScrollView(this);
+        scroll.setVerticalScrollBarEnabled(false);
         scroll.setLayoutParams(new LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
         content = new LinearLayout(this);
