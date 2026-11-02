@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Adaptive-icon background: Clio black (the mark is full-bleed on black). -->
+<!-- Adaptive-icon background: fully transparent - Clio's mark
+     sits directly on the launcher (chris, Nov 2, 2026). -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-    <solid android:color="#000000"/>
+    <solid android:color="#00000000"/>
 </shape>

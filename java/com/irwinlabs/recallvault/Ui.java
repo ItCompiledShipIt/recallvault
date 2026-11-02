@@ -304,25 +304,19 @@ public final class Ui {
     }
 
     /** Brand mark: gradient tile with the vault-lock glyph. */
-    /** Header mark (v0.54.1): Clio's own glyph - the C that is a
-     *  vault door, chris's image - in a rounded tile. */
+    /** Header mark: Clio's glyph on a transparent ground -
+     *  the C/vault door (chris's image, brightened cutout)
+     *  sits directly on the header, no tile behind it. */
     public static FrameLayout brandMark(Activity a) {
         FrameLayout f = new FrameLayout(a);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(a, 40), dp(a, 40));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(a, 44), dp(a, 44));
         f.setLayoutParams(lp);
         ImageView iv = new ImageView(a);
         iv.setImageResource(R.drawable.clio_mark);
-        iv.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        iv.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
         iv.setLayoutParams(new FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
         f.addView(iv);
-        final int radius = dp(a, 11);
-        f.setOutlineProvider(new android.view.ViewOutlineProvider() {
-            @Override public void getOutline(View v, android.graphics.Outline o) {
-                o.setRoundRect(0, 0, v.getWidth(), v.getHeight(), radius);
-            }
-        });
-        f.setClipToOutline(true);
         return f;
     }
 

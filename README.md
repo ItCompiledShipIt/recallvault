@@ -954,3 +954,16 @@ invention. The Settings card is "Clio - Gemma 4", the
 Ask card is tagged CLIO, and the Detail button reads
 "Summarize with Clio". Includes the v0.54.0 filter
 tightening above. Header verified on device.
+
+## v0.54.2 - her mark, readable (Nov 2, 2026)
+
+Chris's call: the logo's black ground was too dark and
+the glyph itself disappeared in the app. The mark is now
+a cutout - background fully transparent (assets/
+clio-logo-transparent.png, derived from his original,
+which is kept untouched) - and the charcoal fill is
+lifted to a graphite that reads on dark surfaces; the
+magenta rim is preserved pixel for pixel. The launcher
+icon uses the transparent cutout over a transparent
+adaptive background, and the header mark drops its tile:
+the C sits directly on the header. Verified on device.
