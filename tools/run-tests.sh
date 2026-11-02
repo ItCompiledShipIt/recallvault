@@ -19,6 +19,7 @@ $JAVAC -cp "$AJ:tools/json-test.jar" -d /tmp/rvtest \
   java/com/irwinlabs/recallvault/Forecast.java java/com/irwinlabs/recallvault/HeadsUp.java \
   java/com/irwinlabs/recallvault/Snooze.java java/com/irwinlabs/recallvault/Receipts.java \
   java/com/irwinlabs/recallvault/Facts.java java/com/irwinlabs/recallvault/Checkup.java \
+  java/com/irwinlabs/recallvault/WebSearch.java \
   java/com/irwinlabs/recallvault/Privacy.java java/com/irwinlabs/recallvault/DayGroup.java java/com/irwinlabs/recallvault/Skills.java java/com/irwinlabs/recallvault/SmsFilter.java \
   java/com/irwinlabs/recallvault/Embed.java \
   java/com/irwinlabs/recallvault/Db.java java/com/irwinlabs/recallvault/Hashes.java \

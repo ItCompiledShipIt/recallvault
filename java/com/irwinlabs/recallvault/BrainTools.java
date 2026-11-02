@@ -40,6 +40,7 @@ public final class BrainTools {
                 tools.put("search_vault", new SearchVault(db));
                 tools.put("read_memory", new ReadMemory(db));
                 tools.put("vault_due", new VaultDue(db));
+                tools.put("search_web", new SearchWeb(ctx));
                 return tools;
             }
         };
@@ -162,6 +163,28 @@ public final class BrainTools {
                 }
             }
             return "No memory with id " + id + ".";
+        }
+    }
+
+    /** Web lookup (v0.55.0): DuckDuckGo, keyless. Gated by the
+     *  Settings switch; only the query words leave the phone. */
+    private static final class SearchWeb implements InternalJsonTool {
+        private final android.content.Context ctx;
+        SearchWeb(android.content.Context ctx) { this.ctx = ctx; }
+
+        @Override public JsonObject getToolDescription() {
+            return desc("search_web",
+                "Search the public web (DuckDuckGo) for facts that are NOT in the user's vault - current information, how-tos, prices, definitions. Results are web pages, not memories; say so when you use them.",
+                params(new String[][]{{"query", "string", "The search words"}}, "query"));
+        }
+
+        @Override public Object execute(JsonObject args) {
+            boolean on = ctx.getSharedPreferences(Embed.PREFS, android.content.Context.MODE_PRIVATE)
+                .getBoolean("brain_web_search", true);
+            if (!on) return "Web search is turned off in Settings.";
+            String q = args != null && args.has("query") ? args.get("query").getAsString() : "";
+            if (q.trim().isEmpty()) return "No search words given.";
+            return WebSearch.search(q.trim());
         }
     }
 

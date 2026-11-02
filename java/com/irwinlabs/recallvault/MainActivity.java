@@ -1209,6 +1209,12 @@ public class MainActivity extends Activity {
                 14, Ui.DIM, false);
             none.setLayoutParams(Ui.matchWrap(8, this));
             askResults.addView(none);
+            // v0.55.1: an empty vault result is exactly when
+            // Clio (and her web search) matters - still offer
+            // the card with no pre-found memories.
+            if (GemmaBrain.isModelPresent(this)) {
+                askResults.addView(buildBrainCard(q, new java.util.ArrayList<Item>()));
+            }
             return;
         }
         boolean first = true;
@@ -1255,21 +1261,27 @@ public class MainActivity extends Activity {
         if (GemmaBrain.isModelPresent(this)) {
             final java.util.List<Item> hitItems = new java.util.ArrayList<Item>();
             for (Ask.Result r : results) hitItems.add(r.item);
-            LinearLayout brainCard = Ui.pressCard(this);
-            brainCard.addView(Ui.tag(this, "CLIO", 1, Ui.ACCENT2));
-            final TextView brainOut = Ui.text(this, "", 14, Ui.TEXT, false);
-            brainOut.setLayoutParams(Ui.matchWrap(6, this));
-            Button writeBtn = Ui.ghostButton(this, "[ WRITE IT UP ]");
-            writeBtn.setLayoutParams(Ui.matchWrap(6, this));
-            writeBtn.setOnClickListener(new View.OnClickListener() {
-                @Override public void onClick(View v) {
-                    if (brainOut.getParent() == null) brainCard.addView(brainOut);
-                    runBrainAnswer(q, hitItems, brainOut);
-                }
-            });
-            brainCard.addView(writeBtn);
-            askResults.addView(brainCard);
+            askResults.addView(buildBrainCard(q, hitItems));
         }
+    }
+
+    /** The CLIO card on Ask (v0.55.1: factored out so an empty
+     *  vault result can offer it too). */
+    private LinearLayout buildBrainCard(final String q, final java.util.List<Item> hitItems) {
+        final LinearLayout brainCard = Ui.pressCard(this);
+        brainCard.addView(Ui.tag(this, "CLIO", 1, Ui.ACCENT2));
+        final TextView brainOut = Ui.text(this, "", 14, Ui.TEXT, false);
+        brainOut.setLayoutParams(Ui.matchWrap(6, this));
+        Button writeBtn = Ui.ghostButton(this, "[ WRITE IT UP ]");
+        writeBtn.setLayoutParams(Ui.matchWrap(6, this));
+        writeBtn.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                if (brainOut.getParent() == null) brainCard.addView(brainOut);
+                runBrainAnswer(q, hitItems, brainOut);
+            }
+        });
+        brainCard.addView(writeBtn);
+        return brainCard;
     }
 
     /** Done / +24H buttons for an Ask answer (v0.52.0). */
@@ -2487,6 +2499,24 @@ public class MainActivity extends Activity {
         });
         brRow.addView(bdel);
         brCard.addView(brRow);
+        final android.widget.Switch webSwitch = new android.widget.Switch(this);
+        webSwitch.setText("Let Clio search the web");
+        webSwitch.setTextColor(Ui.TEXT);
+        webSwitch.setLayoutParams(Ui.matchWrap(8, this));
+        webSwitch.setChecked(getSharedPreferences(Embed.PREFS, MODE_PRIVATE)
+            .getBoolean("brain_web_search", true));
+        webSwitch.setOnCheckedChangeListener(new android.widget.CompoundButton.OnCheckedChangeListener() {
+            @Override public void onCheckedChanged(android.widget.CompoundButton b, boolean on) {
+                getSharedPreferences(Embed.PREFS, MODE_PRIVATE).edit()
+                    .putBoolean("brain_web_search", on).apply();
+            }
+        });
+        brCard.addView(webSwitch);
+        TextView webSub = Ui.text(this,
+            "For answers that aren't in your vault she can look things up with DuckDuckGo. Only the words she searches for leave the phone - never your memories.",
+            12, Ui.DIM, false);
+        webSub.setLayoutParams(Ui.matchWrap(2, this));
+        brCard.addView(webSub);
         box.addView(brCard);
 
         // Skills (v0.53.0): SKILL.md instruction packs for the brain,
@@ -3980,7 +4010,8 @@ public class MainActivity extends Activity {
                     String system = "You are Clio, the muse who keeps this person's private memory vault - everything you know lives on this phone, in these memories. "
                         + "Answer using ONLY the memories provided and what your tools return. "
                         + "Say plainly when the vault does not hold the answer. Be direct and brief. "
-                        + "Never invent dates, amounts or names.\n\n"
+                        + "Never invent dates, amounts or names. "
+                        + "When a question needs facts that are not in the vault, you may use search_web; say clearly when an answer comes from the web instead of the memories.\n\n"
                         + Skills.catalogBlock(on);
                     String prompt = "Question: " + question + "\n\nMemories already found:\n"
                         + GemmaBrain.groundingBlock(hits, 900)

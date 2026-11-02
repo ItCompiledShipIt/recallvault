@@ -1083,6 +1083,22 @@ public class TestMain {
                 !SmsFilter.judge("Your account balance is $2,341.00 as of today.").keep);
             check("sms: dateless order-shipped chatter skipped (v2 rules)",
                 !SmsFilter.judge("Great news, your order has shipped and is on its way!").keep);
+
+            // v0.55.0: web search result parsing (pure).
+            String ddg = "<div class=\"result\"><h2><a rel=\"nofollow\" class=\"result__a\" "
+                + "href=\"//duckduckgo.com/l/?uddg=https%3A%2F%2Fexample.com%2Ft7-manual&amp;rut=abc\">Canon T7 &amp; Manual</a></h2>"
+                + "<a class=\"result__snippet\" href=\"//duckduckgo.com/l/?uddg=x\">The <b>manual</b> for the camera &amp; lens.</a></div>"
+                + "<div class=\"result\"><h2><a rel=\"nofollow\" class=\"result__a\" "
+                + "href=\"//duckduckgo.com/l/?uddg=https%3A%2F%2Fshop.example%2Fbuy\">Buy it</a></h2>"
+                + "<a class=\"result__snippet\" href=\"//duckduckgo.com/l/?uddg=y\">In stock now.</a></div>";
+            java.util.List<WebSearch.Hit> hits = WebSearch.parseResults(ddg, 5);
+            check("web: two hits parsed", hits.size() == 2);
+            check("web: uddg unwrapped + entity decoded",
+                hits.size() == 2 && hits.get(0).url.equals("https://example.com/t7-manual")
+                    && hits.get(0).title.equals("Canon T7 & Manual"));
+            check("web: snippet tags stripped",
+                hits.size() == 2 && hits.get(0).snippet.equals("The manual for the camera & lens."));
+            check("web: empty page parses to none", WebSearch.parseResults("<html>blocked</html>", 5).isEmpty());
         }
 
         System.out.println("RESULT: " + pass + " pass, " + fail + " fail");

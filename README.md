@@ -985,3 +985,25 @@ icons get their own master (assets/clio-logo-icon.png)
 with the fill lifted to silver, so the C reads at a
 glance on the launcher's dark plate. Verified on his
 home screen.
+
+## v0.55.0 - Clio can search the web (Nov 2, 2026)
+
+The other half of Chris's Nov 1 ask: when an answer is
+not in the vault, Clio may look it up. A fourth brain
+tool, search_web, queries DuckDuckGo's public HTML
+endpoint - no key, no account; only the search words
+leave the phone, never vault contents. Results come back
+labeled as web, not memories, and her system prompt now
+tells her to say plainly when an answer came from the
+web. Parser is pure and JVM-tested (redirect unwrapping,
+entity decoding); a Settings switch ("Let Clio search
+the web", default on) gates the tool. Suite 228/228.
+
+## v0.55.1 - the card shows up empty-handed too (Nov 2, 2026)
+
+Ask only offered the CLIO card when the vault already
+had a match - precisely backwards for web questions.
+An empty result now still offers her card (with no
+pre-found memories), so "what's the price of gold"
+reaches her and the web. Card construction factored
+into buildBrainCard.
