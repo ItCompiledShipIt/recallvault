@@ -845,3 +845,47 @@ have yet, built honestly on the engines already here:
   verifying from the list, dense pref toggling on/off,
   export scope radios rendering. The erase flow was
   verified up to its button only - never run.
+
+## v0.53.0 - the brain: Gemma 4 + skills (Nov 1, 2026)
+
+A second on-device model joins the vault: Gemma 4 E4B
+(litert-community, Apache 2.0, ungated), the generic
+.litertlm at 3,659,530,240 bytes, downloaded on demand
+into app storage like the other models - Chris picked E4B
+over E2B (smarter over smaller). It runs through LiteRT-LM
+0.18, the runtime the embedder already shipped; the Kotlin
+API is consumed from Java via its full constructors (the
+$default bridges are synthetic and invisible to javac -
+build-verified). Engine init tries GPU, falls back to CPU,
+and any failure disables the feature quietly instead of
+crashing the vault (the LocalEmbed rule). The native
+engine also refuses a cache directory that does not exist
+yet - GemmaBrain creates it first (device-verified).
+
+What the brain does:
+- Detail: "Summarize with the brain" writes a plain-words
+  summary plus a Key points list, facts kept exact.
+- Ask: a BRAIN card under the results - [ WRITE IT UP ]
+  turns the retrieved memories into a written answer with
+  [n] citations. The grounding block carries each item's
+  due date and amount (without them the model mistook the
+  saved date for the due date - caught in device proof).
+- Tools: the conversation carries BrainTools - search_vault,
+  read_memory, vault_due as LiteRT-LM function calls
+  (InternalJsonTool), read-only, private memories excluded.
+- Skills: SKILL.md instruction packs in the AI Edge Gallery
+  community format (agentskills.io shape). Three bundled
+  (daily-briefing, bill-helper, email-drafter); Settings
+  lists them with per-skill switches, imports new ones from
+  a picked SKILL.md, and links out to the Gallery community
+  skills discussions. Enabled skills ride in the brain's
+  system prompt as a catalog.
+
+JVM suite 205/205 (skills parser). Device-verified on the
+S24 Ultra: model downloaded through the app (exact byte
+count), Settings cards render, summarize produced a correct
+summary of a staged note, WRITE IT UP answered "what do I
+owe" with a cited sentence. The due-date grounding fix was
+built and installed; its on-device re-check was cut short
+when the phone disconnected, and is owed a 30-second
+re-proof when it reconnects.

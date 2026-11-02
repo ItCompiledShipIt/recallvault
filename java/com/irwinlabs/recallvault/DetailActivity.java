@@ -401,6 +401,19 @@ public class DetailActivity extends Activity {
         actions.addView(del);
         root.addView(actions);
 
+        // Brain summary (v0.53.0): Gemma 4 writes the plain-words
+        // version of this memory, on the phone.
+        final String detailText = (item.body != null && !item.body.isEmpty())
+            ? item.body : (item.extracted != null ? item.extracted : "");
+        if (GemmaBrain.isModelPresent(this) && !detailText.trim().isEmpty()) {
+            Button sumBtn = Ui.ghostButton(this, "Summarize with the brain");
+            sumBtn.setLayoutParams(Ui.matchWrap(8, this));
+            sumBtn.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) { summarizeWithBrain(detailText); }
+            });
+            root.addView(sumBtn);
+        }
+
         // Listen (v0.19.0): the phone reads the memory aloud -
         // built-in text-to-speech, nothing leaves the device.
         listenBtn = Ui.ghostButton(this, "Listen - hear this memory");
@@ -731,6 +744,40 @@ public class DetailActivity extends Activity {
     }
 
     /** Send this memory to another app - text, facts, and its file (v0.15.0). */
+    /** Brain summary dialog (v0.53.0): generation on a worker
+     *  thread, the dialog fills in when the words land. */
+    private void summarizeWithBrain(final String text) {
+        final TextView out = Ui.text(this, "The brain is thinking...", 14, Ui.TEXT, false);
+        out.setPadding(Ui.dp(this, 20), Ui.dp(this, 16), Ui.dp(this, 20), Ui.dp(this, 8));
+        final android.app.AlertDialog dlg = new android.app.AlertDialog.Builder(this)
+            .setTitle("Summary")
+            .setView(out)
+            .setPositiveButton("Close", null)
+            .create();
+        dlg.show();
+        new Thread(new Runnable() {
+            @Override public void run() {
+                try {
+                    String clipped = text.length() > 6000 ? text.substring(0, 6000) : text;
+                    final String answer = GemmaBrain.generate(DetailActivity.this,
+                        "You summarize the user's saved memories. Plain words, the key facts first, "
+                        + "dates and amounts kept exact. Never add anything that is not in the text.",
+                        "Summarize this memory in 2-4 short sentences, then a line starting with "
+                        + "\"Key points:\" listing the facts that matter.\n\n" + clipped);
+                    runOnUiThread(new Runnable() {
+                        @Override public void run() { if (dlg.isShowing()) out.setText(answer); }
+                    });
+                } catch (final Exception e) {
+                    runOnUiThread(new Runnable() {
+                        @Override public void run() {
+                            if (dlg.isShowing()) out.setText("Brain unavailable: " + e.getMessage());
+                        }
+                    });
+                }
+            }
+        }).start();
+    }
+
     private void shareOut() {
         StringBuilder text = new StringBuilder(item.title);
         if (!item.body.isEmpty()) text.append("\n\n").append(item.body);

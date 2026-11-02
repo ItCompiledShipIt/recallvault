@@ -1023,6 +1023,26 @@ public class TestMain {
                     && older.contains(","));
         }
 
+        // ---------- v0.53.0: SKILL.md parsing + catalog ----------
+        {
+            String md = "---\nname: daily-briefing\ndescription: Build a short morning briefing.\n---\n\nDo the thing.\nSecond line.\n";
+            Skills.Skill s = Skills.parse(md, true, "daily-briefing");
+            check("skills: parses frontmatter",
+                s != null && "daily-briefing".equals(s.name)
+                    && "Build a short morning briefing.".equals(s.description));
+            check("skills: body is instructions",
+                s != null && s.instructions.startsWith("Do the thing."));
+            check("skills: no frontmatter, no skill",
+                Skills.parse("just some text", true, "x") == null);
+            check("skills: nameless frontmatter rejected",
+                Skills.parse("---\ndescription: hi\n---\nbody", true, "x") == null);
+            java.util.List<Skills.Skill> two = new java.util.ArrayList<Skills.Skill>();
+            two.add(s);
+            check("skills: catalog lists name + description",
+                Skills.catalogBlock(two).contains("daily-briefing")
+                    && Skills.catalogBlock(two).contains("morning briefing"));
+        }
+
         System.out.println("RESULT: " + pass + " pass, " + fail + " fail");
         if (fail > 0) System.exit(1);
     }

@@ -55,6 +55,7 @@ public class MainActivity extends Activity {
     private static final int REQ_IMPORT_FOLDER = 906;
     private static final int REQ_TREE_INGEST = 907;
     private static final int REQ_PERM_MEDIA = 204;
+    private static final int REQ_PICK_SKILL = 908;
 
     private Db db;
     private final Handler ui = new Handler(Looper.getMainLooper());
@@ -1248,6 +1249,26 @@ public class MainActivity extends Activity {
             askResults.addView(card);
         }
         addAskChips(q, results);
+        // Brain write-up (v0.53.0): Gemma 4 turns the retrieved
+        // memories into a written answer, tools + skills attached.
+        if (GemmaBrain.isModelPresent(this)) {
+            final java.util.List<Item> hitItems = new java.util.ArrayList<Item>();
+            for (Ask.Result r : results) hitItems.add(r.item);
+            LinearLayout brainCard = Ui.pressCard(this);
+            brainCard.addView(Ui.tag(this, "BRAIN", 1, Ui.ACCENT2));
+            final TextView brainOut = Ui.text(this, "", 14, Ui.TEXT, false);
+            brainOut.setLayoutParams(Ui.matchWrap(6, this));
+            Button writeBtn = Ui.ghostButton(this, "[ WRITE IT UP ]");
+            writeBtn.setLayoutParams(Ui.matchWrap(6, this));
+            writeBtn.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    if (brainOut.getParent() == null) brainCard.addView(brainOut);
+                    runBrainAnswer(q, hitItems, brainOut);
+                }
+            });
+            brainCard.addView(writeBtn);
+            askResults.addView(brainCard);
+        }
     }
 
     /** Done / +24H buttons for an Ask answer (v0.52.0). */
@@ -2000,6 +2021,12 @@ public class MainActivity extends Activity {
     @Override
     protected void onActivityResult(int req, int result, Intent data) {
         super.onActivityResult(req, result, data);
+        if (req == REQ_PICK_SKILL) {
+            if (result == RESULT_OK && data != null && data.getData() != null) {
+                importSkill(data.getData());
+            }
+            return;
+        }
         if (req == REQ_EXPORT_DOC) {
             if (result == RESULT_OK && data != null && data.getData() != null && pendingExportPassword != null) {
                 writeExport(data.getData(), pendingExportPassword);
@@ -2416,6 +2443,107 @@ public class MainActivity extends Activity {
         row.addView(del);
         mCard.addView(row);
         box.addView(mCard);
+
+        // Brain (v0.53.0): Gemma 4 E4B, the generative model.
+        LinearLayout brCard = Ui.card(this);
+        brCard.addView(Ui.sectionLabel(this, "Brain - Gemma 4"));
+        final TextView brainStatus = Ui.text(this, brainStatusText(), 13, Ui.TEXT, false);
+        brainStatus.setLayoutParams(Ui.matchWrap(6, this));
+        brCard.addView(brainStatus);
+        LinearLayout brRow = new LinearLayout(this);
+        brRow.setOrientation(LinearLayout.HORIZONTAL);
+        brRow.setLayoutParams(Ui.matchWrap(10, this));
+        final boolean brainPresent = GemmaBrain.isModelPresent(this);
+        Button bdl = Ui.iconButton(this,
+            brainPresent ? "Downloaded" : "Download (3.7 GB)",
+            R.drawable.ic_download, Ui.ACCENT, Ui.ACCENT_DARK_TEXT);
+        bdl.setLayoutParams(Ui.weight1(0, this));
+        if (brainPresent) disableButton(bdl);
+        bdl.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { downloadBrain(brainStatus); }
+        });
+        brRow.addView(bdl);
+        Button bdel = Ui.button(this, "Remove", Ui.PANEL_HI, Ui.DANGER);
+        bdel.setLayoutParams(Ui.weight1(8, this));
+        if (!brainPresent) disableButton(bdel);
+        bdel.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                GemmaBrain.deleteModel(MainActivity.this);
+                Toast.makeText(MainActivity.this, "Brain model removed", Toast.LENGTH_SHORT).show();
+                refreshSettings();
+            }
+        });
+        brRow.addView(bdel);
+        brCard.addView(brRow);
+        box.addView(brCard);
+
+        // Skills (v0.53.0): SKILL.md instruction packs for the brain,
+        // the same format AI Edge Gallery's community shares.
+        LinearLayout sCard = Ui.card(this);
+        sCard.addView(Ui.sectionLabel(this, "Skills"));
+        final java.util.List<Skills.Skill> allSkills = Skills.loadAll(this);
+        if (allSkills.isEmpty()) {
+            TextView none = Ui.text(this, "No skills installed.", 13, Ui.DIM, false);
+            none.setLayoutParams(Ui.matchWrap(6, this));
+            sCard.addView(none);
+        }
+        for (final Skills.Skill sk : allSkills) {
+            TextView sName = Ui.text(this, sk.name + (sk.bundled ? "" : "  (imported)"),
+                14, Ui.TEXT, true);
+            sName.setLayoutParams(Ui.matchWrap(6, this));
+            sCard.addView(sName);
+            TextView sDesc = Ui.text(this, sk.description, 12, Ui.DIM, false);
+            sDesc.setLayoutParams(Ui.matchWrap(4, this));
+            sCard.addView(sDesc);
+            android.widget.Switch sSw = new android.widget.Switch(this);
+            sSw.setText("Use this skill");
+            sSw.setTextColor(Ui.TEXT);
+            sSw.setTextSize(13);
+            sSw.setChecked(Skills.isEnabled(this, sk));
+            sSw.setLayoutParams(Ui.matchWrap(6, this));
+            sSw.setOnCheckedChangeListener(new android.widget.CompoundButton.OnCheckedChangeListener() {
+                @Override public void onCheckedChanged(android.widget.CompoundButton b, boolean on) {
+                    Skills.setEnabled(MainActivity.this, sk, on);
+                }
+            });
+            sCard.addView(sSw);
+            if (!sk.bundled) {
+                Button sDel = Ui.ghostButton(this, "Remove skill");
+                sDel.setLayoutParams(Ui.matchWrap(4, this));
+                sDel.setOnClickListener(new View.OnClickListener() {
+                    @Override public void onClick(View v) {
+                        Skills.remove(MainActivity.this, sk);
+                        Toast.makeText(MainActivity.this, "Skill removed", Toast.LENGTH_SHORT).show();
+                        refreshSettings();
+                    }
+                });
+                sCard.addView(sDel);
+            }
+        }
+        Button impBtn = Ui.ghostButton(this, "Import a skill (SKILL.md)");
+        impBtn.setLayoutParams(Ui.matchWrap(6, this));
+        impBtn.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                i.addCategory(Intent.CATEGORY_OPENABLE);
+                i.setType("*/*");
+                startActivityForResult(i, REQ_PICK_SKILL);
+            }
+        });
+        sCard.addView(impBtn);
+        Button commBtn = Ui.ghostButton(this, "Community skills (AI Edge Gallery)");
+        commBtn.setLayoutParams(Ui.matchWrap(4, this));
+        commBtn.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                try {
+                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(Skills.COMMUNITY_URL)));
+                } catch (Exception e) {
+                    Toast.makeText(MainActivity.this, "No browser available", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+        sCard.addView(commBtn);
+        box.addView(sCard);
 
         LinearLayout wCard = Ui.card(this);
         wCard.addView(Ui.sectionLabel(this, "Transcription"));
@@ -3728,6 +3856,120 @@ public class MainActivity extends Activity {
             return "Search model: ready (" + mb + " MB). Semantic Ask works fully offline.";
         }
         return "Search model: not downloaded. Ask matches keywords only.";
+    }
+
+    private String brainStatusText() {
+        if (GemmaBrain.isModelPresent(this)) {
+            long mb = GemmaBrain.modelFile(this).length() / (1024 * 1024);
+            return "Brain model: ready (" + mb + " MB). Summaries, written Ask answers and skills run on this phone.";
+        }
+        return "Brain model: not downloaded. Summaries, written answers and skills stay off.";
+    }
+
+    private void downloadBrain(final TextView status) {
+        status.setText("Downloading brain model... 0%");
+        new Thread(new Runnable() {
+            @Override public void run() {
+                try {
+                    GemmaBrain.download(MainActivity.this, new GemmaBrain.Progress() {
+                        @Override public void onProgress(final int percent) {
+                            ui.post(new Runnable() {
+                                @Override public void run() {
+                                    status.setText("Downloading brain model... " + percent + "%");
+                                }
+                            });
+                        }
+                    });
+                    ui.post(new Runnable() {
+                        @Override public void run() {
+                            Toast.makeText(MainActivity.this, "Brain model ready", Toast.LENGTH_SHORT).show();
+                            refreshSettings();
+                        }
+                    });
+                } catch (final Exception e) {
+                    ui.post(new Runnable() {
+                        @Override public void run() {
+                            status.setText("Download failed: " + e.getMessage());
+                        }
+                    });
+                }
+            }
+        }).start();
+    }
+
+    /** Read a picked SKILL.md and install it as a skill. */
+    private void importSkill(final Uri uri) {
+        new Thread(new Runnable() {
+            @Override public void run() {
+                String text = null;
+                try {
+                    java.io.InputStream in = getContentResolver().openInputStream(uri);
+                    java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
+                    byte[] buf = new byte[8192];
+                    int n;
+                    while ((n = in.read(buf)) > 0) bos.write(buf, 0, n);
+                    in.close();
+                    text = bos.toString("UTF-8");
+                } catch (Exception e) { /* handled below */ }
+                final String md = text;
+                ui.post(new Runnable() {
+                    @Override public void run() {
+                        if (md == null) {
+                            Toast.makeText(MainActivity.this, "Could not read that file", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        Skills.Skill s = Skills.install(MainActivity.this, md);
+                        Toast.makeText(MainActivity.this,
+                            s != null ? "Skill installed: " + s.name
+                                      : "That file is not a SKILL.md skill",
+                            Toast.LENGTH_LONG).show();
+                        if (s != null) refreshSettings();
+                    }
+                });
+            }
+        }).start();
+    }
+
+    /**
+     * Run the brain for Ask: a written answer grounded in the
+     * memories already retrieved, with the vault tools attached and
+     * the enabled skills' catalog in the system prompt. The result
+     * lands in the given TextView. Runs on a worker thread.
+     */
+    private void runBrainAnswer(final String question, final java.util.List<Item> hits,
+                                final TextView target) {
+        ui.post(new Runnable() {
+            @Override public void run() { target.setText("The brain is thinking..."); }
+        });
+        new Thread(new Runnable() {
+            @Override public void run() {
+                try {
+                    java.util.List<Skills.Skill> all = Skills.loadAll(MainActivity.this);
+                    java.util.List<Skills.Skill> on = Skills.enabled(MainActivity.this, all);
+                    String system = "You are the brain of RecallVault, the user's private memory vault. "
+                        + "Answer using ONLY the memories provided and what your tools return. "
+                        + "Say plainly when the vault does not hold the answer. Be direct and brief. "
+                        + "Never invent dates, amounts or names.\n\n"
+                        + Skills.catalogBlock(on);
+                    String prompt = "Question: " + question + "\n\nMemories already found:\n"
+                        + GemmaBrain.groundingBlock(hits, 900)
+                        + "\n\nWrite the answer in full sentences. Cite the memory number like [1] where you use it.";
+                    java.util.List<com.google.ai.edge.litertlm.ToolProvider> tools =
+                        new java.util.ArrayList<com.google.ai.edge.litertlm.ToolProvider>();
+                    tools.add(BrainTools.provider(MainActivity.this, db));
+                    final String answer = GemmaBrain.generate(MainActivity.this, system, prompt, tools);
+                    ui.post(new Runnable() {
+                        @Override public void run() { target.setText(answer); }
+                    });
+                } catch (final Exception e) {
+                    ui.post(new Runnable() {
+                        @Override public void run() {
+                            target.setText("Brain unavailable: " + e.getMessage());
+                        }
+                    });
+                }
+            }
+        }).start();
     }
 
     private String whisperStatusText() {
