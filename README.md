@@ -1185,3 +1185,12 @@ gains a "Clio's mind" card: fact count, read/edit
 either file, reset the instructions, clear the memory.
 Everything is plain markdown on the phone, and the
 user's edits win over the seed.
+
+## v0.65.0 - backups carry the whole picture (Nov 2, 2026)
+
+Full exports (and the weekly auto-backup) now include
+contacts.json and Clio's mind (brain/AGENTS.md,
+brain/MEMORY.md) alongside the memories, and a restore
+brings them home too. This is what lets Clio for
+Desktop - the new companion on bigpc - open a backup
+and show memories, people and mind together.

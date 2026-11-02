@@ -144,7 +144,12 @@ public final class AutoBackup {
         if (tree == null) throw new Exception("No backup folder chosen");
         Db db = new Db(ctx);
         java.util.List<Item> all = db.all();
-        byte[] enc = encrypt(Backup.buildZip(all));
+        java.util.Map<String, java.io.File> extras =
+            new java.util.LinkedHashMap<String, java.io.File>();
+        extras.put("contacts.json", new java.io.File(ctx.getFilesDir(), "contacts.json"));
+        extras.put("brain/AGENTS.md", ClioMind.agentsFile(ctx));
+        extras.put("brain/MEMORY.md", ClioMind.memoryFile(ctx));
+        byte[] enc = encrypt(Backup.buildZip(all, extras));
         ContentResolver cr = ctx.getContentResolver();
         String parentDoc = DocumentsContract.getTreeDocumentId(tree);
         String name = FILE_PREFIX

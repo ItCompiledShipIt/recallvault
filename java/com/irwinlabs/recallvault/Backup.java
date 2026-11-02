@@ -60,6 +60,18 @@ public final class Backup {
     }
 
     public static byte[] buildZip(List<Item> items) throws Exception {
+        return buildZip(items, null);
+    }
+
+    /**
+     * Build the backup zip. extras (v0.65.0) maps extra
+     * entry names to files on disk - the contact library
+     * and Clio's mind ride along so a desktop or a new
+     * phone gets the whole picture, not just memories:
+     * "contacts.json", "brain/AGENTS.md", "brain/MEMORY.md".
+     */
+    public static byte[] buildZip(List<Item> items,
+                                  java.util.Map<String, File> extras) throws Exception {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         ZipOutputStream zos = new ZipOutputStream(bos);
         java.util.Set<String> usedEntries = new java.util.HashSet<String>();
@@ -142,6 +154,22 @@ public final class Backup {
             arr.put(o);
         }
         root.put("items", arr);
+        if (extras != null) {
+            for (java.util.Map.Entry<String, File> ex : extras.entrySet()) {
+                File f = ex.getValue();
+                if (f == null || !f.exists()) continue;
+                zos.putNextEntry(new ZipEntry(uniqueEntry(usedEntries, ex.getKey())));
+                FileInputStream in = new FileInputStream(f);
+                try {
+                    byte[] buf = new byte[64 * 1024];
+                    int n;
+                    while ((n = in.read(buf)) > 0) zos.write(buf, 0, n);
+                } finally {
+                    in.close();
+                }
+                zos.closeEntry();
+            }
+        }
         zos.putNextEntry(new ZipEntry("vault.json"));
         zos.write(root.toString().getBytes("UTF-8"));
         zos.closeEntry();

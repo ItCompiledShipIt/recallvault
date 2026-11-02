@@ -5050,7 +5050,18 @@ public class MainActivity extends Activity {
                         for (Item it : all) if (it.createdAt >= since) scoped.add(it);
                         all = scoped;
                     }
-                    byte[] zip = Backup.buildZip(all);
+                    // Contacts + Clio's mind ride along (v0.65.0),
+                    // full exports only, so a desktop or a new
+                    // phone gets the whole picture.
+                    java.util.Map<String, java.io.File> extras = null;
+                    if (fullScope) {
+                        extras = new java.util.LinkedHashMap<String, java.io.File>();
+                        extras.put("contacts.json",
+                            new java.io.File(getFilesDir(), "contacts.json"));
+                        extras.put("brain/AGENTS.md", ClioMind.agentsFile(MainActivity.this));
+                        extras.put("brain/MEMORY.md", ClioMind.memoryFile(MainActivity.this));
+                    }
+                    byte[] zip = Backup.buildZip(all, extras);
                     final byte[] enc = Backup.encrypt(zip, password);
                     java.io.OutputStream out = getContentResolver().openOutputStream(uri);
                     if (out == null) throw new Exception("Could not open the destination");
@@ -5246,6 +5257,31 @@ public class MainActivity extends Activity {
                         insertedItems.add(it);
                         insertedIdx.add(i);
                         restored++;
+                    }
+                    // Contacts + Clio's mind come home too (v0.65.0):
+                    // when the backup carries them, they replace
+                    // what's here - a restore is a restore.
+                    try {
+                        if (r.files.containsKey("contacts.json")) {
+                            java.io.FileOutputStream cf = new java.io.FileOutputStream(
+                                new java.io.File(getFilesDir(), "contacts.json"));
+                            cf.write(r.files.get("contacts.json"));
+                            cf.close();
+                        }
+                        if (r.files.containsKey("brain/AGENTS.md")) {
+                            java.io.FileOutputStream af = new java.io.FileOutputStream(
+                                ClioMind.agentsFile(MainActivity.this));
+                            af.write(r.files.get("brain/AGENTS.md"));
+                            af.close();
+                        }
+                        if (r.files.containsKey("brain/MEMORY.md")) {
+                            java.io.FileOutputStream mf = new java.io.FileOutputStream(
+                                ClioMind.memoryFile(MainActivity.this));
+                            mf.write(r.files.get("brain/MEMORY.md"));
+                            mf.close();
+                        }
+                    } catch (Exception ignored) {
+                        // Memories are restored; extras are a bonus.
                     }
                     // Re-link restored memories (v0.23.0): link targets
                     // were exported as created_at keys; map them onto
