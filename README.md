@@ -967,3 +967,12 @@ magenta rim is preserved pixel for pixel. The launcher
 icon uses the transparent cutout over a transparent
 adaptive background, and the header mark drops its tile:
 the C sits directly on the header. Verified on device.
+
+## v0.54.3 - mark, undeformed (Nov 2, 2026)
+
+The full-bleed cutout filled the whole icon canvas, so
+the launcher's mask was clipping the C's edges - the
+"deformed" look. The glyph now sits in the adaptive
+safe zone (64% of the foreground canvas, 80% on legacy
+icons, 88% for the in-app header mark). Proportions and
+artwork unchanged.
