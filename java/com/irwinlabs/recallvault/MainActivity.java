@@ -205,6 +205,7 @@ public class MainActivity extends Activity {
     // ---------- shell ----------
 
     private LinearLayout tabsBar;
+    private LinearLayout askBar;
     private TextView headerCount;
 
     private void buildShell() {
@@ -213,10 +214,27 @@ public class MainActivity extends Activity {
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackgroundColor(Ui.BG);
 
+        // Top utility strip (Stitch layout, v0.50.0): what the
+        // app is, in one line, on every screen.
+        LinearLayout strip = new LinearLayout(this);
+        strip.setOrientation(LinearLayout.HORIZONTAL);
+        strip.setGravity(Gravity.CENTER_VERTICAL);
+        strip.setPadding(Ui.dp(this, 16), Ui.dp(this, 12), Ui.dp(this, 16), Ui.dp(this, 0));
+        TextView stripL = Ui.text(this, "● ON-DEVICE", 9, Ui.ACCENT2, true);
+        stripL.setLetterSpacing(0.1f);
+        strip.addView(stripL);
+        View stripSp = new View(this);
+        stripSp.setLayoutParams(new LinearLayout.LayoutParams(0, 1, 1f));
+        strip.addView(stripSp);
+        TextView stripR = Ui.text(this, "NO ACCOUNT • NO CLOUD", 9, Ui.DIM, true);
+        stripR.setLetterSpacing(0.1f);
+        strip.addView(stripR);
+        root.addView(strip);
+
         LinearLayout header = new LinearLayout(this);
         header.setOrientation(LinearLayout.HORIZONTAL);
         header.setGravity(Gravity.CENTER_VERTICAL);
-        header.setPadding(Ui.dp(this, 16), Ui.dp(this, 16), Ui.dp(this, 16), Ui.dp(this, 10));
+        header.setPadding(Ui.dp(this, 16), Ui.dp(this, 10), Ui.dp(this, 16), Ui.dp(this, 10));
         header.addView(Ui.brandMark(this));
         LinearLayout titles = new LinearLayout(this);
         titles.setOrientation(LinearLayout.VERTICAL);
@@ -238,6 +256,44 @@ public class MainActivity extends Activity {
         content.setPadding(Ui.dp(this, 16), Ui.dp(this, 8), Ui.dp(this, 16), Ui.dp(this, 24));
         scroll.addView(content);
         root.addView(scroll);
+
+        // Ask bar (v0.51.0, per the Stitch design): the question
+        // input lives at the bottom of the Ask screen - input,
+        // mic, send - not stacked at the top of the scroll.
+        askBar = new LinearLayout(this);
+        askBar.setOrientation(LinearLayout.HORIZONTAL);
+        askBar.setGravity(Gravity.CENTER_VERTICAL);
+        askBar.setBackgroundColor(Ui.PANEL);
+        askBar.setPadding(Ui.dp(this, 12), Ui.dp(this, 8), Ui.dp(this, 12), Ui.dp(this, 8));
+        askBar.setVisibility(View.GONE);
+        askInput = Ui.input(this, "Ask anything saved in your vault...");
+        LinearLayout.LayoutParams ailp = new LinearLayout.LayoutParams(0,
+            LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+        askInput.setLayoutParams(ailp);
+        askBar.addView(askInput);
+        Button askMic = Ui.iconButton(this, "", R.drawable.ic_mic, Ui.ACCENT, Ui.ACCENT_DARK_TEXT);
+        LinearLayout.LayoutParams amlp = new LinearLayout.LayoutParams(
+            Ui.dp(this, 52), LinearLayout.LayoutParams.MATCH_PARENT);
+        amlp.setMargins(Ui.dp(this, 8), 0, 0, 0);
+        askMic.setLayoutParams(amlp);
+        askMic.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                Intent i = new Intent(MainActivity.this, VoiceActivity.class);
+                i.putExtra("mode", "ask");
+                startActivityForResult(i, 301);
+            }
+        });
+        askBar.addView(askMic);
+        Button askGo = Ui.primaryButton(this, "ASK");
+        LinearLayout.LayoutParams aglp = new LinearLayout.LayoutParams(
+            Ui.dp(this, 64), LinearLayout.LayoutParams.MATCH_PARENT);
+        aglp.setMargins(Ui.dp(this, 8), 0, 0, 0);
+        askGo.setLayoutParams(aglp);
+        askGo.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { runAsk(); }
+        });
+        askBar.addView(askGo);
+        root.addView(askBar);
 
         tabsBar = new LinearLayout(this);
         tabsBar.setOrientation(LinearLayout.HORIZONTAL);
@@ -271,13 +327,34 @@ public class MainActivity extends Activity {
             new View.OnClickListener() { @Override public void onClick(View v) { tab = "REMINDERS"; render(); } }));
     }
 
+    /** Total bytes the vault itself holds (item files + db). */
+    private String vaultSizeText() {
+        long bytes = 0;
+        try {
+            java.io.File dbf = getDatabasePath("recallvault.db");
+            if (dbf != null && dbf.exists()) bytes += dbf.length();
+            for (Item it : db.all()) {
+                if (it.filePath != null && !it.filePath.isEmpty()) {
+                    java.io.File f = new java.io.File(it.filePath);
+                    if (f.exists()) bytes += f.length();
+                }
+            }
+        } catch (Exception ignored) { }
+        if (bytes <= 0) return "0 MB";
+        double mb = bytes / 1048576.0;
+        if (mb < 1024) return String.format(java.util.Locale.US, "%.1f MB", mb);
+        return String.format(java.util.Locale.US, "%.2f GB", mb / 1024.0);
+    }
+
     private void render() {
         if (content == null) return;
         if (headerCount != null) {
             int n = db.count();
-            headerCount.setText(n + (n == 1 ? " memory" : " memories"));
+            headerCount.setText(n + (n == 1 ? " memory" : " memories")
+                + "  •  " + vaultSizeText() + " on this phone");
         }
         renderTabs();
+        if (askBar != null) askBar.setVisibility("ASK".equals(tab) ? View.VISIBLE : View.GONE);
         content.removeAllViews();
         if ("ASK".equals(tab)) renderAsk();
         else if ("REMINDERS".equals(tab)) renderReminders();
@@ -288,6 +365,9 @@ public class MainActivity extends Activity {
     // ---------- VAULT ----------
 
     private void renderVault() {
+        LinearLayout title = Ui.screenTitle(this, "VAULT", "ON-DEVICE");
+        title.setLayoutParams(Ui.matchWrap(6, this));
+        content.addView(title);
         content.addView(captureDock());
         attentionStrip();
 
@@ -440,6 +520,87 @@ public class MainActivity extends Activity {
         fillList(listHolder);
     }
 
+    /**
+     * First-run register (Stitch layout, v0.50.0): an empty
+     * vault gets a commissioning card - what the app is, the
+     * three moves that set it up, and the two ways in (record,
+     * or restore a backup) - instead of a bare empty state.
+     */
+    private LinearLayout firstRunCard() {
+        LinearLayout card = Ui.card(this);
+        TextView t = Ui.text(this, "VAULT REGISTER EMPTY", 18, Ui.TEXT, true);
+        t.setLetterSpacing(0.04f);
+        card.addView(t);
+        TextView sub = Ui.text(this,
+            "No memories stored yet. Everything you save stays on this phone - "
+            + "filed, dated and searchable, with no account and no cloud.",
+            13, Ui.DIM, false);
+        sub.setLayoutParams(Ui.matchWrap(6, this));
+        card.addView(sub);
+
+        boolean lockOn = getSharedPreferences(Embed.PREFS, MODE_PRIVATE)
+            .getBoolean("app_lock_enabled", false);
+        card.addView(firstRunStep("STEP 01", "Record a voice note",
+            "Speak it - transcription happens on this phone.", lockOn ? null : null,
+            new View.OnClickListener() {
+                @Override public void onClick(View v) { startVoice(); }
+            }));
+        card.addView(firstRunStep("STEP 02", lockOn ? "App lock is on" : "Turn on the app lock",
+            lockOn ? "The vault asks for your fingerprint on open."
+                   : "Require your fingerprint to open the vault.",
+            lockOn ? "DONE" : null,
+            new View.OnClickListener() {
+                @Override public void onClick(View v) { showSettings(); }
+            }));
+        card.addView(firstRunStep("STEP 03", "Scan a document",
+            "A bill, a letter, a receipt - dates and amounts are pulled out.",
+            null,
+            new View.OnClickListener() {
+                @Override public void onClick(View v) { startCamera("SCAN"); }
+            }));
+
+        Button first = Ui.primaryButton(this, "[ +  RECORD FIRST MEMORY ]");
+        first.setLayoutParams(Ui.matchWrap(12, this));
+        first.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { startVoice(); }
+        });
+        card.addView(first);
+        Button imp = Ui.ghostButton(this, "[ IMPORT BACKUP ARCHIVE ]");
+        imp.setLayoutParams(Ui.matchWrap(8, this));
+        imp.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                i.addCategory(Intent.CATEGORY_OPENABLE);
+                i.setType("application/octet-stream");
+                startActivityForResult(i, REQ_IMPORT_DOC);
+            }
+        });
+        card.addView(imp);
+        return card;
+    }
+
+    private LinearLayout firstRunStep(String step, String title, String desc,
+                                      String doneTag, View.OnClickListener click) {
+        LinearLayout row = Ui.pressCard(this);
+        LinearLayout head = new LinearLayout(this);
+        head.setOrientation(LinearLayout.HORIZONTAL);
+        head.setGravity(Gravity.CENTER_VERTICAL);
+        head.addView(Ui.tag(this, step, 1, Ui.ACCENT));
+        if (doneTag != null) {
+            View sp = new View(this);
+            sp.setLayoutParams(new LinearLayout.LayoutParams(0, 1, 1f));
+            head.addView(sp);
+            head.addView(Ui.tag(this, doneTag, 1, Ui.ACCENT2));
+        }
+        row.addView(head);
+        TextView t = Ui.text(this, title, 15, Ui.TEXT, true);
+        t.setLayoutParams(Ui.matchWrap(6, this));
+        row.addView(t);
+        row.addView(Ui.text(this, desc, 12, Ui.DIM, false));
+        row.setOnClickListener(click);
+        return row;
+    }
+
     private void renderListOnly() {
         for (int i = 0; i < content.getChildCount(); i++) {
             View v = content.getChildAt(i);
@@ -455,26 +616,41 @@ public class MainActivity extends Activity {
         holder.removeAllViews();
         List<Item> items = db.byCategory(categoryFilter);
         String q = vaultQuery.trim().toLowerCase();
+        // Filter first so day headers can carry entry counts
+        // (Stitch layout, v0.50.0).
+        java.util.List<Item> visible = new java.util.ArrayList<Item>();
+        for (Item it : items) {
+            if (!q.isEmpty() && !it.searchableText().toLowerCase().contains(q)
+                    && !it.title.toLowerCase().contains(q)) continue;
+            visible.add(it);
+        }
         int shown = 0;
         long lastMonthStamp = -1;
         long lastDayStamp = -1;
         long nowMs = System.currentTimeMillis();
-        for (Item it : items) {
-            if (!q.isEmpty() && !it.searchableText().toLowerCase().contains(q)
-                    && !it.title.toLowerCase().contains(q)) continue;
+        for (int vi = 0; vi < visible.size(); vi++) {
+            Item it = visible.get(vi);
             if (vaultByMonth && (lastMonthStamp == -1 || !Resurface.sameMonth(lastMonthStamp, it.createdAt))) {
                 TextView mh = Ui.sectionLabel(this, Resurface.monthLabel(it.createdAt));
                 mh.setLayoutParams(Ui.matchWrap(10, this));
                 holder.addView(mh);
                 lastMonthStamp = it.createdAt;
             }
-            // Day-grouped feed (v0.48.0 layout): the vault reads
-            // like a journal - Today, Yesterday, then dated days -
-            // instead of one undifferentiated stack.
+            // Day-grouped feed (v0.48.0, counts v0.50.0): the
+            // vault reads like a journal - Today, Yesterday,
+            // then dated days - each header saying how many
+            // entries the day holds.
             if (!vaultByMonth) {
                 long day = DayGroup.startOfDay(it.createdAt);
                 if (day != lastDayStamp) {
-                    TextView dh = Ui.sectionLabel(this, DayGroup.label(it.createdAt, nowMs));
+                    int count = 0;
+                    for (int vj = vi; vj < visible.size(); vj++) {
+                        if (DayGroup.startOfDay(visible.get(vj).createdAt) == day) count++;
+                        else break;
+                    }
+                    LinearLayout dh = Ui.sectionHead(this,
+                        DayGroup.label(it.createdAt, nowMs),
+                        count + (count == 1 ? " ENTRY" : " ENTRIES"));
                     dh.setLayoutParams(Ui.matchWrap(12, this));
                     holder.addView(dh);
                     lastDayStamp = day;
@@ -485,9 +661,7 @@ public class MainActivity extends Activity {
         }
         if (shown == 0) {
             if (db.count() == 0) {
-                holder.addView(Ui.emptyState(this, R.drawable.ic_vault, "Nothing saved yet",
-                    "Capture your first note, photo, scan or document above - "
-                    + "it will be filed, dated and searchable here."));
+                holder.addView(firstRunCard());
             } else {
                 holder.addView(Ui.emptyState(this, R.drawable.ic_search, "Nothing matches",
                     "No memory matches this filter. Try different words or another category."));
@@ -566,7 +740,7 @@ public class MainActivity extends Activity {
         });
         Item first = due.get(0);
         LinearLayout strip = Ui.pressCard(this);
-        strip.setBackground(Ui.rippleBg(this, Ui.PANEL, Ui.WARN, 16, 0x2EFFFFFF));
+        strip.setBackground(Ui.rippleBg(this, Ui.PANEL, Ui.WARN, 8, 0x2EFFFFFF));
         strip.setLayoutParams(Ui.matchWrap(12, this));
         TextView t = Ui.text(this,
             due.size() + (due.size() == 1 ? " deadline needs" : " deadlines need")
@@ -581,53 +755,114 @@ public class MainActivity extends Activity {
     }
 
     private LinearLayout captureCard() {
+        // Stitch layout (v0.50.0): the sheet reads like a capture
+        // register - a hero voice card, rich tiles with a tag and
+        // a one-line truth about each vector, Settings as a row.
         LinearLayout card = Ui.card(this);
-        card.addView(Ui.text(this, "Save something", 16, Ui.TEXT, true));
-        card.addView(Ui.text(this, "One tap. It files itself - no folders.", 12, Ui.DIM, false));
+        card.addView(Ui.sectionLabel(this, "// Instant capture register"));
+
+        LinearLayout hero = Ui.pressCard(this);
+        hero.setBackground(Ui.rippleBg(this, Ui.PANEL_HI, Ui.ACCENT, 8, 0x2EFFFFFF));
+        hero.setLayoutParams(Ui.matchWrap(12, this));
+        hero.addView(Ui.tag(this, "LIVE MIC", 0, 0));
+        TextView hv = Ui.text(this, "VOICE NOTE", 18, Ui.TEXT, true);
+        hv.setLayoutParams(Ui.matchWrap(6, this));
+        hv.setLetterSpacing(0.04f);
+        hero.addView(hv);
+        hero.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { startVoice(); }
+        });
+        card.addView(hero);
 
         LinearLayout row1 = new LinearLayout(this);
         row1.setOrientation(LinearLayout.HORIZONTAL);
-        row1.setLayoutParams(Ui.matchWrap(12, this));
-        row1.addView(tileInRow(Ui.tile(this, R.drawable.ic_note, "Note", Ui.ACCENT,
+        row1.setLayoutParams(Ui.matchWrap(10, this));
+        row1.addView(richTile("[ SCRATCHPAD ]", "NOTE / MEMO",
+            "Plain text - files and dates itself.",
             new View.OnClickListener() {
                 @Override public void onClick(View v) {
                     startActivity(new Intent(MainActivity.this, EditorActivity.class));
                 }
-            }), false));
-        row1.addView(tileInRow(Ui.tile(this, R.drawable.ic_mic, "Voice", Ui.ACCENT2,
-            new View.OnClickListener() {
-                @Override public void onClick(View v) { startVoice(); }
-            }), true));
-        row1.addView(tileInRow(Ui.tile(this, R.drawable.ic_photo, "Photo", Ui.WARN,
+            }, false));
+        row1.addView(richTile("[ GALLERY ]", "PHOTO",
+            "Pick a photo - the words in it become searchable.",
             new View.OnClickListener() {
                 @Override public void onClick(View v) { pickImage(); }
-            }), true));
-        row1.addView(tileInRow(Ui.tile(this, R.drawable.ic_scan, "Scan", Ui.ACCENT,
-            new View.OnClickListener() {
-                @Override public void onClick(View v) { startCamera("SCAN"); }
-            }), true));
+            }, true));
         card.addView(row1);
 
         LinearLayout row2 = new LinearLayout(this);
         row2.setOrientation(LinearLayout.HORIZONTAL);
         row2.setLayoutParams(Ui.matchWrap(8, this));
-        row2.addView(tileInRow(Ui.tile(this, R.drawable.ic_doc, "Document", Ui.ACCENT2,
+        row2.addView(richTile("[ DOCUMENT OCR ]", "SCAN DOC",
+            "Camera scan - edge crop, on-device OCR.",
+            new View.OnClickListener() {
+                @Override public void onClick(View v) { startCamera("SCAN"); }
+            }, false));
+        row2.addView(richTile("[ FILE SYSTEM ]", "IMPORT FILE",
+            "PDFs and documents - text extracted locally.",
             new View.OnClickListener() {
                 @Override public void onClick(View v) { pickDocument(); }
-            }), false));
-        row2.addView(tileInRow(Ui.tile(this, R.drawable.ic_meeting, "Meeting", Ui.WARN,
-            new View.OnClickListener() {
-                @Override public void onClick(View v) { startVoiceMode("meeting"); }
-            }), true));
-        row2.addView(tileInRow(Ui.tile(this, R.drawable.ic_settings, "Settings", Ui.DIM,
-            new View.OnClickListener() {
-                @Override public void onClick(View v) { showSettings(); }
-            }), true));
-        View spacer = new View(this);
-        spacer.setLayoutParams(Ui.weight1(8, this));
-        row2.addView(spacer);
+            }, true));
         card.addView(row2);
+
+        LinearLayout meet = Ui.pressCard(this);
+        meet.setLayoutParams(Ui.matchWrap(10, this));
+        meet.addView(Ui.tag(this, "[ MEETING ]", 1, Ui.WARN));
+        TextView mv = Ui.text(this, "MEETING", 16, Ui.TEXT, true);
+        mv.setLayoutParams(Ui.matchWrap(6, this));
+        meet.addView(mv);
+        meet.addView(Ui.text(this,
+            "Records, transcribes, and pulls out decisions, to-dos and dates.",
+            12, Ui.DIM, false));
+        meet.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { startVoiceMode("meeting"); }
+        });
+        card.addView(meet);
+
+        LinearLayout setRow = Ui.pressCard(this);
+        setRow.setLayoutParams(Ui.matchWrap(8, this));
+        LinearLayout sr = new LinearLayout(this);
+        sr.setOrientation(LinearLayout.HORIZONTAL);
+        sr.setGravity(Gravity.CENTER_VERTICAL);
+        LinearLayout sc = new LinearLayout(this);
+        sc.setOrientation(LinearLayout.VERTICAL);
+        sc.setLayoutParams(new LinearLayout.LayoutParams(0,
+            LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        sc.addView(Ui.text(this, "[ SETTINGS ]", 10, Ui.DIM, true));
+        TextView stv = Ui.text(this, "Vault settings", 14, Ui.TEXT, true);
+        stv.setLayoutParams(Ui.matchWrap(2, this));
+        sc.addView(stv);
+        sc.addView(Ui.text(this, "Themes, on-device models, backup, app lock", 11, Ui.DIM, false));
+        sr.addView(sc);
+        sr.addView(Ui.text(this, ">", 18, Ui.DIM, true));
+        setRow.addView(sr);
+        setRow.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { showSettings(); }
+        });
+        card.addView(setRow);
         return card;
+    }
+
+    /** One rich capture tile: tag, title, one-line description. */
+    private LinearLayout richTile(String tag, String title, String desc,
+                                  View.OnClickListener click, boolean leftMargin) {
+        LinearLayout tile = Ui.pressCard(this);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0,
+            LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+        if (leftMargin) lp.setMargins(Ui.dp(this, 8), 0, 0, 0);
+        tile.setLayoutParams(lp);
+        TextView tg = Ui.text(this, tag, 9, Ui.ACCENT2, true);
+        tg.setLetterSpacing(0.06f);
+        tile.addView(tg);
+        TextView tt = Ui.text(this, title, 15, Ui.TEXT, true);
+        tt.setLayoutParams(Ui.matchWrap(5, this));
+        tile.addView(tt);
+        TextView td = Ui.text(this, desc, 11, Ui.DIM, false);
+        td.setMaxLines(3);
+        tile.addView(td);
+        tile.setOnClickListener(click);
+        return tile;
     }
 
     private View tileInRow(View tile, boolean withLeftMargin) {
@@ -650,58 +885,101 @@ public class MainActivity extends Activity {
     }
 
     private LinearLayout itemCard(final Item it) {
+        // Stitch layout (v0.50.0): tag row on top (type tag left,
+        // amount/status chip right), then title, snippet, and a
+        // meta row whose tail is an honest status word.
         LinearLayout card = Ui.pressCard(this);
-        LinearLayout row = new LinearLayout(this);
-        row.setOrientation(LinearLayout.HORIZONTAL);
-        row.addView(Ui.badge(this, typeIcon(it.type), typeTint(it.type)));
-
-        LinearLayout col = new LinearLayout(this);
-        col.setOrientation(LinearLayout.VERTICAL);
-        LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(0,
-            LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
-        clp.setMargins(Ui.dp(this, 12), 0, 0, 0);
-        col.setLayoutParams(clp);
+        boolean priv = Privacy.isPrivate(it);
 
         LinearLayout top = new LinearLayout(this);
         top.setOrientation(LinearLayout.HORIZONTAL);
-        TextView cat = Ui.text(this, it.category.toUpperCase(java.util.Locale.US), 10, Ui.ACCENT, true);
-        cat.setLetterSpacing(0.1f);
-        top.addView(cat);
-        TextView typ = Ui.text(this, "  -  " + Ui.typeLabel(it.type), 11, Ui.DIM, false);
-        top.addView(typ);
-        col.addView(top);
+        top.setGravity(Gravity.CENTER_VERTICAL);
+        if (priv) {
+            top.addView(Ui.tag(this, "RESTRICTED", 1, Ui.WARN));
+        } else if ("VOICE".equals(it.type)) {
+            top.addView(Ui.tag(this, "VOICE NOTE", 0, 0));
+        } else {
+            top.addView(Ui.tag(this, Ui.typeLabel(it.type).toUpperCase(java.util.Locale.US),
+                1, typeTint(it.type)));
+        }
+        View tsp = new View(this);
+        tsp.setLayoutParams(new LinearLayout.LayoutParams(0, 1, 1f));
+        top.addView(tsp);
+        if (!priv) {
+            long cents = Ask.principalCents(it);
+            if (cents > 0) {
+                top.addView(Ui.tag(this, Ask.formatMoney(cents), 1, Ui.TEXT));
+            } else if (!it.category.equalsIgnoreCase(Ui.typeLabel(it.type))) {
+                top.addView(Ui.tag(this,
+                    it.category.toUpperCase(java.util.Locale.US), 2, Ui.DIM));
+            }
+        } else {
+            top.addView(Ui.tag(this, "AES-256 • ON-DEVICE", 2, Ui.DIM));
+        }
+        card.addView(top);
 
-        TextView t = Ui.text(this, Privacy.displayTitle(it), 15, Ui.TEXT, true);
-        t.setLayoutParams(Ui.matchWrap(3, this));
+        TextView t = Ui.text(this, Privacy.displayTitle(it), 16, Ui.TEXT, true);
+        t.setLayoutParams(Ui.matchWrap(8, this));
         t.setMaxLines(2);
         t.setEllipsize(android.text.TextUtils.TruncateAt.END);
-        col.addView(t);
+        card.addView(t);
 
-        String snip = Privacy.isPrivate(it) ? "" : Ask.snippet(it, "");
-        if (!snip.isEmpty()) {
-            TextView s = Ui.text(this, snip, 13, Ui.DIM, false);
-            s.setLayoutParams(Ui.matchWrap(2, this));
-            s.setMaxLines(2);
-            s.setEllipsize(android.text.TextUtils.TruncateAt.END);
-            col.addView(s);
+        if (priv) {
+            TextView s = Ui.text(this,
+                "•••• •••• ••••  [Content masked - tap to unmask]",
+                13, Ui.DIM, false);
+            s.setLayoutParams(Ui.matchWrap(3, this));
+            card.addView(s);
+        } else {
+            String snip = Ask.snippet(it, "");
+            if (!snip.isEmpty()) {
+                TextView s = Ui.text(this, snip, 13, Ui.DIM, false);
+                s.setLayoutParams(Ui.matchWrap(3, this));
+                s.setMaxLines(2);
+                s.setEllipsize(android.text.TextUtils.TruncateAt.END);
+                card.addView(s);
+            }
         }
+
+        LinearLayout metaRow = new LinearLayout(this);
+        metaRow.setOrientation(LinearLayout.HORIZONTAL);
+        metaRow.setGravity(Gravity.CENTER_VERTICAL);
+        metaRow.setLayoutParams(Ui.matchWrap(6, this));
         StringBuilder meta = new StringBuilder();
         meta.append(Ui.dateLine(it.createdAt));
-        if (!it.amounts.isEmpty() && !Privacy.isPrivate(it)) meta.append("  -  ").append(it.amounts.replace(",", ", "));
-        if (it.reminderAt > 0) {
-            meta.append("  -  due ").append(Extract.formatDate(it.reminderAt))
+        if (it.reminderAt > 0 && !priv) {
+            meta.append("  •  due ").append(Extract.formatDate(it.reminderAt))
                 .append(" (").append(Extract.relativeDay(it.reminderAt, System.currentTimeMillis())).append(")");
         }
-        TextView m = Ui.text(this, meta.toString(), 12, Ui.DIM, false);
-        m.setLayoutParams(Ui.matchWrap(3, this));
-        col.addView(m);
+        metaRow.addView(Ui.text(this, meta.toString(), 11, Ui.DIM, false));
+        View msp = new View(this);
+        msp.setLayoutParams(new LinearLayout.LayoutParams(0, 1, 1f));
+        metaRow.addView(msp);
+        String status = cardStatus(it, priv);
+        if (status != null) {
+            TextView st = Ui.text(this, status, 10,
+                it.reminderAt > 0 && it.handledAt == 0 ? Ui.WARN : Ui.ACCENT2, true);
+            st.setLetterSpacing(0.08f);
+            metaRow.addView(st);
+        }
+        card.addView(metaRow);
 
-        row.addView(col);
-        card.addView(row);
         card.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { openDetail(it.id); }
         });
         return card;
+    }
+
+    /** The honest status word at a card's tail (Stitch layout). */
+    private String cardStatus(Item it, boolean priv) {
+        if (priv) return "[TAP TO AUTH]";
+        if (it.reminderAt > 0 && it.handledAt == 0) return "REMINDER SET";
+        if ("VOICE".equals(it.type) || "MEETING".equals(it.type)) {
+            return it.body != null && !it.body.trim().isEmpty() ? "TRANSCRIBED" : "AUDIO";
+        }
+        if (it.embeddingLocal != null && !it.embeddingLocal.isEmpty()) return "INDEXED";
+        if ("PHOTO".equals(it.type) || "SCAN".equals(it.type)) return "OCR • LOCAL";
+        return null;
     }
 
     private void openDetail(long id) {
@@ -719,38 +997,16 @@ public class MainActivity extends Activity {
     private String lastAnsweredQuery = null;
 
     private void renderAsk() {
-        TextView h = Ui.text(this, "Ask your vault", 18, Ui.TEXT, true);
-        content.addView(h);
-        TextView sub = Ui.text(this,
-            "Plain words. Try: when is my electricity bill due?  -  "
-            + "Answers cite the memory they came from. Semantic search uses "
-            + "EmbeddingGemma 2 on this phone when the model is downloaded "
-            + "(Settings). Keyword search always works.",
-            12, Ui.DIM, false);
-        sub.setLayoutParams(Ui.matchWrap(4, this));
-        content.addView(sub);
+        LinearLayout title = Ui.screenTitle(this, "ASK", "ON-DEVICE");
+        title.setLayoutParams(Ui.matchWrap(6, this));
+        content.addView(title);
 
-        askInput = Ui.input(this, "What are you looking for?");
-        askInput.setLayoutParams(Ui.matchWrap(12, this));
-        content.addView(askInput);
-
-        Button go = Ui.iconButton(this, "Ask", R.drawable.ic_search, Ui.ACCENT, Ui.ACCENT_DARK_TEXT);
-        go.setLayoutParams(Ui.matchWrap(10, this));
-        go.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { runAsk(); }
-        });
-        content.addView(go);
-
-        Button speak = Ui.iconButton(this, "Ask out loud", R.drawable.ic_mic, Ui.PANEL_HI, Ui.ACCENT2);
-        speak.setLayoutParams(Ui.matchWrap(8, this));
-        speak.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) {
-                Intent i = new Intent(MainActivity.this, VoiceActivity.class);
-                i.putExtra("mode", "ask");
-                startActivityForResult(i, 301);
-            }
-        });
-        content.addView(speak);
+        // Conversation first (v0.51.1): answers belong at the top
+        // of the Ask screen, like the design - people & places
+        // and earlier questions live below the fold.
+        askResults = new LinearLayout(this);
+        askResults.setOrientation(LinearLayout.VERTICAL);
+        content.addView(askResults);
 
         // People & places (v0.31.0): the names the vault has noticed -
         // one tap lines up everything about that name.
@@ -759,9 +1015,6 @@ public class MainActivity extends Activity {
             TextView pl = Ui.sectionLabel(this, "People & places");
             pl.setLayoutParams(Ui.matchWrap(14, this));
             content.addView(pl);
-            TextView ph = Ui.text(this, "Everything about a name, in one place:",
-                12, Ui.DIM, false);
-            content.addView(ph);
             for (final Entities.Entity e : ents) {
                 Button chip = Ui.ghostButton(this,
                     e.name + "  (" + e.itemCount + (e.itemCount == 1 ? " memory)" : " memories)"));
@@ -777,7 +1030,7 @@ public class MainActivity extends Activity {
         // what you already asked sits one tap away, above the new
         // answer, instead of vanishing when the next question lands.
         if (!askEarlier.isEmpty()) {
-            TextView el = Ui.sectionLabel(this, "Earlier questions");
+            TextView el = Ui.sectionLabel(this, "// Recent queries");
             el.setLayoutParams(Ui.matchWrap(14, this));
             content.addView(el);
             for (final String eq : askEarlier) {
@@ -792,10 +1045,6 @@ public class MainActivity extends Activity {
                 content.addView(row);
             }
         }
-
-        askResults = new LinearLayout(this);
-        askResults.setOrientation(LinearLayout.VERTICAL);
-        content.addView(askResults);
     }
 
     /** The last question Ask answered, for follow-ups (v0.32.0). */
@@ -856,18 +1105,24 @@ public class MainActivity extends Activity {
             while (askEarlier.size() > 6) askEarlier.remove(askEarlier.size() - 1);
         }
         lastAnsweredQuery = q;
-        TextView bubble = Ui.text(this, q, 14, Ui.TEXT, true);
-        bubble.setBackground(Ui.panelBg(Ui.PANEL_HI, Ui.ACCENT, 14, this));
+        // Query block (Stitch layout, v0.50.0): a register entry,
+        // not a chat balloon - QUERY // time over the question.
+        LinearLayout bubble = new LinearLayout(this);
+        bubble.setOrientation(LinearLayout.VERTICAL);
+        bubble.setBackground(Ui.panelBg(Ui.PANEL_HI, Ui.ACCENT, 12, this));
         bubble.setPadding(Ui.dp(this, 12), Ui.dp(this, 10), Ui.dp(this, 12), Ui.dp(this, 10));
         bubble.setLayoutParams(Ui.matchWrap(12, this));
+        TextView qh = Ui.text(this,
+            "QUERY  //  " + new java.text.SimpleDateFormat("HH:mm:ss",
+                java.util.Locale.US).format(new java.util.Date()),
+            10, Ui.ACCENT, true);
+        qh.setLetterSpacing(0.08f);
+        bubble.addView(qh);
+        TextView qt = Ui.text(this, q, 15, Ui.TEXT, true);
+        qt.setLayoutParams(Ui.matchWrap(4, this));
+        bubble.addView(qt);
         askResults.addView(bubble);
         List<Ask.Result> results = Ask.search(Privacy.visible(db.all()), q, vec, true);
-        TextView modeView = Ui.text(this,
-            mode == 2 ? "Semantic + keyword search (EmbeddingGemma 2 on this phone)"
-                : "Keyword search (download the on-device model in Settings for semantic search)",
-            11, Ui.DIM, false);
-        modeView.setLayoutParams(Ui.matchWrap(12, this));
-        askResults.addView(modeView);
 
         // Answers that add up: for set questions ("how much do I owe
         // this month"), lead with the total across every match.
@@ -882,19 +1137,17 @@ public class MainActivity extends Activity {
         if (sum == null) sum = Ask.summarize(Privacy.visible(db.all()), q, vec, System.currentTimeMillis());
         if (sum != null) {
             LinearLayout sumCard = Ui.pressCard(this);
-            sumCard.setBackground(Ui.rippleBg(this, Ui.PANEL_HI, Ui.ACCENT2, 16, 0x2EFFFFFF));
+            sumCard.setBackground(Ui.rippleBg(this, Ui.PANEL_HI, Ui.ACCENT2, 8, 0x2EFFFFFF));
+            sumCard.addView(Ui.tag(this, "VAULT ANSWER", 1, Ui.ACCENT2));
             TextView st = Ui.text(this, sum.text, 16, Ui.TEXT, true);
+            st.setLayoutParams(Ui.matchWrap(6, this));
             sumCard.addView(st);
-            TextView sh = Ui.text(this, "Across your whole vault - the matches are below.",
-                11, Ui.DIM, false);
-            sh.setLayoutParams(Ui.matchWrap(4, this));
-            sumCard.addView(sh);
             askResults.addView(sumCard);
         }
 
         if (results.isEmpty()) {
             TextView none = Ui.text(this,
-                "No match in your vault yet. Save it first - then you can ask for it.",
+                "No match in your vault yet.",
                 14, Ui.DIM, false);
             none.setLayoutParams(Ui.matchWrap(8, this));
             askResults.addView(none);
@@ -904,7 +1157,7 @@ public class MainActivity extends Activity {
         for (final Ask.Result r : results) {
             LinearLayout card = Ui.pressCard(this);
             if (first) {
-                card.setBackground(Ui.rippleBg(this, Ui.PANEL_HI, Ui.ACCENT, 16, 0x2EFFFFFF));
+                card.setBackground(Ui.rippleBg(this, Ui.PANEL_HI, Ui.ACCENT, 8, 0x2EFFFFFF));
                 TextView a = Ui.text(this, r.answer, 16, Ui.TEXT, true);
                 card.addView(a);
                 first = false;
@@ -912,12 +1165,21 @@ public class MainActivity extends Activity {
                 TextView a = Ui.text(this, r.answer, 14, Ui.TEXT, false);
                 card.addView(a);
             }
+            LinearLayout srcRow = new LinearLayout(this);
+            srcRow.setOrientation(LinearLayout.HORIZONTAL);
+            srcRow.setGravity(Gravity.CENTER_VERTICAL);
+            srcRow.setBackground(Ui.panelBg(Ui.PANEL, Ui.BORDER, 8, this));
+            srcRow.setPadding(Ui.dp(this, 10), Ui.dp(this, 7), Ui.dp(this, 10), Ui.dp(this, 7));
+            srcRow.setLayoutParams(Ui.matchWrap(8, this));
             TextView src = Ui.text(this,
-                "Source: " + r.item.title + "  -  " + r.item.category + "  -  " + Ui.dateLine(r.item.createdAt)
-                    + (r.viaPhoto ? "  -  matched by what's in the photo" : ""),
-                12, Ui.ACCENT2, false);
-            src.setLayoutParams(Ui.matchWrap(6, this));
-            card.addView(src);
+                "SOURCE: " + r.item.title + "  •  " + r.item.category + "  •  " + Ui.dateLine(r.item.createdAt)
+                    + (r.viaPhoto ? "  •  matched by what's in the photo" : ""),
+                11, Ui.ACCENT2, false);
+            src.setLayoutParams(new LinearLayout.LayoutParams(0,
+                LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+            srcRow.addView(src);
+            srcRow.addView(Ui.text(this, ">", 14, Ui.DIM, true));
+            card.addView(srcRow);
             card.setOnClickListener(new View.OnClickListener() {
                 @Override public void onClick(View v) { openDetail(r.item.id); }
             });
@@ -928,41 +1190,45 @@ public class MainActivity extends Activity {
     // ---------- REMINDERS ----------
 
     private void renderReminders() {
-        TextView h = Ui.text(this, "Reminders", 18, Ui.TEXT, true);
-        content.addView(h);
-        TextView sub = Ui.text(this,
-            "Dates pulled out of what you saved - bills, renewals, expiries. "
-            + "Tap one to open the memory behind it.", 12, Ui.DIM, false);
-        sub.setLayoutParams(Ui.matchWrap(4, this));
-        content.addView(sub);
+        LinearLayout title = Ui.screenTitle(this, "REMINDERS", "ON-DEVICE");
+        title.setLayoutParams(Ui.matchWrap(6, this));
+        content.addView(title);
 
         List<Item> items = db.withReminders();
-        // At-a-glance counts (v0.48.0 layout): the shape of the
-        // week before the detail starts.
+        // Stat tiles (Stitch layout, v0.50.0): the register at a
+        // glance - overdue, today, the week, and what's payable
+        // across everything still open (due within 60 days or
+        // already overdue).
         {
             long nowR = System.currentTimeMillis();
             int overdue = 0, today = 0, week = 0;
+            long payable = 0;
             for (Item it : items) {
                 if (it.handledAt != 0 || it.reminderAt <= 0) continue;
                 if (it.reminderAt < DayGroup.startOfDay(nowR)) overdue++;
                 else if (it.reminderAt < DayGroup.startOfDay(nowR) + 24L * 3600 * 1000) today++;
                 else if (it.reminderAt <= nowR + 7L * 24 * 3600 * 1000) week++;
+                if (it.reminderAt <= nowR + 60L * 24 * 3600 * 1000 && !Privacy.isPrivate(it)) {
+                    payable += Ask.principalCents(it);
+                }
             }
-            if (overdue + today + week > 0) {
-                StringBuilder sb = new StringBuilder();
-                if (overdue > 0) sb.append(overdue).append(" overdue");
-                if (today > 0) { if (sb.length() > 0) sb.append("  -  "); sb.append(today).append(" due today"); }
-                if (week > 0) { if (sb.length() > 0) sb.append("  -  "); sb.append(week).append(" more this week"); }
-                TextView counts = Ui.text(this, sb.toString(), 13,
-                    overdue > 0 ? Ui.WARN : Ui.ACCENT2, true);
-                counts.setLayoutParams(Ui.matchWrap(8, this));
-                content.addView(counts);
-            }
+            LinearLayout tiles = new LinearLayout(this);
+            tiles.setOrientation(LinearLayout.HORIZONTAL);
+            tiles.setLayoutParams(Ui.matchWrap(10, this));
+            tiles.addView(tileInRow(Ui.statTile(this, "OVERDUE",
+                String.valueOf(overdue), overdue > 0 ? Ui.DANGER : Ui.ACCENT2), false));
+            tiles.addView(tileInRow(Ui.statTile(this, "TODAY",
+                String.valueOf(today), today > 0 ? Ui.WARN : Ui.TEXT), true));
+            tiles.addView(tileInRow(Ui.statTile(this, "7-DAY",
+                String.valueOf(week), Ui.TEXT), true));
+            tiles.addView(tileInRow(Ui.statTile(this, "PAYABLE",
+                Ask.formatMoney(payable), Ui.ACCENT), true));
+            content.addView(tiles);
         }
         Ask.Summary digest = Ask.dueDigest(items, System.currentTimeMillis());
         if (digest != null) {
             LinearLayout dCard = Ui.card(this);
-            dCard.setBackground(Ui.rippleBg(this, Ui.PANEL_HI, Ui.ACCENT2, 16, 0x2EFFFFFF));
+            dCard.setBackground(Ui.rippleBg(this, Ui.PANEL_HI, Ui.ACCENT2, 8, 0x2EFFFFFF));
             TextView dl = Ui.sectionLabel(this, "Due this week");
             dCard.addView(dl);
             TextView dt = Ui.text(this, digest.text, 15, Ui.TEXT, true);
@@ -985,9 +1251,6 @@ public class MainActivity extends Activity {
                 });
                 pCard.addView(pt);
             }
-            TextView pHint = Ui.text(this, "Tap a bill to see its trend.", 11, Ui.DIM, false);
-            pHint.setLayoutParams(Ui.matchWrap(2, this));
-            pCard.addView(pHint);
             long proj = Patterns.projectedMonthlyCents(pats);
             if (proj > 0) {
                 TextView pp = Ui.text(this,
@@ -1005,21 +1268,81 @@ public class MainActivity extends Activity {
                 Forecast.forecast(db.all(), System.currentTimeMillis());
             if (!fc.isEmpty()) {
                 LinearLayout fCard = Ui.card(this);
-                fCard.addView(Ui.sectionLabel(this, "What's coming"));
+                fCard.addView(Ui.sectionHead(this, "What's coming", "OUTLOOK"));
                 java.util.Calendar cal = java.util.Calendar.getInstance();
+                long[] monthTotals = new long[3];
+                long grand = 0;
                 for (int m = 0; m < 3; m++) {
                     java.util.Calendar mc = (java.util.Calendar) cal.clone();
                     mc.add(java.util.Calendar.MONTH, m);
-                    long total = Forecast.monthTotalCents(fc,
+                    monthTotals[m] = Forecast.monthTotalCents(fc,
                         mc.get(java.util.Calendar.YEAR), mc.get(java.util.Calendar.MONTH));
-                    if (total <= 0) continue;
-                    TextView mt = Ui.text(this,
-                        Report.monthName(mc.get(java.util.Calendar.YEAR),
-                            mc.get(java.util.Calendar.MONTH))
-                            + ": about " + Ask.formatMoney(total) + " expected",
+                    grand += monthTotals[m];
+                }
+                if (grand > 0) {
+                    TextView gt = Ui.text(this,
+                        "Next 3 months: about " + Ask.formatMoney(grand) + " expected",
                         13, Ui.ACCENT2, true);
-                    mt.setLayoutParams(Ui.matchWrap(3, this));
-                    fCard.addView(mt);
+                    gt.setLayoutParams(Ui.matchWrap(6, this));
+                    fCard.addView(gt);
+                    // Stacked share bar (Stitch layout, v0.50.0):
+                    // each month a segment sized by its share.
+                    LinearLayout bar = new LinearLayout(this);
+                    bar.setOrientation(LinearLayout.HORIZONTAL);
+                    LinearLayout.LayoutParams blp = Ui.matchWrap(8, this);
+                    blp.height = Ui.dp(this, 8);
+                    bar.setLayoutParams(blp);
+                    int[] segColors = {Ui.ACCENT, Ui.ACCENT2, Ui.WARN};
+                    for (int m = 0; m < 3; m++) {
+                        if (monthTotals[m] <= 0) continue;
+                        View seg = new View(this);
+                        seg.setBackgroundColor(segColors[m]);
+                        seg.setLayoutParams(new LinearLayout.LayoutParams(0,
+                            LinearLayout.LayoutParams.MATCH_PARENT,
+                            (float) monthTotals[m]));
+                        bar.addView(seg);
+                    }
+                    fCard.addView(bar);
+                }
+                for (int m = 0; m < 3; m++) {
+                    if (monthTotals[m] <= 0) continue;
+                    java.util.Calendar mc = (java.util.Calendar) cal.clone();
+                    mc.add(java.util.Calendar.MONTH, m);
+                    int my = mc.get(java.util.Calendar.YEAR);
+                    int mm = mc.get(java.util.Calendar.MONTH);
+                    LinearLayout mRow = new LinearLayout(this);
+                    mRow.setOrientation(LinearLayout.HORIZONTAL);
+                    mRow.setGravity(Gravity.CENTER_VERTICAL);
+                    mRow.setLayoutParams(Ui.matchWrap(6, this));
+                    TextView mn = Ui.text(this,
+                        Report.monthName(my, mm).toUpperCase(java.util.Locale.US),
+                        12, Ui.TEXT, true);
+                    mn.setLetterSpacing(0.06f);
+                    mRow.addView(mn);
+                    View msp = new View(this);
+                    msp.setLayoutParams(new LinearLayout.LayoutParams(0, 1, 1f));
+                    mRow.addView(msp);
+                    mRow.addView(Ui.text(this, Ask.formatMoney(monthTotals[m]),
+                        14, Ui.ACCENT, true));
+                    fCard.addView(mRow);
+                    StringBuilder itemsLine = new StringBuilder();
+                    int inMonth = 0;
+                    for (Forecast.Entry e : fc) {
+                        java.util.Calendar ec = java.util.Calendar.getInstance();
+                        ec.setTimeInMillis(e.dueMs);
+                        if (ec.get(java.util.Calendar.YEAR) != my
+                                || ec.get(java.util.Calendar.MONTH) != mm) continue;
+                        if (inMonth++ >= 4) break;
+                        if (itemsLine.length() > 0) itemsLine.append("  •  ");
+                        itemsLine.append(e.title).append(" ")
+                            .append(Ask.formatMoney(e.cents));
+                    }
+                    if (itemsLine.length() > 0) {
+                        TextView il = Ui.text(this, itemsLine.toString(), 11, Ui.DIM, false);
+                        il.setMaxLines(2);
+                        il.setEllipsize(android.text.TextUtils.TruncateAt.END);
+                        fCard.addView(il);
+                    }
                 }
                 int shownF = 0;
                 for (Forecast.Entry e : fc) {
@@ -1124,59 +1447,130 @@ public class MainActivity extends Activity {
             return;
         }
         long now = System.currentTimeMillis();
-        // Open reminders first (due-date order), handled ones after.
-        for (int pass = 0; pass < 2; pass++) {
-          if (pass == 1) {
-            boolean anyHandled = false;
-            for (Item x : items) if (x.handledAt > 0) { anyHandled = true; break; }
-            if (!anyHandled) break;
-            TextView hh = Ui.sectionLabel(this, "Handled");
-            hh.setLayoutParams(Ui.matchWrap(14, this));
-            content.addView(hh);
-          }
-          for (final Item it : items) {
-            final boolean handled = it.handledAt > 0;
-            if ((pass == 1) != handled) continue;
-            LinearLayout card = Ui.pressCard(this);
-            if (handled) card.setAlpha(0.55f);
-            boolean overdue = !handled && it.reminderAt < now - 24L * 60 * 60 * 1000;
-            TextView when = Ui.text(this,
-                Extract.formatDate(it.reminderAt) + "  (" + Extract.relativeDay(it.reminderAt, now) + ")"
-                    + (handled ? "  -  done " + Extract.relativeDay(it.handledAt, now) : ""),
-                14, handled ? Ui.DIM : (overdue ? Ui.DANGER : Ui.WARN), true);
-            card.addView(when);
-            TextView t = Ui.text(this, Privacy.displayTitle(it), 15, handled ? Ui.DIM : Ui.TEXT, false);
-            t.setLayoutParams(Ui.matchWrap(2, this));
-            card.addView(t);
-            if (!it.amounts.isEmpty() && !Privacy.isPrivate(it)) {
-                card.addView(Ui.text(this, it.amounts.replace(",", ", "), 12, Ui.DIM, false));
+        // Bucketed register (Stitch layout, v0.50.0): critical
+        // (overdue + next 24h), this week, later - then handled.
+        long dayEnd = DayGroup.startOfDay(now) + 24L * 3600 * 1000;
+        long weekEnd = now + 7L * 24 * 3600 * 1000;
+        String[] bucketNames = {"Due in 24 hours", "This week", "Later", "Handled"};
+        for (int b = 0; b < 4; b++) {
+            java.util.List<Item> bucket = new java.util.ArrayList<Item>();
+            for (Item it : items) {
+                boolean handled = it.handledAt > 0;
+                int bi = handled ? 3
+                    : (it.reminderAt < dayEnd ? 0 : (it.reminderAt <= weekEnd ? 1 : 2));
+                if (bi == b) bucket.add(it);
             }
-            Button hb = Ui.ghostButton(this,
-                handled ? "Undo - still open"
-                    : ("Bills".equals(it.category) ? "Mark paid" : "Mark done"));
-            hb.setLayoutParams(Ui.matchWrap(8, this));
-            hb.setOnClickListener(new View.OnClickListener() {
-                @Override public void onClick(View v) {
-                    it.handledAt = handled ? 0 : System.currentTimeMillis();
-                    db.update(it);
-                    render();
-                }
-            });
-            card.addView(hb);
-            if (!handled) {
-                Button sb = Ui.ghostButton(this, "Snooze");
-                sb.setLayoutParams(Ui.matchWrap(8, this));
-                sb.setOnClickListener(new View.OnClickListener() {
-                    @Override public void onClick(View v) { showSnoozeChooser(it); }
-                });
-                card.addView(sb);
+            if (bucket.isEmpty()) continue;
+            LinearLayout bh = Ui.sectionHead(this,
+                bucketNames[b].toUpperCase(java.util.Locale.US),
+                b == 0 ? "URGENCY: HIGH" : bucket.size() + " PENDING");
+            bh.setLayoutParams(Ui.matchWrap(14, this));
+            content.addView(bh);
+            for (final Item it : bucket) {
+                final boolean handled = it.handledAt > 0;
+                content.addView(reminderCard(it, handled, now));
             }
-            card.setOnClickListener(new View.OnClickListener() {
-                @Override public void onClick(View v) { openDetail(it.id); }
-            });
-            content.addView(card);
-          }
         }
+    }
+
+    /** One register card for a reminder (Stitch layout, v0.50.0). */
+    private LinearLayout reminderCard(final Item it, final boolean handled, long now) {
+        LinearLayout card = Ui.pressCard(this);
+        if (handled) card.setAlpha(0.55f);
+        boolean priv = Privacy.isPrivate(it);
+        boolean overdue = !handled && it.reminderAt < DayGroup.startOfDay(now);
+
+        LinearLayout top = new LinearLayout(this);
+        top.setOrientation(LinearLayout.HORIZONTAL);
+        top.setGravity(Gravity.CENTER_VERTICAL);
+        TextView cat = Ui.text(this, it.category.toUpperCase(java.util.Locale.US),
+            10, Ui.ACCENT, true);
+        cat.setLetterSpacing(0.08f);
+        top.addView(cat);
+        View tsp = new View(this);
+        tsp.setLayoutParams(new LinearLayout.LayoutParams(0, 1, 1f));
+        top.addView(tsp);
+        if (!priv) {
+            long cents = Ask.principalCents(it);
+            if (cents > 0) top.addView(Ui.tag(this, Ask.formatMoney(cents), 1, Ui.TEXT));
+        }
+        card.addView(top);
+
+        TextView t = Ui.text(this, Privacy.displayTitle(it), 16,
+            handled ? Ui.DIM : Ui.TEXT, true);
+        t.setLayoutParams(Ui.matchWrap(6, this));
+        t.setMaxLines(2);
+        t.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        card.addView(t);
+
+        TextView when = Ui.text(this,
+            Extract.formatDate(it.reminderAt) + "  •  "
+                + Extract.relativeDay(it.reminderAt, now)
+                + (handled ? "  •  done " + Extract.relativeDay(it.handledAt, now) : ""),
+            13, handled ? Ui.DIM : (overdue ? Ui.DANGER : Ui.WARN), true);
+        when.setLayoutParams(Ui.matchWrap(3, this));
+        card.addView(when);
+
+        LinearLayout actions = new LinearLayout(this);
+        actions.setOrientation(LinearLayout.HORIZONTAL);
+        actions.setLayoutParams(Ui.matchWrap(10, this));
+        Button done = new Button(this);
+        done.setText(handled ? "UNDO" : ("Bills".equals(it.category) ? "DONE - PAID" : "DONE"));
+        done.setTextSize(13);
+        done.setAllCaps(true);
+        done.setTypeface(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD);
+        done.setTextColor(Ui.ACCENT_DARK_TEXT);
+        done.setBackground(Ui.rippleBg(this, Ui.ACCENT2, 0, 10, 0x330B0E13));
+        done.setLayoutParams(Ui.weight1(0, this));
+        done.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                it.handledAt = handled ? 0 : System.currentTimeMillis();
+                db.update(it);
+                render();
+            }
+        });
+        actions.addView(done);
+        if (!handled) {
+            Button s1 = Ui.ghostButton(this, "+1 DAY");
+            LinearLayout.LayoutParams s1lp = Ui.weight1(0, this);
+            s1lp.setMargins(Ui.dp(this, 6), 0, 0, 0);
+            s1.setLayoutParams(s1lp);
+            s1.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) { snoozeDirect(it, 1); }
+            });
+            actions.addView(s1);
+            Button s7 = Ui.ghostButton(this, "+7 DAYS");
+            LinearLayout.LayoutParams s7lp = Ui.weight1(0, this);
+            s7lp.setMargins(Ui.dp(this, 6), 0, 0, 0);
+            s7.setLayoutParams(s7lp);
+            s7.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) { snoozeDirect(it, 7); }
+            });
+            actions.addView(s7);
+            Button sm = Ui.ghostButton(this, "...");
+            LinearLayout.LayoutParams smlp = new LinearLayout.LayoutParams(
+                Ui.dp(this, 44), LinearLayout.LayoutParams.MATCH_PARENT);
+            smlp.setMargins(Ui.dp(this, 6), 0, 0, 0);
+            sm.setLayoutParams(smlp);
+            sm.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) { showSnoozeChooser(it); }
+            });
+            actions.addView(sm);
+        }
+        card.addView(actions);
+        card.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { openDetail(it.id); }
+        });
+        return card;
+    }
+
+    /** Direct snooze (Stitch layout): the design's +1/+7 buttons. */
+    private void snoozeDirect(Item it, int days) {
+        it.reminderAt = Snooze.snoozedUntil(it.reminderAt, days);
+        db.update(it);
+        Toast.makeText(this, "Snoozed to " + Extract.formatDate(it.reminderAt),
+            Toast.LENGTH_SHORT).show();
+        render();
     }
 
     /** Vault checkup (v0.45.0): the gaps, and one tap that fixes them. */
@@ -1803,20 +2197,9 @@ public class MainActivity extends Activity {
         box.setOrientation(LinearLayout.VERTICAL);
         box.setPadding(Ui.dp(this, 20), Ui.dp(this, 12), Ui.dp(this, 20), Ui.dp(this, 4));
 
-        TextView allLocal = Ui.text(this,
-            "Everything runs on this phone - search, transcription, reminders. "
-            + "No server is involved. The two models below are the only downloads.",
-            12, Ui.TEXT, false);
-        box.addView(allLocal);
-
         // Appearance (v0.49.0): three full themes, applied live.
         LinearLayout themeCard = Ui.card(this);
         themeCard.addView(Ui.sectionLabel(this, "Appearance"));
-        TextView thHelp = Ui.text(this,
-            "The whole app re-skins at once - every screen, card and button.",
-            11, Ui.DIM, false);
-        thHelp.setLayoutParams(Ui.matchWrap(4, this));
-        themeCard.addView(thHelp);
         int curTheme = Ui.theme(this);
         for (int ti = 0; ti < Ui.THEME_NAMES.length; ti++) {
             final int t = ti;
@@ -1835,12 +2218,6 @@ public class MainActivity extends Activity {
         final TextView modelStatus = Ui.text(this, modelStatusText(), 13, Ui.TEXT, false);
         modelStatus.setLayoutParams(Ui.matchWrap(6, this));
         mCard.addView(modelStatus);
-        TextView mHelp = Ui.text(this,
-            "EmbeddingGemma 2, stored on this phone only. With it, Ask "
-            + "understands meaning instead of just matching words.",
-            11, Ui.DIM, false);
-        mHelp.setLayoutParams(Ui.matchWrap(4, this));
-        mCard.addView(mHelp);
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setLayoutParams(Ui.matchWrap(10, this));
@@ -1906,15 +2283,6 @@ public class MainActivity extends Activity {
         final TextView whisperStatus = Ui.text(this, whisperStatusText(), 13, Ui.TEXT, false);
         whisperStatus.setLayoutParams(Ui.matchWrap(6, this));
         wCard.addView(whisperStatus);
-        TextView wHelp = Ui.text(this,
-            "Whisper (English), stored on this phone only - the audio never "
-            + "leaves it. Fast (~31 MB) is a rough draft, Balanced (~57 MB) "
-            + "is the everyday pick, Sharpest (~173 MB) hears the most and "
-            + "thinks the longest. Switching keeps the other downloads; "
-            + "Remove deletes the selected one.",
-            11, Ui.DIM, false);
-        wHelp.setLayoutParams(Ui.matchWrap(4, this));
-        wCard.addView(wHelp);
         LinearLayout wrow = new LinearLayout(this);
         wrow.setOrientation(LinearLayout.HORIZONTAL);
         wrow.setLayoutParams(Ui.matchWrap(10, this));

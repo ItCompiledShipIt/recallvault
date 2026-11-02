@@ -278,8 +278,7 @@ public class DetailActivity extends Activity {
                 TextView fh = Ui.sectionLabel(this, "Facts in this memory");
                 fh.setLayoutParams(Ui.matchWrap(16, this));
                 bodyCol.addView(fh);
-                TextView fhint = Ui.text(this, "Tap to use one, long-press to copy it.", 11, Ui.DIM, false);
-                bodyCol.addView(fhint);
+
                 for (final Facts.Fact fact : foundFacts) {
                     Button fb = Ui.ghostButton(this, fact.label);
                     fb.setLayoutParams(Ui.matchWrap(6, this));

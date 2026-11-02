@@ -753,3 +753,51 @@ style directions, built as switchable themes.
   icons confirmed readable. JVM suite 193/193.
 - Note: the home-screen widgets use XML colors and do not
   follow the theme yet.
+
+## v0.50.0 - the Stitch layout (Nov 1, 2026)
+
+Chris generated a design in Google Stitch from a written brief
+and sent the export; this release rebuilds the app's layout
+in its register (an instrument console: rectangular tags,
+monospace micro-labels, stat readouts), keeping only claims
+that are true of this app (no fake "LLM synthesis", no
+confidence percentages, no TEE/enclave language).
+
+- Shell: top utility strip (ON-DEVICE / NO ACCOUNT - NO
+  CLOUD), header count gains the vault's size on the phone.
+- Every tab gets the design's big square-bullet title with
+  an ON-DEVICE tag.
+- Vault cards: type tag left (filled for voice), amount or
+  category chip right, honest status word at the tail
+  (TRANSCRIBED / REMINDER SET / INDEXED / OCR - LOCAL,
+  RESTRICTED + masked line + [TAP TO AUTH] for private).
+  Day headers carry entry counts.
+- Capture sheet: hero voice card, rich tiles with bracket
+  tags and one-line descriptions, meeting card, settings row.
+- Ask: QUERY // time register block, VAULT ANSWER tag on
+  summary cards, SOURCE rows as bordered sub-panels.
+- Reminders: stat tiles (OVERDUE / TODAY / 7-DAY / PAYABLE -
+  the payable total is new), bucketed register (DUE IN 24
+  HOURS / THIS WEEK / LATER / HANDLED), register cards with
+  DONE - PAID + direct +1 DAY / +7 DAYS snooze buttons, and
+  the forecast gains a stacked share bar and per-month item
+  lines.
+- Empty vault: a first-run register card (three setup steps,
+  record-first-memory and import-backup actions).
+
+## v0.51.0 / v0.51.1 - no prose, bottom Ask bar (Nov 1, 2026)
+
+Directed the same day: "Dont add hints on how it works.
+Clean all that stuff up" and "it still doesn't look like
+what I sent you".
+
+- All how-it-works copy removed app-wide: help paragraphs,
+  try-examples, search-mode lines, Settings intro and model
+  explanations, tap-hints. Labels, values and state stay.
+- Ask input moved to a bottom bar (input + mic + ASK),
+  matching the design; results render at the top of the
+  Ask screen, people & places below the fold (v0.51.1).
+- Register tightened: cards and buttons go near-rectangular
+  (8dp radius), section labels and tags are monospace.
+- Verified on the S24 Ultra in the Console theme (the
+  design's register): Vault, Ask, Reminders, capture sheet.

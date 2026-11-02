@@ -123,6 +123,84 @@ public final class Ui {
         return g;
     }
 
+    // ---------- Stitch layout kit (v0.50.0) ----------
+    // The instrument-register pieces from the Stitch design:
+    // rectangular tags, screen titles, stat tiles, section
+    // heads with a right-hand readout.
+
+    /** Rectangular tag: style 0 = filled accent, 1 = panel with
+     *  colored text, 2 = panel with dim text. */
+    public static TextView tag(Activity ctx, String label, int style, int color) {
+        TextView t = text(ctx, label, 10, style == 0 ? ACCENT_DARK_TEXT : color, true);
+        t.setLetterSpacing(0.08f);
+        t.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
+        int bg = style == 0 ? ACCENT : PANEL_HI;
+        t.setBackground(panelBg(bg, style == 0 ? 0 : BORDER, 4, ctx));
+        t.setPadding(dp(ctx, 8), dp(ctx, 3), dp(ctx, 8), dp(ctx, 3));
+        return t;
+    }
+
+    /** Big screen title: amber square + caps title + right tag. */
+    public static LinearLayout screenTitle(Activity ctx, String title, String rightTag) {
+        LinearLayout row = new LinearLayout(ctx);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        View sq = new View(ctx);
+        sq.setBackgroundColor(ACCENT);
+        LinearLayout.LayoutParams slp = new LinearLayout.LayoutParams(dp(ctx, 9), dp(ctx, 9));
+        sq.setLayoutParams(slp);
+        row.addView(sq);
+        TextView t = text(ctx, title, 20, TEXT, true);
+        t.setLetterSpacing(0.05f);
+        LinearLayout.LayoutParams tlp = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        tlp.setMargins(dp(ctx, 10), 0, 0, 0);
+        t.setLayoutParams(tlp);
+        row.addView(t);
+        if (rightTag != null) {
+            View sp = new View(ctx);
+            sp.setLayoutParams(new LinearLayout.LayoutParams(0, 1, 1f));
+            row.addView(sp);
+            row.addView(tag(ctx, rightTag, 1, ACCENT2));
+        }
+        return row;
+    }
+
+    /** Stat tile: small caps label over a big value, in a panel. */
+    public static LinearLayout statTile(Activity ctx, String label, String value, int valueColor) {
+        LinearLayout tile = new LinearLayout(ctx);
+        tile.setOrientation(LinearLayout.VERTICAL);
+        tile.setBackground(panelBg(PANEL, BORDER, 10, ctx));
+        tile.setPadding(dp(ctx, 10), dp(ctx, 8), dp(ctx, 10), dp(ctx, 8));
+        TextView l = text(ctx, label, 9, DIM, true);
+        l.setLetterSpacing(0.1f);
+        tile.addView(l);
+        TextView v = text(ctx, value, 18, valueColor, true);
+        LinearLayout.LayoutParams vlp = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        vlp.setMargins(0, dp(ctx, 2), 0, 0);
+        v.setLayoutParams(vlp);
+        tile.addView(v);
+        return tile;
+    }
+
+    /** Section header with a right-hand readout. */
+    public static LinearLayout sectionHead(Activity ctx, String left, String right) {
+        LinearLayout row = new LinearLayout(ctx);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        row.addView(sectionLabel(ctx, left));
+        if (right != null) {
+            View sp = new View(ctx);
+            sp.setLayoutParams(new LinearLayout.LayoutParams(0, 1, 1f));
+            row.addView(sp);
+            TextView r = text(ctx, right, 10, DIM, true);
+            r.setLetterSpacing(0.08f);
+            row.addView(r);
+        }
+        return row;
+    }
+
     /** Panel background with a touch ripple on top. */
     public static Drawable rippleBg(Activity a, int color, int border, int radiusDp, int rippleColor) {
         return new RippleDrawable(ColorStateList.valueOf(rippleColor),
@@ -143,6 +221,9 @@ public final class Ui {
     public static TextView sectionLabel(Activity a, String s) {
         TextView t = text(a, s.toUpperCase(java.util.Locale.US), 11, DIM, true);
         t.setLetterSpacing(0.12f);
+        // Register match (v0.51.0): the design's micro-labels are
+        // monospace - telemetry, not prose.
+        t.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         return t;
     }
 
@@ -152,7 +233,7 @@ public final class Ui {
         b.setAllCaps(false);
         b.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         int ripple = (bg == ACCENT || bg == ACCENT2) ? RIPPLE_ON_ACCENT : RIPPLE_MAIN;
-        b.setBackground(rippleBg(a, bg, bordered ? BORDER : 0, 12, ripple));
+        b.setBackground(rippleBg(a, bg, bordered ? BORDER : 0, 8, ripple));
         b.setPadding(dp(a, 16), dp(a, 12), dp(a, 16), dp(a, 12));
         b.setMinHeight(0);
         b.setMinimumHeight(0);
@@ -354,8 +435,10 @@ public final class Ui {
     public static LinearLayout card(Activity a) {
         LinearLayout c = new LinearLayout(a);
         c.setOrientation(LinearLayout.VERTICAL);
-        c.setBackground(panelBg(PANEL, BORDER, 16, a));
-        c.setPadding(dp(a, 16), dp(a, 14), dp(a, 16), dp(a, 14));
+        // Tighter radius (v0.51.0): the design's panels are
+        // near-rectangular registers, not soft cards.
+        c.setBackground(panelBg(PANEL, BORDER, 8, a));
+        c.setPadding(dp(a, 14), dp(a, 12), dp(a, 14), dp(a, 12));
         c.setLayoutParams(matchWrap(10, a));
         c.setGravity(Gravity.START);
         return c;
@@ -364,7 +447,7 @@ public final class Ui {
     /** Card with touch ripple (for tappable list items). */
     public static LinearLayout pressCard(Activity a) {
         LinearLayout c = card(a);
-        c.setBackground(rippleBg(a, PANEL, BORDER, 16, RIPPLE_MAIN));
+        c.setBackground(rippleBg(a, PANEL, BORDER, 8, RIPPLE_MAIN));
         c.setClickable(true);
         c.setFocusable(true);
         return c;
