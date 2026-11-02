@@ -79,6 +79,7 @@
         <activity android:name=".DetailActivity" android:exported="false"
             android:configChanges="orientation|screenSize|keyboardHidden" />
         <activity android:name=".OnboardingActivity" android:exported="false" />
+        <activity android:name=".ContactsActivity" android:exported="false" />
         <activity android:name=".LockActivity" android:exported="false"
             android:excludeFromRecents="true"
             android:configChanges="orientation|screenSize|keyboardHidden" />

@@ -1123,3 +1123,21 @@ and any filter it had set is cleared with it so the
 home is never silently filtered. Search and Ask still
 find everything by category words. The other themes
 keep their bar.
+
+## v0.62.0 - profile, permissions step, contact library (Nov 2, 2026)
+
+Onboarding grows to five steps at chris's word. A name
+step asks what Clio should call you (pref user_name):
+the home greeting uses it ("Good afternoon, Chris")
+and the header disc wears your initial. A permissions
+step lists Microphone, Camera, Notifications, Photos
+and Text messages, each with its plain reason and an
+Allow button that fires the real system prompt; granted
+ones read Allowed. Settings gains a Profile card (name
+edit dialog, initial disc) with the way into the new
+contact library: ContactsActivity + Contacts.java (a
+private contacts.json on-device: name, phone, email,
+note; add, edit, delete). Verified on the phone: steps
+1-3 render, all five permissions show their real
+granted state, the profile card and the empty contact
+library open from Settings.

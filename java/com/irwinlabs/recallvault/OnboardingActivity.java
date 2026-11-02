@@ -68,11 +68,11 @@ public class OnboardingActivity extends Activity {
         topRow.setOrientation(LinearLayout.HORIZONTAL);
         topRow.setGravity(Gravity.CENTER_VERTICAL);
         topRow.setLayoutParams(Ui.matchWrap(4, this));
-        topRow.addView(Ui.text(this, "Step " + (step + 1) + " of 3", 12, Ui.DIM, true));
+        topRow.addView(Ui.text(this, "Step " + (step + 1) + " of 5", 12, Ui.DIM, true));
         View tsp = new View(this);
         tsp.setLayoutParams(new LinearLayout.LayoutParams(0, 1, 1f));
         topRow.addView(tsp);
-        if (step < 2) {
+        if (step < 4) {
             TextView skip = Ui.text(this, "Skip", 13, Ui.WARN, true);
             skip.setClickable(true);
             skip.setOnClickListener(new View.OnClickListener() {
@@ -84,18 +84,20 @@ public class OnboardingActivity extends Activity {
         LinearLayout prog = new LinearLayout(this);
         prog.setOrientation(LinearLayout.HORIZONTAL);
         prog.setLayoutParams(Ui.matchWrap(14, this));
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 5; i++) {
             View seg = new View(this);
             seg.setBackground(Ui.panelBg(i <= step ? Ui.ACCENT : Ui.PANEL_HI, 0, 999, this));
             LinearLayout.LayoutParams slp = new LinearLayout.LayoutParams(0, Ui.dp(this, 5), 1f);
-            slp.setMargins(i == 0 ? 0 : Ui.dp(this, 4), 0, i == 2 ? 0 : Ui.dp(this, 4), 0);
+            slp.setMargins(i == 0 ? 0 : Ui.dp(this, 4), 0, i == 4 ? 0 : Ui.dp(this, 4), 0);
             seg.setLayoutParams(slp);
             prog.addView(seg);
         }
         body.addView(prog);
 
         if (step == 0) stepWelcome();
-        else if (step == 1) stepListen();
+        else if (step == 1) stepName();
+        else if (step == 2) stepPerms();
+        else if (step == 3) stepListen();
         else stepModels();
     }
 
@@ -214,8 +216,103 @@ public class OnboardingActivity extends Activity {
         lockCard.addView(lr);
         body.addView(lockCard);
         body.addView(primary("Continue", new View.OnClickListener() {
-            @Override public void onClick(View v) { step = 2; showStep(); }
+            @Override public void onClick(View v) { step = 4; showStep(); }
         }));
+    }
+
+    /** Step 2 (v0.62.0): the name Clio greets you by. */
+    private void stepName() {
+        body.addView(headline("What should Clio call you?"));
+        body.addView(bodyText(
+            "Just your first name. She will greet you with it - "
+            + "and like everything else here, it stays on this phone."));
+        final android.widget.EditText nameIn = new android.widget.EditText(this);
+        nameIn.setHint("Your name");
+        nameIn.setSingleLine(true);
+        nameIn.setTextColor(Ui.TEXT);
+        nameIn.setHintTextColor(Ui.DIM);
+        nameIn.setTextSize(17);
+        nameIn.setTypeface(Ui.face(this, false));
+        nameIn.setBackground(Ui.panelBg(Ui.PANEL, 0, 16, this));
+        nameIn.setPadding(Ui.dp(this, 16), Ui.dp(this, 14), Ui.dp(this, 16), Ui.dp(this, 14));
+        String cur = getSharedPreferences(Embed.PREFS, MODE_PRIVATE).getString("user_name", "");
+        if (!cur.isEmpty()) nameIn.setText(cur);
+        nameIn.setLayoutParams(Ui.matchWrap(16, this));
+        body.addView(nameIn);
+        body.addView(primary("Continue", new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                getSharedPreferences(Embed.PREFS, MODE_PRIVATE).edit()
+                    .putString("user_name", nameIn.getText().toString().trim()).apply();
+                step = 2;
+                showStep();
+            }
+        }));
+    }
+
+    /** Step 3 (v0.62.0): the device permissions, each with
+     *  its plain reason and the real system prompt. */
+    private void stepPerms() {
+        body.addView(headline("A few permissions, only for what they do."));
+        body.addView(bodyText(
+            "Clio asks only for what a feature needs. Tap Allow and the "
+            + "phone itself will ask - nothing is taken quietly, and you "
+            + "can change your mind in the phone's settings any time."));
+        String[][] rows = {
+            {android.Manifest.permission.RECORD_AUDIO, "Microphone",
+                "For voice notes and speaking your questions"},
+            {android.Manifest.permission.CAMERA, "Camera",
+                "For scanning receipts, letters and documents"},
+            {android.Manifest.permission.POST_NOTIFICATIONS, "Notifications",
+                "So a reminder can reach you before something is due"},
+            {android.Manifest.permission.READ_MEDIA_IMAGES, "Photos",
+                "For keeping photos you ask Clio to save"},
+            {android.Manifest.permission.READ_SMS, "Text messages",
+                "Only if you turn on text keeping in Settings, so plans "
+                + "in your texts can be filed for you"},
+        };
+        for (int i = 0; i < rows.length; i++) {
+            final String perm = rows[i][0];
+            if (perm.equals(android.Manifest.permission.POST_NOTIFICATIONS)
+                    && android.os.Build.VERSION.SDK_INT < 33) continue;
+            boolean granted = checkSelfPermission(perm)
+                == android.content.pm.PackageManager.PERMISSION_GRANTED;
+            LinearLayout r = new LinearLayout(this);
+            r.setOrientation(LinearLayout.HORIZONTAL);
+            r.setGravity(Gravity.CENTER_VERTICAL);
+            r.setBackground(Ui.panelBg(Ui.PANEL, 0, 16, this));
+            r.setElevation(Ui.dp(this, 1));
+            r.setPadding(Ui.dp(this, 14), Ui.dp(this, 12), Ui.dp(this, 14), Ui.dp(this, 12));
+            r.setLayoutParams(Ui.matchWrap(10, this));
+            LinearLayout texts = new LinearLayout(this);
+            texts.setOrientation(LinearLayout.VERTICAL);
+            texts.setLayoutParams(new LinearLayout.LayoutParams(0,
+                LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+            texts.addView(Ui.text(this, rows[i][1], 15, Ui.TEXT, true));
+            texts.addView(Ui.text(this, rows[i][2], 12, Ui.DIM, false));
+            r.addView(texts);
+            if (granted) {
+                r.addView(Ui.catPill(this, "Allowed", Ui.MINT, Ui.MINT_TEXT));
+            } else {
+                final int code = 900 + i;
+                android.widget.Button allow = Ui.ghostButton(this, "Allow");
+                allow.setOnClickListener(new View.OnClickListener() {
+                    @Override public void onClick(View v) {
+                        requestPermissions(new String[]{perm}, code);
+                    }
+                });
+                r.addView(allow);
+            }
+            body.addView(r);
+        }
+        body.addView(primary("Continue", new View.OnClickListener() {
+            @Override public void onClick(View v) { step = 3; showStep(); }
+        }));
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (step == 2) showStep();
     }
 
     private void stepModels() {

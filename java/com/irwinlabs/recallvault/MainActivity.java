@@ -254,9 +254,31 @@ public class MainActivity extends Activity {
             View hsp = new View(this);
             hsp.setLayoutParams(new LinearLayout.LayoutParams(0, 1, 1f));
             header.addView(hsp);
-            header.addView(Ui.avatarDisc(this, new View.OnClickListener() {
-                @Override public void onClick(View v) { tab = "SETTINGS"; render(); }
-            }));
+            String hdrName = getSharedPreferences(Embed.PREFS, MODE_PRIVATE)
+                .getString("user_name", "").trim();
+            if (!hdrName.isEmpty()) {
+                // The profile disc wears your initial (v0.62.0).
+                FrameLayout idisc = new FrameLayout(this);
+                android.graphics.drawable.GradientDrawable idg = new android.graphics.drawable.GradientDrawable();
+                idg.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+                idg.setColor(Ui.FOREST);
+                idisc.setBackground(idg);
+                idisc.setLayoutParams(new LinearLayout.LayoutParams(Ui.dp(this, 44), Ui.dp(this, 44)));
+                TextView ini = Ui.text(this,
+                    hdrName.substring(0, 1).toUpperCase(java.util.Locale.US), 18, 0xFFFFFFFF, true);
+                ini.setGravity(Gravity.CENTER);
+                idisc.addView(ini, new FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+                idisc.setClickable(true);
+                idisc.setOnClickListener(new View.OnClickListener() {
+                    @Override public void onClick(View v) { tab = "SETTINGS"; render(); }
+                });
+                header.addView(idisc);
+            } else {
+                header.addView(Ui.avatarDisc(this, new View.OnClickListener() {
+                    @Override public void onClick(View v) { tab = "SETTINGS"; render(); }
+                }));
+            }
             headerCount = Ui.text(this, "", 12, Ui.DIM, false);
             headerCount.setVisibility(View.GONE);
             header.addView(headerCount);
@@ -482,6 +504,9 @@ public class MainActivity extends Activity {
             // in, then the day's memories as tactile cards.
             int hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY);
             String greet = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+            String myName = getSharedPreferences(Embed.PREFS, MODE_PRIVATE)
+                .getString("user_name", "").trim();
+            if (!myName.isEmpty()) greet += ", " + myName;
             TextView g = Ui.text(this, greet, 26, Ui.TEXT, true);
             g.setTypeface(Ui.faceDisplay(this));
             g.setLayoutParams(Ui.matchWrap(6, this));
@@ -3351,6 +3376,80 @@ public class MainActivity extends Activity {
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
         box.setPadding(Ui.dp(this, 20), Ui.dp(this, 12), Ui.dp(this, 20), Ui.dp(this, 4));
+
+        // Profile (v0.62.0): your name, and the way into the
+        // contact library - customization lives here.
+        {
+            final android.content.SharedPreferences pp =
+                getSharedPreferences(Embed.PREFS, MODE_PRIVATE);
+            final String myName = pp.getString("user_name", "").trim();
+            LinearLayout pCard = Ui.card(this);
+            LinearLayout prow = new LinearLayout(this);
+            prow.setOrientation(LinearLayout.HORIZONTAL);
+            prow.setGravity(Gravity.CENTER_VERTICAL);
+            FrameLayout pdisc = new FrameLayout(this);
+            android.graphics.drawable.GradientDrawable pdg = new android.graphics.drawable.GradientDrawable();
+            pdg.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+            pdg.setColor(Ui.FOREST);
+            pdisc.setBackground(pdg);
+            pdisc.setLayoutParams(new LinearLayout.LayoutParams(Ui.dp(this, 48), Ui.dp(this, 48)));
+            if (!myName.isEmpty()) {
+                TextView ini = Ui.text(this,
+                    myName.substring(0, 1).toUpperCase(java.util.Locale.US), 19, 0xFFFFFFFF, true);
+                ini.setGravity(Gravity.CENTER);
+                pdisc.addView(ini, new FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+            } else {
+                ImageView piv = Ui.icon(this, R.drawable.ic_person, 22, 0xFFFFFFFF);
+                FrameLayout.LayoutParams pilp = new FrameLayout.LayoutParams(Ui.dp(this, 22), Ui.dp(this, 22));
+                pilp.gravity = Gravity.CENTER;
+                piv.setLayoutParams(pilp);
+                pdisc.addView(piv);
+            }
+            prow.addView(pdisc);
+            LinearLayout ptexts = new LinearLayout(this);
+            ptexts.setOrientation(LinearLayout.VERTICAL);
+            LinearLayout.LayoutParams ptlp = new LinearLayout.LayoutParams(0,
+                LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+            ptlp.setMargins(Ui.dp(this, 12), 0, 0, 0);
+            ptexts.setLayoutParams(ptlp);
+            ptexts.addView(Ui.text(this, myName.isEmpty() ? "Your profile" : myName, 16, Ui.TEXT, true));
+            ptexts.addView(Ui.text(this, "The name Clio greets you by", 12, Ui.DIM, false));
+            prow.addView(ptexts);
+            Button editName = Ui.ghostButton(this, myName.isEmpty() ? "Add name" : "Edit");
+            editName.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    final EditText nin = Ui.input(MainActivity.this, "Your name");
+                    nin.setText(myName);
+                    new AlertDialog.Builder(MainActivity.this)
+                        .setTitle("What should Clio call you?")
+                        .setView(nin)
+                        .setPositiveButton("Save", new android.content.DialogInterface.OnClickListener() {
+                            @Override public void onClick(android.content.DialogInterface d, int w) {
+                                pp.edit().putString("user_name",
+                                    nin.getText().toString().trim()).apply();
+                                buildShell();
+                                refreshSettings();
+                                render();
+                            }
+                        })
+                        .setNegativeButton("Cancel", null)
+                        .show();
+                }
+            });
+            prow.addView(editName);
+            pCard.addView(prow);
+            Button contactsBtn = Ui.ghostButton(this,
+                "Contacts (" + Contacts.load(this).size() + ") - the people who matter");
+            contactsBtn.setLayoutParams(Ui.matchWrap(10, this));
+            contactsBtn.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    startActivity(new Intent(MainActivity.this, ContactsActivity.class));
+                }
+            });
+            pCard.addView(contactsBtn);
+            box.addView(pCard);
+        }
 
         // Appearance (v0.49.0): three full themes, applied live.
         LinearLayout themeCard = Ui.card(this);
