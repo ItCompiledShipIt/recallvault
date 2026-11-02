@@ -147,35 +147,104 @@ public class DetailActivity extends Activity {
         root.setPadding(Ui.dp(this, 16), Ui.dp(this, 16), Ui.dp(this, 16), Ui.dp(this, 16));
 
         android.widget.ScrollView scroll = new android.widget.ScrollView(this);
+        scroll.setVerticalScrollBarEnabled(false);
         LinearLayout bodyCol = new LinearLayout(this);
         bodyCol.setOrientation(LinearLayout.VERTICAL);
         scroll.addView(bodyCol);
         root.addView(scroll, new LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
 
-        TextView meta = Ui.text(this, item.category + "  -  " + Ui.typeLabel(item.type)
-            + "  -  " + Ui.dateLine(item.createdAt), 12, Ui.ACCENT, true);
-        bodyCol.addView(meta);
+        if (Ui.SANCTUARY) {
+            // Sanctuary header (v0.61.0): tinted chips, a
+            // gentle date line, the title in the display face.
+            LinearLayout chipRow = new LinearLayout(this);
+            chipRow.setOrientation(LinearLayout.HORIZONTAL);
+            chipRow.setGravity(android.view.Gravity.CENTER_VERTICAL);
+            int[] tint = "Bills".equals(item.category) || "People".equals(item.category)
+                ? new int[]{Ui.TERRA_BG, Ui.TERRA_TEXT}
+                : "Receipts".equals(item.category) || "Wallet".equals(item.category)
+                ? new int[]{Ui.MINT, Ui.MINT_TEXT}
+                : "Meetings".equals(item.category)
+                ? new int[]{Ui.SAGE_BG, Ui.SAGE_TEXT}
+                : new int[]{Ui.PANEL_HI, Ui.DIM};
+            chipRow.addView(Ui.catPill(this, item.category, tint[0], tint[1]));
+            TextView tp = Ui.catPill(this, Ui.typeLabel(item.type), Ui.PANEL_HI, Ui.DIM);
+            LinearLayout.LayoutParams tplp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            tplp.setMargins(Ui.dp(this, 8), 0, 0, 0);
+            tp.setLayoutParams(tplp);
+            chipRow.addView(tp);
+            bodyCol.addView(chipRow);
+            TextView dl = Ui.text(this,
+                "Recorded " + new java.text.SimpleDateFormat("MMM d, yyyy • h:mm a",
+                    java.util.Locale.US).format(new java.util.Date(item.createdAt)),
+                12, Ui.DIM, false);
+            dl.setLayoutParams(Ui.matchWrap(8, this));
+            bodyCol.addView(dl);
+            TextView title = Ui.text(this, item.title, 26, Ui.TEXT, true);
+            title.setTypeface(Ui.faceDisplay(this));
+            title.setLayoutParams(Ui.matchWrap(4, this));
+            bodyCol.addView(title);
+        } else {
+            TextView meta = Ui.text(this, item.category + "  -  " + Ui.typeLabel(item.type)
+                + "  -  " + Ui.dateLine(item.createdAt), 12, Ui.ACCENT, true);
+            bodyCol.addView(meta);
 
-        TextView title = Ui.text(this, item.title, 22, Ui.TEXT, true);
-        title.setLayoutParams(Ui.matchWrap(6, this));
-        bodyCol.addView(title);
+            TextView title = Ui.text(this, item.title, 22, Ui.TEXT, true);
+            title.setLayoutParams(Ui.matchWrap(6, this));
+            bodyCol.addView(title);
+        }
 
         // Facts pulled out of the text, in their own card.
-        StringBuilder facts = new StringBuilder();
-        if (item.reminderAt > 0) {
-            facts.append("Date: ").append(Extract.formatDate(item.reminderAt))
-                .append(" (").append(Extract.relativeDay(item.reminderAt, System.currentTimeMillis())).append(")\n");
-        }
-        if (!item.amounts.isEmpty()) facts.append("Amounts: ").append(item.amounts.replace(",", ", ")).append("\n");
-        if (item.embeddingLocal != null && !item.embeddingLocal.isEmpty()) facts.append("Semantic index: embedded on this phone (EmbeddingGemma 2)\n");
-        else if (LocalEmbed.isModelPresent(this)) facts.append("Semantic index: indexing in the background\n");
-        else facts.append("Semantic index: not embedded yet (needs the on-device model - Settings)\n");
-        if (facts.length() > 0) {
-            LinearLayout factsCard = Ui.card(this);
-            TextView fv = Ui.text(this, facts.toString().trim(), 13, Ui.ACCENT2, false);
-            factsCard.addView(fv);
-            bodyCol.addView(factsCard);
+        if (Ui.SANCTUARY) {
+            // Key Highlights (v0.61.0): the design's mint card
+            // with white rows - dates and amounts only; the
+            // index bookkeeping stays out of the sanctuary.
+            java.util.List<String> hl = new java.util.ArrayList<String>();
+            if (item.reminderAt > 0) {
+                hl.add("Due " + Extract.formatDate(item.reminderAt)
+                    + " (" + Extract.relativeDay(item.reminderAt, System.currentTimeMillis()) + ")");
+            }
+            if (!item.amounts.isEmpty()) {
+                hl.add("Amounts: " + item.amounts.replace(",", ", "));
+            }
+            if (item.expiryAt > 0) {
+                hl.add("Expires " + Extract.formatDate(item.expiryAt));
+            }
+            if (!hl.isEmpty()) {
+                TextView hh = Ui.sectionLabel(this, "Key Highlights");
+                hh.setLayoutParams(Ui.matchWrap(14, this));
+                bodyCol.addView(hh);
+                LinearLayout mint = new LinearLayout(this);
+                mint.setOrientation(LinearLayout.VERTICAL);
+                mint.setBackground(Ui.panelBg(Ui.MINT, 0, 20, this));
+                mint.setPadding(Ui.dp(this, 12), Ui.dp(this, 10), Ui.dp(this, 12), Ui.dp(this, 10));
+                mint.setLayoutParams(Ui.matchWrap(6, this));
+                for (String line : hl) {
+                    TextView row = Ui.text(this, line, 14, Ui.TEXT, true);
+                    row.setBackground(Ui.panelBg(0xFFFFFFFF, 0, 12, this));
+                    row.setPadding(Ui.dp(this, 12), Ui.dp(this, 9), Ui.dp(this, 12), Ui.dp(this, 9));
+                    row.setLayoutParams(Ui.matchWrap(6, this));
+                    mint.addView(row);
+                }
+                bodyCol.addView(mint);
+            }
+        } else {
+            StringBuilder facts = new StringBuilder();
+            if (item.reminderAt > 0) {
+                facts.append("Date: ").append(Extract.formatDate(item.reminderAt))
+                    .append(" (").append(Extract.relativeDay(item.reminderAt, System.currentTimeMillis())).append(")\n");
+            }
+            if (!item.amounts.isEmpty()) facts.append("Amounts: ").append(item.amounts.replace(",", ", ")).append("\n");
+            if (item.embeddingLocal != null && !item.embeddingLocal.isEmpty()) facts.append("Semantic index: embedded on this phone (EmbeddingGemma 2)\n");
+            else if (LocalEmbed.isModelPresent(this)) facts.append("Semantic index: indexing in the background\n");
+            else facts.append("Semantic index: not embedded yet (needs the on-device model - Settings)\n");
+            if (facts.length() > 0) {
+                LinearLayout factsCard = Ui.card(this);
+                TextView fv = Ui.text(this, facts.toString().trim(), 13, Ui.ACCENT2, false);
+                factsCard.addView(fv);
+                bodyCol.addView(factsCard);
+            }
         }
 
         // Media / file preview.
@@ -226,12 +295,16 @@ public class DetailActivity extends Activity {
                 });
                 bodyCol.addView(addPage);
             } else if (item.mime != null && item.mime.startsWith("audio/")) {
-                playBtn = Ui.iconButton(this, "Play voice note", R.drawable.ic_play, Ui.PANEL_HI, Ui.ACCENT2);
-                playBtn.setLayoutParams(Ui.matchWrap(10, this));
-                playBtn.setOnClickListener(new View.OnClickListener() {
-                    @Override public void onClick(View v) { togglePlay(); }
-                });
-                bodyCol.addView(playBtn);
+                if (Ui.SANCTUARY) {
+                    bodyCol.addView(playerCard());
+                } else {
+                    playBtn = Ui.iconButton(this, "Play voice note", R.drawable.ic_play, Ui.PANEL_HI, Ui.ACCENT2);
+                    playBtn.setLayoutParams(Ui.matchWrap(10, this));
+                    playBtn.setOnClickListener(new View.OnClickListener() {
+                        @Override public void onClick(View v) { togglePlay(); }
+                    });
+                    bodyCol.addView(playBtn);
+                }
             } else {
                 TextView fv = Ui.text(this, "File: " + f.getName(), 12, Ui.DIM, false);
                 fv.setLayoutParams(Ui.matchWrap(8, this));
@@ -247,9 +320,44 @@ public class DetailActivity extends Activity {
 
         String text = !item.body.isEmpty() ? item.body : item.extracted;
         if (text != null && !text.trim().isEmpty()) {
-            TextView tv = Ui.text(this, text, 15, Ui.TEXT, false);
-            tv.setLayoutParams(Ui.matchWrap(12, this));
-            bodyCol.addView(tv);
+            if (Ui.SANCTUARY) {
+                // The words in their own white card, with the
+                // design's Copy action (v0.61.0).
+                final String words = text;
+                TextView bh = Ui.sectionLabel(this,
+                    ("VOICE".equals(item.type) || "MEETING".equals(item.type))
+                        ? "Full Transcription" : "Memory");
+                bh.setLayoutParams(Ui.matchWrap(16, this));
+                bodyCol.addView(bh);
+                LinearLayout bCard = Ui.card(this);
+                LinearLayout brow = new LinearLayout(this);
+                brow.setOrientation(LinearLayout.HORIZONTAL);
+                View bsp = new View(this);
+                bsp.setLayoutParams(new LinearLayout.LayoutParams(0, 1, 1f));
+                brow.addView(bsp);
+                TextView copy = Ui.text(this, "Copy text", 13, Ui.WARN, true);
+                copy.setClickable(true);
+                copy.setOnClickListener(new View.OnClickListener() {
+                    @Override public void onClick(View v) {
+                        android.content.ClipboardManager cm = (android.content.ClipboardManager)
+                            getSystemService(CLIPBOARD_SERVICE);
+                        if (cm != null) {
+                            cm.setPrimaryClip(android.content.ClipData.newPlainText("memory", words));
+                            Toast.makeText(DetailActivity.this, "Copied", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
+                brow.addView(copy);
+                bCard.addView(brow);
+                TextView tv = Ui.text(this, text, 15, Ui.TEXT, false);
+                tv.setLayoutParams(Ui.matchWrap(4, this));
+                bCard.addView(tv);
+                bodyCol.addView(bCard);
+            } else {
+                TextView tv = Ui.text(this, text, 15, Ui.TEXT, false);
+                tv.setLayoutParams(Ui.matchWrap(12, this));
+                bodyCol.addView(tv);
+            }
         } else if (item.filePath.isEmpty()) {
             TextView tv = Ui.text(this, "(no text)", 14, Ui.DIM, false);
             tv.setLayoutParams(Ui.matchWrap(12, this));
@@ -388,18 +496,41 @@ public class DetailActivity extends Activity {
         slp.setMargins(Ui.dp(this, 8), 0, 0, 0);
         share.setLayoutParams(slp);
         share.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { shareOut(); }
+            @Override public void onClick(View v) {
+                if (Ui.SANCTUARY) showShareSheet(); else shareOut();
+            }
         });
         actions.addView(share);
-        Button del = Ui.iconButton(this, "Delete", R.drawable.ic_delete, Ui.PANEL_HI, Ui.DANGER);
-        LinearLayout.LayoutParams dlp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
-        dlp.setMargins(Ui.dp(this, 8), 0, 0, 0);
-        del.setLayoutParams(dlp);
-        del.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { confirmDelete(); }
-        });
-        actions.addView(del);
+        if (!Ui.SANCTUARY) {
+            Button del = Ui.iconButton(this, "Delete", R.drawable.ic_delete, Ui.PANEL_HI, Ui.DANGER);
+            LinearLayout.LayoutParams dlp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+            dlp.setMargins(Ui.dp(this, 8), 0, 0, 0);
+            del.setLayoutParams(dlp);
+            del.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) { confirmDelete(); }
+            });
+            actions.addView(del);
+        }
         root.addView(actions);
+        if (Ui.SANCTUARY) {
+            // The quiet assurance, then Delete in the
+            // design's red text form (v0.61.0).
+            TextView safe = Ui.text(this,
+                "This memory is encrypted and stored only on this device.",
+                12, Ui.DIM, false);
+            safe.setGravity(android.view.Gravity.CENTER);
+            safe.setLayoutParams(Ui.matchWrap(10, this));
+            root.addView(safe);
+            TextView delText = Ui.text(this, "Delete Memory", 14, Ui.DANGER, true);
+            delText.setGravity(android.view.Gravity.CENTER);
+            delText.setClickable(true);
+            delText.setPadding(0, Ui.dp(this, 6), 0, Ui.dp(this, 2));
+            delText.setLayoutParams(Ui.matchWrap(2, this));
+            delText.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) { confirmDelete(); }
+            });
+            root.addView(delText);
+        }
 
         // Brain summary (v0.53.0): Gemma 4 writes the plain-words
         // version of this memory, on the phone.
@@ -715,6 +846,242 @@ public class DetailActivity extends Activity {
         Embed.embedPending(this, db);
         Toast.makeText(this, "Read " + text.length() + " chars - now searchable", Toast.LENGTH_SHORT).show();
         render();
+    }
+
+    private ImageView playDiscIcon;
+
+    /** The Sanctuary player card (v0.61.0): a forest play
+     *  disc, the waveform, and the length - the design's
+     *  shape over the same MediaPlayer. */
+    private LinearLayout playerCard() {
+        LinearLayout card = Ui.card(this);
+        card.setLayoutParams(Ui.matchWrap(12, this));
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        android.widget.FrameLayout disc = new android.widget.FrameLayout(this);
+        android.graphics.drawable.GradientDrawable dg = new android.graphics.drawable.GradientDrawable();
+        dg.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+        dg.setColor(Ui.FOREST);
+        disc.setBackground(dg);
+        disc.setLayoutParams(new LinearLayout.LayoutParams(Ui.dp(this, 48), Ui.dp(this, 48)));
+        playDiscIcon = Ui.icon(this, R.drawable.ic_play, 20, 0xFFFFFFFF);
+        android.widget.FrameLayout.LayoutParams ilp = new android.widget.FrameLayout.LayoutParams(
+            Ui.dp(this, 20), Ui.dp(this, 20));
+        ilp.gravity = android.view.Gravity.CENTER;
+        playDiscIcon.setLayoutParams(ilp);
+        disc.addView(playDiscIcon);
+        disc.setClickable(true);
+        disc.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { togglePlaySanctuary(); }
+        });
+        row.addView(disc);
+        LinearLayout wave = new LinearLayout(this);
+        wave.setOrientation(LinearLayout.HORIZONTAL);
+        wave.setGravity(android.view.Gravity.CENTER_VERTICAL);
+        LinearLayout.LayoutParams wlp = new LinearLayout.LayoutParams(0,
+            LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+        wlp.setMargins(Ui.dp(this, 12), 0, Ui.dp(this, 12), 0);
+        wave.setLayoutParams(wlp);
+        long seed = item.id * 2654435761L;
+        for (int i = 0; i < 26; i++) {
+            seed = seed * 1103515245L + 12345L;
+            int h = 6 + (int) ((seed >> 16) % 16);
+            View bar = new View(this);
+            bar.setBackgroundColor(i < 9 ? Ui.ACCENT : 0xFFCFC9BC);
+            LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(Ui.dp(this, 3), Ui.dp(this, h));
+            blp.setMargins(Ui.dp(this, 1), 0, Ui.dp(this, 1), 0);
+            bar.setLayoutParams(blp);
+            wave.addView(bar);
+        }
+        row.addView(wave);
+        String dur = "";
+        try {
+            android.media.MediaMetadataRetriever mmr = new android.media.MediaMetadataRetriever();
+            mmr.setDataSource(item.filePath);
+            String d = mmr.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION);
+            mmr.release();
+            if (d != null) {
+                long s = Long.parseLong(d) / 1000;
+                dur = String.format(java.util.Locale.US, "%d:%02d", s / 60, s % 60);
+            }
+        } catch (Exception e) { /* length unknown - leave blank */ }
+        row.addView(Ui.text(this, dur, 12, Ui.DIM, true));
+        card.addView(row);
+        return card;
+    }
+
+    private void togglePlaySanctuary() {
+        try {
+            if (player != null && player.isPlaying()) {
+                player.pause();
+                if (playDiscIcon != null) playDiscIcon.setImageDrawable(
+                    Ui.iconDrawable(this, R.drawable.ic_play, 0xFFFFFFFF));
+                return;
+            }
+            if (player == null) {
+                player = new MediaPlayer();
+                player.setDataSource(item.filePath);
+                player.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                    @Override public void onCompletion(MediaPlayer mp) {
+                        if (playDiscIcon != null) playDiscIcon.setImageDrawable(
+                            Ui.iconDrawable(DetailActivity.this, R.drawable.ic_play, 0xFFFFFFFF));
+                    }
+                });
+                player.prepare();
+            }
+            player.start();
+            if (playDiscIcon != null) playDiscIcon.setImageDrawable(
+                Ui.iconDrawable(this, R.drawable.ic_pause, 0xFFFFFFFF));
+        } catch (Exception e) {
+            Toast.makeText(this, "Could not play that recording", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    /** The Sanctuary share sheet (v0.61.0): the design's
+     *  export page, as honest options - text, the file,
+     *  a PDF keepsake, or the clipboard. */
+    private void showShareSheet() {
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(Ui.dp(this, 20), Ui.dp(this, 14), Ui.dp(this, 20), Ui.dp(this, 8));
+        TextView h = Ui.text(this, "Share this memory", 17, Ui.TEXT, true);
+        h.setTypeface(Ui.faceDisplay(this));
+        box.addView(h);
+        box.addView(shareRow("Share as text", "The words, anywhere", new View.OnClickListener() {
+            @Override public void onClick(View v) { shareTextOnly(); }
+        }));
+        File f = item.filePath == null || item.filePath.isEmpty() ? null : new File(item.filePath);
+        if (f != null && f.exists()) {
+            box.addView(shareRow("Share the file", "The original, as saved", new View.OnClickListener() {
+                @Override public void onClick(View v) { shareOut(); }
+            }));
+        }
+        box.addView(shareRow("Export a PDF keepsake", "A clean page to keep or send", new View.OnClickListener() {
+            @Override public void onClick(View v) { exportPdf(); }
+        }));
+        final String words = (!item.body.isEmpty() ? item.body : item.extracted);
+        box.addView(shareRow("Copy the words", "To paste anywhere", new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                android.content.ClipboardManager cm = (android.content.ClipboardManager)
+                    getSystemService(CLIPBOARD_SERVICE);
+                if (cm != null) {
+                    cm.setPrimaryClip(android.content.ClipData.newPlainText("memory", words));
+                    Toast.makeText(DetailActivity.this, "Copied", Toast.LENGTH_SHORT).show();
+                }
+            }
+        }));
+        new AlertDialog.Builder(this)
+            .setView(box)
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+
+    private LinearLayout shareRow(String label, String sub, View.OnClickListener click) {
+        LinearLayout r = new LinearLayout(this);
+        r.setOrientation(LinearLayout.VERTICAL);
+        r.setBackground(Ui.rippleBg(this, Ui.PANEL_HI, 0, 14, 0x1F000000));
+        r.setPadding(Ui.dp(this, 14), Ui.dp(this, 10), Ui.dp(this, 14), Ui.dp(this, 10));
+        r.setLayoutParams(Ui.matchWrap(8, this));
+        r.setClickable(true);
+        r.addView(Ui.text(this, label, 15, Ui.TEXT, true));
+        r.addView(Ui.text(this, sub, 12, Ui.DIM, false));
+        r.setOnClickListener(click);
+        return r;
+    }
+
+    private void shareTextOnly() {
+        StringBuilder text = new StringBuilder(item.title);
+        if (!item.body.isEmpty()) text.append("\n\n").append(item.body);
+        String machine = item.extracted == null ? "" : item.extracted.trim();
+        if (!machine.isEmpty() && !machine.equals(item.body.trim())) {
+            text.append("\n\n").append(machine);
+        }
+        Intent s = new Intent(Intent.ACTION_SEND);
+        s.setType("text/plain");
+        s.putExtra(Intent.EXTRA_SUBJECT, item.title);
+        s.putExtra(Intent.EXTRA_TEXT, text.toString());
+        startActivity(Intent.createChooser(s, "Share this memory"));
+    }
+
+    /** A simple, honest keepsake PDF (title, date, facts,
+     *  words) drawn with the platform PDF writer. */
+    private void exportPdf() {
+        try {
+            File dir = new File(getFilesDir(), "exports");
+            dir.mkdirs();
+            File out = new File(dir, "keepsake-" + item.id + ".pdf");
+            android.graphics.pdf.PdfDocument doc = new android.graphics.pdf.PdfDocument();
+            android.graphics.Paint titleP = new android.graphics.Paint();
+            titleP.setTypeface(Ui.faceDisplay(this));
+            titleP.setTextSize(20);
+            titleP.setColor(0xFF221F1D);
+            android.graphics.Paint bodyP = new android.graphics.Paint();
+            bodyP.setTypeface(Ui.face(this, false));
+            bodyP.setTextSize(12.5f);
+            bodyP.setColor(0xFF221F1D);
+            android.graphics.Paint dimP = new android.graphics.Paint();
+            dimP.setTypeface(Ui.face(this, false));
+            dimP.setTextSize(11);
+            dimP.setColor(0xFF69645E);
+            java.util.List<String> lines = new java.util.ArrayList<String>();
+            String words = (!item.body.isEmpty() ? item.body : item.extracted);
+            if (words != null) {
+                for (String para : words.split("\n")) {
+                    String rest = para;
+                    while (rest.length() > 0) {
+                        int n = bodyP.breakText(rest, true, 499, null);
+                        if (n <= 0) break;
+                        int cut = rest.lastIndexOf(' ', n);
+                        if (cut <= 0 || n >= rest.length()) cut = n;
+                        lines.add(rest.substring(0, cut).trim());
+                        rest = rest.substring(cut).trim();
+                    }
+                    lines.add("");
+                }
+            }
+            int pageNo = 0;
+            int idx = 0;
+            do {
+                android.graphics.pdf.PdfDocument.PageInfo info =
+                    new android.graphics.pdf.PdfDocument.PageInfo.Builder(595, 842, ++pageNo).create();
+                android.graphics.pdf.PdfDocument.Page page = doc.startPage(info);
+                android.graphics.Canvas c = page.getCanvas();
+                float y = 64;
+                if (pageNo == 1) {
+                    c.drawText(item.title, 48, y, titleP);
+                    y += 24;
+                    c.drawText(Ui.dateLine(item.createdAt) + "  •  " + item.category, 48, y, dimP);
+                    y += 14;
+                    if (item.reminderAt > 0) {
+                        y += 18;
+                        c.drawText("Due " + Extract.formatDate(item.reminderAt), 48, y, dimP);
+                    }
+                    if (!item.amounts.isEmpty()) {
+                        y += 18;
+                        c.drawText("Amounts: " + item.amounts.replace(",", ", "), 48, y, dimP);
+                    }
+                    y += 26;
+                }
+                while (idx < lines.size() && y < 790) {
+                    c.drawText(lines.get(idx++), 48, y, bodyP);
+                    y += 17;
+                }
+                doc.finishPage(page);
+            } while (idx < lines.size());
+            java.io.FileOutputStream fos = new java.io.FileOutputStream(out);
+            doc.writeTo(fos);
+            fos.close();
+            doc.close();
+            Intent s = new Intent(Intent.ACTION_SEND);
+            s.setType("application/pdf");
+            s.putExtra(Intent.EXTRA_STREAM, ShareProvider.uriFor(out));
+            s.putExtra(Intent.EXTRA_SUBJECT, item.title);
+            s.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            startActivity(Intent.createChooser(s, "Share the keepsake"));
+        } catch (Exception e) {
+            Toast.makeText(this, "Could not make that PDF", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void togglePlay() {

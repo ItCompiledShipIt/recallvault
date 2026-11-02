@@ -1096,3 +1096,21 @@ first-run welcome in the Sanctuary design: three steps
 an honest app-lock offer on step two, real model
 status on step three, shown once after the lock
 clears, skippable throughout.
+
+## v0.61.0 - Detail, voice and share wear Sanctuary (Nov 2, 2026)
+
+The last surfaces. Detail: tinted category/type chips,
+a "Recorded ..." line, the title in the display face,
+Key Highlights as the design's mint card with white
+rows, a real player card for voice (forest disc,
+waveform, true length), the words in a white card with
+Copy text, the encrypted-on-this-device assurance and
+Delete in red text. Share opens the sanctuary sheet:
+as text, the file itself, a PDF keepsake (drawn by the
+platform PDF writer, shared through the app's own
+provider), or copy. Voice: centered title, the timer
+large, and the design's stage - a sage ring and forest
+mic disc that works the same recording path. The scan
+screen is the system camera by design, so nothing
+there needed reskinning; its results land in Detail.
+With this, every screen speaks Sanctuary.

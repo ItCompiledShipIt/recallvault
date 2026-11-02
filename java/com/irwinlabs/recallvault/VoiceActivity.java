@@ -46,13 +46,20 @@ public class VoiceActivity extends Activity {
     private String transcript = "";
     private SpeechRecognizer recognizer;
     private TextView elapsedView;
+    private android.widget.ImageView stageIcon;
     private long recordStartedAt = 0;
     private final android.os.Handler timer = new android.os.Handler(android.os.Looper.getMainLooper());
     private final Runnable tick = new Runnable() {
         @Override public void run() {
             if (!recording) return;
             long s = (System.currentTimeMillis() - recordStartedAt) / 1000;
-            elapsedView.setText(String.format(java.util.Locale.US, "Recording  %d:%02d", s / 60, s % 60));
+            elapsedView.setText(Ui.SANCTUARY
+                ? String.format(java.util.Locale.US, "%d:%02d", s / 60, s % 60)
+                : String.format(java.util.Locale.US, "Recording  %d:%02d", s / 60, s % 60));
+            if (stageIcon != null) {
+                stageIcon.setImageDrawable(Ui.iconDrawable(VoiceActivity.this,
+                    recording ? R.drawable.ic_stop : R.drawable.ic_mic, 0xFFFFFFFF));
+            }
             timer.postDelayed(this, 500);
         }
     };
@@ -70,11 +77,19 @@ public class VoiceActivity extends Activity {
         root.setPadding(Ui.dp(this, 16), Ui.dp(this, 16), Ui.dp(this, 16), Ui.dp(this, 16));
 
         boolean meeting = "meeting".equals(mode);
-        root.addView(Ui.text(this,
-            "ask".equals(mode) ? "Ask out loud" : meeting ? "Meeting recorder" : "Voice note",
-            20, Ui.TEXT, true));
+        TextView vTitle = Ui.text(this,
+            "ask".equals(mode) ? "Ask out loud" : meeting ? "Meeting recorder" : "Voice Note",
+            Ui.SANCTUARY ? 24 : 20, Ui.TEXT, true);
+        if (Ui.SANCTUARY) {
+            vTitle.setTypeface(Ui.faceDisplay(this));
+            vTitle.setGravity(android.view.Gravity.CENTER);
+        }
+        root.addView(vTitle);
 
-        status = Ui.text(this, meeting
+        status = Ui.text(this, Ui.SANCTUARY
+            ? (meeting ? "Records the room. Captions appear as people talk."
+                       : "Dictate for the words, or record to keep the audio itself.")
+            : meeting
             ? "Records the room and files it under Meetings. With the "
               + "transcription model on this phone, captions appear below "
               + "as people talk; on save, a full clean transcript runs in "
@@ -83,6 +98,7 @@ public class VoiceActivity extends Activity {
               + "pulled out as reminders either way."
             : "Dictate turns your speech into searchable text. "
               + "Record keeps the audio itself.", 13, Ui.DIM, false);
+        if (Ui.SANCTUARY) status.setGravity(android.view.Gravity.CENTER);
         status.setLayoutParams(Ui.matchWrap(8, this));
         root.addView(status);
 
@@ -94,7 +110,9 @@ public class VoiceActivity extends Activity {
         root.addView(dictateBtn);
 
         transcriptView = Ui.text(this, "", 15, Ui.TEXT, false);
-        transcriptView.setBackground(Ui.panelBg(Ui.PANEL, Ui.BORDER, 12, this));
+        transcriptView.setBackground(Ui.SANCTUARY
+            ? Ui.panelBg(Ui.PANEL, 0, 20, this)
+            : Ui.panelBg(Ui.PANEL, Ui.BORDER, 12, this));
         transcriptView.setPadding(Ui.dp(this, 14), Ui.dp(this, 12), Ui.dp(this, 14), Ui.dp(this, 12));
         transcriptView.setMinHeight(Ui.dp(this, 56));
         transcriptView.setLayoutParams(Ui.matchWrap(12, this));
@@ -118,7 +136,9 @@ public class VoiceActivity extends Activity {
         }
 
         if (!"ask".equals(mode)) {
-            elapsedView = Ui.text(this, "", 26, Ui.WARN, true);
+            elapsedView = Ui.text(this, Ui.SANCTUARY ? "0:00" : "", Ui.SANCTUARY ? 34 : 26,
+                Ui.SANCTUARY ? Ui.TEXT : Ui.WARN, true);
+            if (Ui.SANCTUARY) elapsedView.setGravity(android.view.Gravity.CENTER);
             elapsedView.setLayoutParams(Ui.matchWrap(10, this));
             root.addView(elapsedView);
             recordBtn = Ui.iconButton(this, "Start recording audio", R.drawable.ic_record, Ui.PANEL_HI, Ui.DANGER);
@@ -128,6 +148,50 @@ public class VoiceActivity extends Activity {
                     if (recording) stopRecording(); else startRecording();
                 }
             });
+            if (Ui.SANCTUARY) {
+                // The design's stage (v0.61.0): a sage ring and
+                // the forest disc; tapping it works the same
+                // record button, which stays wired but unseen.
+                recordBtn.setVisibility(View.GONE);
+                android.widget.FrameLayout stage = new android.widget.FrameLayout(this);
+                LinearLayout.LayoutParams stlp = new LinearLayout.LayoutParams(
+                    Ui.dp(this, 148), Ui.dp(this, 148));
+                stlp.gravity = android.view.Gravity.CENTER_HORIZONTAL;
+                stlp.setMargins(0, Ui.dp(this, 6), 0, Ui.dp(this, 6));
+                stage.setLayoutParams(stlp);
+                View ring = new View(this);
+                android.graphics.drawable.GradientDrawable rd = new android.graphics.drawable.GradientDrawable();
+                rd.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+                rd.setColor(Ui.SAGE_BG);
+                ring.setBackground(rd);
+                stage.addView(ring, new android.widget.FrameLayout.LayoutParams(
+                    Ui.dp(this, 148), Ui.dp(this, 148)));
+                android.widget.FrameLayout disc = new android.widget.FrameLayout(this);
+                android.graphics.drawable.GradientDrawable dd = new android.graphics.drawable.GradientDrawable();
+                dd.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+                dd.setColor(Ui.FOREST);
+                disc.setBackground(dd);
+                android.widget.FrameLayout.LayoutParams dflp = new android.widget.FrameLayout.LayoutParams(
+                    Ui.dp(this, 96), Ui.dp(this, 96));
+                dflp.gravity = android.view.Gravity.CENTER;
+                disc.setLayoutParams(dflp);
+                stageIcon = Ui.icon(this, R.drawable.ic_mic, 38, 0xFFFFFFFF);
+                android.widget.FrameLayout.LayoutParams ilp = new android.widget.FrameLayout.LayoutParams(
+                    Ui.dp(this, 38), Ui.dp(this, 38));
+                ilp.gravity = android.view.Gravity.CENTER;
+                stageIcon.setLayoutParams(ilp);
+                disc.addView(stageIcon);
+                stage.addView(disc);
+                stage.setClickable(true);
+                stage.setOnClickListener(new View.OnClickListener() {
+                    @Override public void onClick(View v) { recordBtn.performClick(); }
+                });
+                root.addView(stage);
+                TextView tapHint = Ui.text(this, "Tap to record", 12, Ui.DIM, false);
+                tapHint.setGravity(android.view.Gravity.CENTER);
+                tapHint.setLayoutParams(Ui.matchWrap(2, this));
+                root.addView(tapHint);
+            }
             root.addView(recordBtn);
 
             Button save = Ui.iconButton(this, "meeting".equals(mode) ? "Save meeting" : "Save voice note",

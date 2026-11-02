@@ -20,7 +20,7 @@ import java.util.List;
  */
 public class ShareProvider extends ContentProvider {
 
-    private static final String[] DIRS = {"captures", "imports", "voice", "restored", "pages"};
+    private static final String[] DIRS = {"captures", "imports", "voice", "restored", "pages", "exports"};
 
     public static Uri uriFor(File f) {
         String dir = f.getParentFile() != null ? f.getParentFile().getName() : "captures";
