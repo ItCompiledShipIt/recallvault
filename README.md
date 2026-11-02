@@ -976,3 +976,12 @@ the launcher's mask was clipping the C's edges - the
 safe zone (64% of the foreground canvas, 80% on legacy
 icons, 88% for the in-app header mark). Proportions and
 artwork unchanged.
+
+## v0.54.4 - silver icon (Nov 2, 2026)
+
+Chris's follow-up: brighten just the app icon (the
+in-app header mark keeps the graphite). The launcher
+icons get their own master (assets/clio-logo-icon.png)
+with the fill lifted to silver, so the C reads at a
+glance on the launcher's dark plate. Verified on his
+home screen.
