@@ -1,5 +1,21 @@
 # RecallVault
 
+## v0.72.0 - ask-first
+
+The home screen stops listing the vault. Following chris's
+direction - the full list is a lot to look at; let Clio work
+in the background and pull things up when asked - the quiet
+home is now: capture, the attention strip, Ask, one NOTICED
+card carrying her digest (overdue, due today, this week's
+bills, a bill running high, on this day) when she has
+something to say, and a single bottom line ("N memories in
+the vault - ask, and I'll find it") with Browse demoted to a
+small button. The dates-and-money list card is gone; due
+things still surface through Noticed, the attention strip,
+reminders and notifications. The desktop mirrors it: Ask is
+the landing view with NOTICED on top, and the feed is now
+the Vault view, second in the nav.
+
 ## v0.71.0 - smarter
 
 Ask's keyword ranking was rebuilt from a measured eval

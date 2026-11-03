@@ -629,18 +629,20 @@ public class MainActivity extends Activity {
         content.addView(hsv);
         }
 
-        // Selective home (v0.68.0): on the quiet home, surface the
-        // facts that matter - dates, appointments, prices - and a
-        // one-line account of everything stored. The report, the
-        // look-alikes and the full list live in Browse, or appear
-        // when a search asks for them.
+        // Ask-first home (v0.72.0, chris's direction): the home
+        // no longer lists the vault at all. Clio works in the
+        // background; what she has noticed - overdue, due today,
+        // this week's bills, a bill running high - gets one
+        // quiet card, and everything else waits to be asked
+        // for. The full list lives behind Browse, one tap away
+        // and visually last.
         boolean homeQuiet = Ui.SANCTUARY && !vaultBrowse && vaultQuery.trim().isEmpty();
         if (homeQuiet) {
             if (db.count() == 0) {
                 content.addView(firstRunCard());
             } else {
-                factsCard();
-                collectionsCard();
+                noticedCard();
+                quietLine();
             }
         }
 
@@ -786,99 +788,51 @@ public class MainActivity extends Activity {
      * line for this month's receipts. Everything else is stored,
      * not shown, until it is asked for.
      */
-    private void factsCard() {
-        long now = System.currentTimeMillis();
-        java.util.List<Item> dated = new java.util.ArrayList<Item>();
-        long receiptCents = 0;
-        int receiptCount = 0;
-        java.util.Calendar cal = java.util.Calendar.getInstance();
-        int thisMonth = cal.get(java.util.Calendar.MONTH);
-        int thisYear = cal.get(java.util.Calendar.YEAR);
-        for (Item it : db.all()) {
-            if (it.handledAt == 0 && it.reminderAt > 0) dated.add(it);
-            if ("Receipts".equals(it.category)) {
-                java.util.Calendar ic = java.util.Calendar.getInstance();
-                ic.setTimeInMillis(it.createdAt);
-                if (ic.get(java.util.Calendar.MONTH) == thisMonth
-                        && ic.get(java.util.Calendar.YEAR) == thisYear) {
-                    receiptCount++;
-                    for (String a : Extract.findAmounts(it.amounts == null ? "" : it.amounts)) {
-                        try {
-                            receiptCents += Math.round(Double.parseDouble(
-                                a.replace("$", "").replace(",", "")) * 100);
-                        } catch (Exception e) { /* unparseable amount: skip */ }
-                    }
-                }
-            }
-        }
-        if (dated.isEmpty() && receiptCount == 0) return;
-        java.util.Collections.sort(dated, new java.util.Comparator<Item>() {
-            @Override public int compare(Item a, Item b) {
-                return Long.compare(a.reminderAt, b.reminderAt);
-            }
-        });
+    /**
+     * The Ask-first home's one proactive surface (v0.72.0):
+     * whatever Clio has noticed, in her digest's own words -
+     * overdue, due today, this week, a bill running high, on
+     * this day. Silent when there is nothing worth saying.
+     */
+    private void noticedCard() {
+        Digest.Out d = Digest.compose(db.all(), System.currentTimeMillis());
+        if (d == null) return;
         LinearLayout card = Ui.card(this);
         card.setLayoutParams(Ui.matchWrap(12, this));
-        card.addView(Ui.sectionLabel(this, "Dates & money"));
-        int shown = 0;
-        for (final Item it : dated) {
-            if (shown >= 5) break;
-            shown++;
-            String line = Privacy.displayTitle(it) + "  -  "
-                + Extract.relativeDay(it.reminderAt, now)
-                + (it.amounts == null || it.amounts.isEmpty() ? "" : "  -  " + it.amounts);
-            Button row = Ui.ghostButton(this, line);
-            row.setLayoutParams(Ui.matchWrap(4, this));
-            row.setOnClickListener(new View.OnClickListener() {
-                @Override public void onClick(View v) { openDetail(it.id); }
-            });
-            card.addView(row);
-        }
-        if (dated.size() > 5) {
-            Button more = Ui.ghostButton(this,
-                "+ " + (dated.size() - 5) + " more dated - see Reminders");
-            more.setLayoutParams(Ui.matchWrap(4, this));
-            more.setOnClickListener(new View.OnClickListener() {
-                @Override public void onClick(View v) { tab = "REMINDERS"; render(); }
-            });
-            card.addView(more);
-        }
-        if (receiptCount > 0) {
-            TextView rt = Ui.text(this,
-                "Receipts this month: " + receiptCount
-                    + (receiptCents > 0 ? " - " + Ask.formatMoney(receiptCents) : ""),
-                13, Ui.DIM, false);
-            rt.setLayoutParams(Ui.matchWrap(4, this));
-            card.addView(rt);
+        card.addView(Ui.sectionLabel(this, "Noticed"));
+        for (String line : d.lines) {
+            TextView t = Ui.text(this, line, 13, Ui.TEXT, false);
+            t.setLayoutParams(Ui.matchWrap(3, this));
+            card.addView(t);
         }
         content.addView(card);
     }
 
     /**
-     * The selective home's storage card (v0.68.0): one quiet line
-     * accounting for everything stored, by category, and the way
-     * into the full list. Nothing here parades individual items.
+     * The vault's whole presence on the Ask-first home: one
+     * quiet line and the way into Browse, demoted to the
+     * bottom where a filing cabinet belongs.
      */
-    private void collectionsCard() {
+    private void quietLine() {
         java.util.List<Item> all = db.all();
         if (all.isEmpty()) return;
-        // No category ledger on the surface (v0.69.0): the web of
-        // categories is Clio's to keep, not ours to read.
-        StringBuilder sb = new StringBuilder();
-        sb.append(all.size()).append(all.size() == 1 ? " memory" : " memories").append(" stored");
-        LinearLayout card = Ui.card(this);
-        card.setLayoutParams(Ui.matchWrap(12, this));
-        card.addView(Ui.sectionLabel(this, "Stored quietly"));
-        TextView t = Ui.text(this, sb.toString(), 13, Ui.TEXT, false);
-        t.setLayoutParams(Ui.matchWrap(4, this));
-        card.addView(t);
-        Button browse = Ui.ghostButton(this, "Browse everything");
-        browse.setLayoutParams(Ui.matchWrap(6, this));
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setLayoutParams(Ui.matchWrap(10, this));
+        TextView t = Ui.text(this,
+            all.size() + (all.size() == 1 ? " memory" : " memories")
+                + " in the vault - ask, and I'll find it.",
+            12, Ui.DIM, false);
+        t.setLayoutParams(new LinearLayout.LayoutParams(0,
+            LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        row.addView(t);
+        Button browse = Ui.ghostButton(this, "Browse");
         browse.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { vaultBrowse = true; render(); }
         });
-        card.addView(browse);
-        content.addView(card);
+        row.addView(browse);
+        content.addView(row);
     }
 
     /** The home screen's three quiet ways in (Sanctuary). */
