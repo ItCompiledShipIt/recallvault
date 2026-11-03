@@ -986,6 +986,29 @@ public class TestMain {
             check("phantom: hinted past date keeps its due date",
                 Extract.analyze("This bill was due January 15, 2020").dueDate
                     == Extract.parseIso("2020-01-15"));
+            // When vs deadline (v0.78.2): a date that merely
+            // reports an event is a "when", never a due date -
+            // in every ingest stream. Only obligations earn
+            // deadlines.
+            check("when: sign-in alert date is not a due date",
+                Extract.analyze("New sign-in to your account on November 20, 2026 at 3:12 PM. If this was not you, reset your password.").dueDate == -1);
+            check("when: the sign-in date is still recorded as a date",
+                !Extract.analyze("New sign-in to your account on November 20, 2026").dates.isEmpty());
+            check("when: a received payment is a when, the amount due is the deadline",
+                Extract.analyze("Payment received on November 1, 2026. Your amount due is $105.67 by November 16, 2026.").dueDate
+                    == Extract.parseIso("2026-11-16"));
+            check("when: a shipped order's arriving-by date is not a due date",
+                Extract.analyze("Your order has shipped. Arriving by November 20, 2026.").dueDate == -1);
+            check("when: a sale end date is not a due date",
+                Extract.analyze("Your wishlist game is on sale. Offer ends November 17, 2026.").dueDate == -1);
+            check("when: a delivered date is not a due date",
+                Extract.analyze("Your package was delivered on November 20, 2026.").dueDate == -1);
+            check("when: a future subscription charge keeps its date",
+                Extract.analyze("Your card will be charged $20.00 on December 3, 2026 for your subscription.").dueDate
+                    == Extract.parseIso("2026-12-03"));
+            check("when: a statement-ready notice keeps the real payment due",
+                Extract.analyze("Your statement is ready. Payment due December 1, 2026: $300.00.").dueDate
+                    == Extract.parseIso("2026-12-01"));
             // Notification judge (v0.70.0): facts file, noise does not.
             check("notify: bank spend alert kept",
                 NotifyFilter.judge("Chase", "You spent $42.10 at SHELL OIL.").keep);

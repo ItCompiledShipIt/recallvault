@@ -70,6 +70,73 @@ public final class Extract {
         Pattern.compile("(due|expires?|expiry|renew(?:al|s)?|deadline|pay(?:ment)? by|valid (?:until|thru)|through)",
             Pattern.CASE_INSENSITIVE);
 
+    // Sharpened v0.78.2 (chris: "arent due dates, appointments
+    // or anything else other than a when"): a date becomes a
+    // deadline only when its own sentence asks for action by
+    // it. A sentence that REPORTS an event - a sign-in, a
+    // charge that posted, a payment received, a delivery, a
+    // sale ending - makes its dates "whens": they stay in
+    // the record (and in f.dates) but never become due
+    // dates. A strong obligation phrase in the same sentence
+    // ("amount due", "payment due") overrides the veto: a
+    // bill that also reports a received payment keeps the
+    // real deadline.
+    private static final Pattern P_EVENT_SENTENCE =
+        Pattern.compile("(sign[ -]?in|signed in|was charged|were charged|charged to your"
+            + "|payment (was )?(received|made|processed|completed)|you paid|paid in full"
+            + "|has shipped|out for delivery|was delivered|delivered on|ready for pickup"
+            + "|statement is (ready|available)|password (was )?(changed|reset)"
+            + "|offer ends|sale ends|promotion ends"
+            + "|was (paid|sent|processed|completed|posted|deducted|withdrawn|received)"
+            + "|receipt|transaction|purchase|offer|sale|promo|discount|coupon)",
+            Pattern.CASE_INSENSITIVE);
+
+    private static final Pattern P_STRONG_OBLIGATION =
+        Pattern.compile("(amount due|balance due|total due|payment due|minimum due|due date|please pay)",
+            Pattern.CASE_INSENSITIVE);
+
+    /** The clause/sentence a position sits in (bounded). */
+    private static String sentenceAround(String text, int pos) {
+        int start = 0;
+        for (int i = pos - 1; i >= Math.max(0, pos - 200); i--) {
+            char c = text.charAt(i);
+            if (c == '.' || c == '\n' || c == ';' || c == '!' || c == '?') { start = i + 1; break; }
+        }
+        int end = text.length();
+        for (int i = pos; i < Math.min(text.length(), pos + 200); i++) {
+            char c = text.charAt(i);
+            if (c == '.' || c == '\n' || c == ';' || c == '!' || c == '?') { end = i; break; }
+        }
+        return text.substring(start, end);
+    }
+
+    private static boolean eventFramed(String text, Hit h) {
+        String s = sentenceAround(text, h.pos);
+        return P_EVENT_SENTENCE.matcher(s).find()
+            && !P_STRONG_OBLIGATION.matcher(s).find();
+    }
+
+    // For the unhinted fallback: the document as a whole
+    // must be obligation-shaped (a bill, a booking, a plan
+    // to attend or renew) before a bare future date may pose
+    // as a deadline. Pure event records and notices fail
+    // this gate, so their dates stay "whens".
+    private static final String[] OBLIGATION_DOC = {
+        "due", "payment", "pay ", "bill", "invoice", "appointment",
+        "reservation", "booking", "booked", "renew", "rent", "owe",
+        "subscription", "flight", "ticket",
+        // Commitment verbs: a sentence Actions already judged
+        // a commitment ("I'll send the signed lease by Nov
+        // 28") is obligation-shaped even without bill words -
+        // without these, v0.78.2's gate undated real to-dos.
+        "send", "submit", "schedule"
+    };
+
+    private static boolean obligationFramed(String lower) {
+        for (String w : OBLIGATION_DOC) if (lower.contains(w)) return true;
+        return false;
+    }
+
     private static final Map<String, Integer> MONTHS = new LinkedHashMap<String, Integer>();
     static {
         String[] names = {"jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"};
@@ -314,25 +381,32 @@ public final class Extract {
         if (text == null || text.trim().isEmpty()) return f;
         List<Hit> hits = findDates(text);
         for (Hit h : hits) f.dates.add(h.epoch);
-        // Due date: first date with a due/expires hint in the 48 chars before it.
+        // Due date: first date with a due/expires hint in the
+        // 48 chars before it - unless its own sentence merely
+        // reports an event (v0.78.2, see P_EVENT_SENTENCE).
         for (Hit h : hits) {
             int from = Math.max(0, h.pos - 48);
             String before = text.substring(from, h.pos);
-            if (P_DUE_HINT.matcher(before).find()) { f.dueDate = h.epoch; break; }
+            if (P_DUE_HINT.matcher(before).find() && !eventFramed(text, h)) {
+                f.dueDate = h.epoch; break;
+            }
         }
-        if (f.dueDate < 0 && !hits.isEmpty()) {
-            // Unhinted fallback (tightened v0.70.0): only a FUTURE
-            // date may become a deadline on its own. The old rule -
-            // latest date, period - manufactured reminders out of
-            // any dated text: a screenshot of Clio's own home
-            // screen, which merely displays other items' dates,
-            // filed itself with a due date (Nov 2, 2026). Past and
-            // same-day dates are history, not deadlines, unless a
-            // due/expires hint says otherwise (handled above).
+        if (f.dueDate < 0 && !hits.isEmpty()
+                && obligationFramed(text.toLowerCase(Locale.US))) {
+            // Unhinted fallback (tightened v0.70.0, gated
+            // v0.78.2): only in an obligation-shaped document
+            // may a FUTURE, non-event date become a deadline on
+            // its own. The old rule - latest future date,
+            // period - manufactured reminders out of any dated
+            // text: sign-in alerts, delivery notices and sale
+            // mail all filed themselves due dates out of what
+            // were only "whens".
             long todayStart = startOfDay(System.currentTimeMillis());
             long max = -1;
             for (Hit h : hits) {
-                if (h.epoch > todayStart && h.epoch > max) max = h.epoch;
+                if (h.epoch > todayStart && h.epoch > max && !eventFramed(text, h)) {
+                    max = h.epoch;
+                }
             }
             f.dueDate = max;
         }
