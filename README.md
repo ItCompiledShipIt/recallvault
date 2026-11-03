@@ -1,5 +1,23 @@
 # RecallVault
 
+## v0.78.0 - real release signing, targetSdk 35, sealed chats
+
+Release builds now sign with the real RSA-4096 keystore in
+`~/Projects/recallvault-signing/` (outside the repo; 0600
+keystore.properties; the debug-key `house` config remains
+only as a fresh-clone fallback). The key change means a
+ONE-TIME uninstall/reinstall - Android will not update the
+debug-signed build in place - held for the word. targetSdk
+34 -> 35. ChatStore seals its JSON with VaultCrypto: chat
+text quotes memories, so it gets the vault's protection
+(dec passes legacy plaintext through; re-sealed on save).
+Desktop, same round: mail HTML stripping + the phone's
+due-hint algorithm for mail_facts, chats.json sealed at
+rest, provider cut-outs keep the partial instead of
+double-answering, takeaways render as bullets, and the
+desktop's first automated suite (test_server.py, 15
+checks, census parity with this app's verified series).
+
 ## v0.77.0 - smarter answers, if you want them
 
 Optional external AI, off by default, on both apps. A new
