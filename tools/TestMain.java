@@ -919,6 +919,72 @@ public class TestMain {
                 && csv.contains("WALMART SUPERCENTER") && csv.contains("84.40"));
         }
 
+        // ---------- v0.68.0: selective classification ----------
+        {
+            // His real false positives (Nov 2, 2026): a game menu
+            // screenshot filed as a receipt because it says "Store".
+            String menuShot = "SpatialScreen\nMy Status,\nProfile\nQuests\nSettings\nStore\n"
+                + "X Close\nSNEAK / SWAP HAND: CLOSE - CLICK: SELECT";
+            check("selective: game menu is not a receipt",
+                "Notes".equals(Extract.analyze(menuShot).category));
+            check("selective: game menu files as an image",
+                "Images".equals(Extract.forType(Extract.analyze(menuShot).category, "PHOTO")));
+            check("selective: game menu does not parse as a receipt",
+                Receipts.parse(menuShot) == null);
+            // A screenshot of Clio's own home screen, which says
+            // "Receipts" and "Receipt or note" in its own UI.
+            String homeShot = "Clio\nGood afternoon\nSaved on this phone only 100% Private\n"
+                + "Record Voice\nQuick audio\nAll\nSearch your memories, voice notes, photos...\n"
+                + "PHOTO LOOK-ALIKES\nTODAY\nRECENT MEMORIES\nReceipts\nweed\nVault\n"
+                + "Scan Doc\nReceipt or note\nBills\n";
+            check("selective: own home screen is not a receipt",
+                "Notes".equals(Extract.analyze(homeShot).category));
+            check("selective: own home screen does not parse",
+                Receipts.parse(homeShot) == null);
+            // A screenshot that merely displays a price is not a receipt.
+            check("selective: lone price does not parse",
+                Receipts.parse("Big sale this weekend\nOnly $20.00\nCome on down") == null);
+            // His real dispensary receipt: labels and prices on
+            // separate OCR lines, structure everywhere.
+            String weed = "$16.00\nQueen - Dab'Ums - (7g)\nClarity\nNight -\n$4.00\n$20.00\n"
+                + "GF41969006162188\nRegular Price\nSavings\n$20.00\n-$4.00\n$16.00\nSubtotal\n"
+                + "Purchase Total\nDiscount\nTax Breakdowrn\n$4.07\n$0.91\n"
+                + "WA State Excise Tax (included)\nCheney Sales Tax (included)\n"
+                + "Payment Breakdown\n$16.00\nTx Amount\n$20.00\nCash\n$4.00\n$20.00\n$16.00\n"
+                + "Total Tendered\nCash Back\nTotal\nCassidy R\nTerminal 6\n"
+                + "Nov 02, 2026 09:26 AM PST\nCHRISTOPHER IRWIN\nReceipt ID\nTime\nCashier\n"
+                + "Register\nPurchased by\nCloud 9 Cannabis Co.- Cheney\n1845 1st St.\nCheney, WA";
+            Receipts.Parsed wp = Receipts.parse(weed);
+            check("selective: real receipt still parses", wp != null);
+            check("selective: real receipt total is the tendered total",
+                wp != null && wp.totalCents == 2000);
+            check("selective: real receipt classifies as Receipts",
+                "Receipts".equals(Extract.analyze(weed).category));
+            // A utility bill is a bill, never a receipt - and it
+            // keeps its due date.
+            String util = "City of Cheney\nUtility Statement\nAccount 4419\n"
+                + "Amount Due $105.67\nDue Date November 16, 2026\nWater and electric service";
+            check("selective: utility bill does not parse as a receipt",
+                Receipts.parse(util) == null);
+            Extract.Facts uf = Extract.analyze(util);
+            check("selective: utility bill classifies as Bills", "Bills".equals(uf.category));
+            check("selective: utility bill keeps its due date", uf.dueDate > 0);
+            // Substring traps: words inside words do not count.
+            check("selective: stored totals are prose, not a receipt",
+                "Notes".equals(Extract.analyze(
+                    "I stored the totals from the tournament in a spreadsheet").category));
+            check("selective: a note about keeping a receipt stays a note",
+                "Notes".equals(Extract.analyze("Keep the receipt for the TV in the drawer").category));
+            // A plain photo with no signal files as Images; a
+            // plain typed note stays Notes.
+            check("selective: silent photo files as Images",
+                "Images".equals(Extract.forType(
+                    Extract.analyze("A quiet afternoon at the lake").category, "PHOTO")));
+            check("selective: typed note stays Notes",
+                "Notes".equals(Extract.forType(
+                    Extract.analyze("A quiet afternoon at the lake").category, "NOTE")));
+        }
+
         // ---------- v0.43.0: people cards ----------
         {
             Item g1 = new Item();

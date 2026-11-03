@@ -419,6 +419,9 @@ public final class FileIngest {
             it.amounts = am.toString();
             // Receipt mode (v0.42.0): ingested scans file as expenses too.
             if (fm.startsWith("image/")) Receipts.refine(it, machine, false);
+            // Images default (v0.68.0): a picture with no confident
+            // category files as an Image, not a Note.
+            it.category = Extract.forType(it.category, it.type);
             db.insert(it);
             return 1;
         } catch (Exception e) {

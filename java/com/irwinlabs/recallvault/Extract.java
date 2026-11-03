@@ -23,7 +23,7 @@ public final class Extract {
     private Extract() {}
 
     public static final String[] CATEGORIES = {
-        "Bills", "Receipts", "Wallet", "People", "Meetings", "Notes"
+        "Bills", "Receipts", "Wallet", "People", "Meetings", "Images", "Notes"
     };
 
     public static class Facts {
@@ -190,7 +190,7 @@ public final class Extract {
     private static final Pattern P_AMOUNT =
         Pattern.compile("\\$\\s?(\\d{1,3}(?:,\\d{3})*(?:\\.\\d{2})|\\d+(?:\\.\\d{2})?)");
 
-    private static List<String> findAmounts(String text) {
+    public static List<String> findAmounts(String text) {
         List<String> out = new ArrayList<String>();
         Matcher m = P_AMOUNT.matcher(text);
         while (m.find()) {
@@ -202,40 +202,109 @@ public final class Extract {
 
     // ---------- category ----------
 
-    private static final Map<String, String[]> KEYWORDS = new LinkedHashMap<String, String[]>();
+    /**
+     * Selective classification (v0.68.0). The old classifier counted
+     * raw substring hits, so one stray word - "Store" in a game
+     * menu, the word "Receipts" on Clio's own home screen - filed
+     * screenshots as receipts. Now: phrases must match on word
+     * boundaries, each keyword counts once, keywords carry weights
+     * (strong 3 / standard 2), and a category must reach 3 points
+     * to beat Notes. Receipts additionally needs corroboration -
+     * the word "receipt", or two receipt-structure signals plus a
+     * price - because generic words like "store" and "total" were
+     * dropped from its set entirely.
+     */
+    private static final Map<String, String[]> STRONG = new LinkedHashMap<String, String[]>();
+    private static final Map<String, String[]> STANDARD = new LinkedHashMap<String, String[]>();
     static {
-        KEYWORDS.put("Bills", new String[]{
-            "bill", "invoice", "amount due", "balance due", "payment due", "due date",
-            "electric", "electricity", "utility", "utilities", "water bill", "gas bill",
-            "internet", "broadband", "phone bill", "statement", "premium", "subscription",
-            "rent", "mortgage", "avangrid", "avista", "energy bill"});
-        KEYWORDS.put("Receipts", new String[]{
-            "receipt", "subtotal", "total", "tax", "change due", "cashier", "order #",
-            "order number", "purchased", "checkout", "refund", "store", "grocery", "groceries"});
-        KEYWORDS.put("Wallet", new String[]{
-            "passport", "driver license", "drivers license", "license", "insurance",
-            "policy", "warranty", "expires", "expiration", "card", "visa", "mastercard",
-            "account number", "member id", "id number", "boarding pass", "ticket", "vin"});
-        KEYWORDS.put("People", new String[]{
-            "birthday", "phone", "email", "address", "contact", "call", "wife", "husband",
+        STRONG.put("Bills", new String[]{
+            "amount due", "balance due", "payment due", "past due", "due date",
+            "water bill", "gas bill", "phone bill", "energy bill", "invoice"});
+        STANDARD.put("Bills", new String[]{
+            "bill", "electric", "electricity", "utility", "utilities", "statement",
+            "premium", "subscription", "rent", "mortgage", "avangrid", "avista"});
+        STRONG.put("Receipts", new String[]{
+            "receipt", "subtotal", "change due", "sales tax"});
+        STANDARD.put("Receipts", new String[]{
+            "cashier", "order #", "order number", "checkout", "refund", "groceries"});
+        STRONG.put("Wallet", new String[]{
+            "passport", "driver license", "drivers license", "boarding pass"});
+        STANDARD.put("Wallet", new String[]{
+            "license", "insurance", "policy", "warranty", "expires", "expiration",
+            "visa", "mastercard", "credit card", "debit card",
+            "account number", "member id", "id number", "vin"});
+        STRONG.put("People", new String[]{"birthday"});
+        STANDARD.put("People", new String[]{
+            "phone", "email", "address", "contact", "wife", "husband",
             "mom", "dad", "sister", "brother", "friend", "doctor", "dr."});
-        KEYWORDS.put("Meetings", new String[]{
-            "meeting", "minutes", "agenda", "attendees", "action item", "action items",
-            "discussed", "decided", "call notes", "standup", "appointment", "scheduled"});
+        STRONG.put("Meetings", new String[]{
+            "action item", "action items", "call notes"});
+        STANDARD.put("Meetings", new String[]{
+            "meeting", "minutes", "agenda", "attendees", "discussed",
+            "standup", "appointment"});
     }
 
-    private static String classify(String lower) {
+    /** Receipt-structure signals for the corroboration gate. */
+    private static final String[] RECEIPT_STRUCTURE = {
+        "subtotal", "tax", "change due", "cashier", "register",
+        "tendered", "cash back", "purchase total"};
+
+    /** Phrase match on word boundaries (no letter/digit either side). */
+    static boolean hasPhrase(String lower, String phrase) {
+        int idx = 0;
+        while ((idx = lower.indexOf(phrase, idx)) >= 0) {
+            int end = idx + phrase.length();
+            boolean leftOk = idx == 0 || !Character.isLetterOrDigit(lower.charAt(idx - 1));
+            boolean rightOk = end >= lower.length()
+                || !Character.isLetterOrDigit(lower.charAt(end));
+            if (leftOk && rightOk) return true;
+            idx++;
+        }
+        return false;
+    }
+
+    private static int scoreFor(String lower, String cat) {
+        int score = 0;
+        String[] strong = STRONG.get(cat);
+        if (strong != null) for (String kw : strong) if (hasPhrase(lower, kw)) score += 3;
+        String[] standard = STANDARD.get(cat);
+        if (standard != null) for (String kw : standard) if (hasPhrase(lower, kw)) score += 2;
+        return score;
+    }
+
+    private static String classify(String lower, boolean hasAmount) {
         String best = "Notes";
         int bestScore = 0;
-        for (Map.Entry<String, String[]> e : KEYWORDS.entrySet()) {
-            int score = 0;
-            for (String kw : e.getValue()) {
-                int idx = 0;
-                while ((idx = lower.indexOf(kw, idx)) >= 0) { score++; idx += kw.length(); }
+        for (String cat : STRONG.keySet()) {
+            int score = scoreFor(lower, cat);
+            if (cat.equals("Receipts") && score >= 3) {
+                // Corroboration: real receipt structure, or the
+                // word backed by structure and a price. The word
+                // alone is not enough - Clio's own home screen
+                // says "Receipts" and "Receipt or note", and a
+                // screenshot of it filed as a receipt (Nov 2, 2026).
+                int structure = 0;
+                for (String s : RECEIPT_STRUCTURE) if (hasPhrase(lower, s)) structure++;
+                boolean word = hasPhrase(lower, "receipt");
+                boolean corroborated = structure >= 2
+                    || (word && structure >= 1 && hasAmount);
+                if (!corroborated) score = 0;
             }
-            if (score > bestScore) { bestScore = score; best = e.getKey(); }
+            if (score >= 3 && score > bestScore) { bestScore = score; best = cat; }
         }
         return best;
+    }
+
+    /**
+     * The medium-aware default (v0.68.0): a photo or scan with no
+     * confident category is an Image, not a Note - pictures file
+     * as pictures, and text categories stay meaningful.
+     */
+    public static String forType(String category, String type) {
+        if (("PHOTO".equals(type) || "SCAN".equals(type)) && "Notes".equals(category)) {
+            return "Images";
+        }
+        return category;
     }
 
     // ---------- entry point ----------
@@ -258,7 +327,7 @@ public final class Extract {
             f.dueDate = max;
         }
         f.amounts = findAmounts(text);
-        f.category = classify(text.toLowerCase(Locale.US));
+        f.category = classify(text.toLowerCase(Locale.US), !f.amounts.isEmpty());
         return f;
     }
 

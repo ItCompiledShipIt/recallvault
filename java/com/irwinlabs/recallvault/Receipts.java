@@ -53,24 +53,44 @@ public final class Receipts {
         return last;
     }
 
-    /** Parse receipt OCR text; null when no total can be found. */
+    /** Receipt-structure signals for the guarded fallback below. */
+    private static final String[] STRUCTURE = {
+        "subtotal", "tax", "receipt", "cashier", "register",
+        "tendered", "cash back", "discount", "purchase total"};
+
+    /**
+     * Parse receipt OCR text; null when it does not look like a
+     * receipt. Tightened (v0.68.0): "amount due" / "balance due"
+     * are bill totals, not receipt totals, and the old fallback -
+     * any largest price in the text makes it a receipt - filed
+     * screenshots that merely displayed a price. The fallback now
+     * needs real receipt structure around the prices.
+     */
     public static Parsed parse(String text) {
         if (text == null || text.trim().isEmpty()) return null;
+        String lowerAll = text.toLowerCase(Locale.US);
+        // A bill is not a receipt, however it is laid out.
+        if (Extract.hasPhrase(lowerAll, "amount due")
+            || Extract.hasPhrase(lowerAll, "balance due")
+            || Extract.hasPhrase(lowerAll, "payment due")) {
+            return null;
+        }
         String[] lines = text.split("\\n");
         Long grandTotal = null, total = null, tax = null, largest = null;
+        int amountLines = 0;
         String store = null;
         for (String raw : lines) {
             String line = raw.trim();
             if (line.isEmpty()) continue;
             String low = line.toLowerCase(Locale.US);
             Long amt = amountOn(line);
-            if (amt != null && (largest == null || amt > largest)) largest = amt;
             if (amt != null) {
-                if (low.contains("grand total") || low.contains("amount due")
-                    || low.contains("balance due")) {
+                amountLines++;
+                if (largest == null || amt > largest) largest = amt;
+                if (low.contains("grand total")) {
                     grandTotal = amt;
                 } else if (low.contains("total") && !low.contains("subtotal")
-                    && !low.contains("sub total")) {
+                    && !low.contains("sub total") && !low.contains("due")) {
                     total = amt;
                 } else if (low.contains("tax")) {
                     tax = amt;
@@ -81,7 +101,19 @@ public final class Receipts {
                 store = line.length() > 40 ? line.substring(0, 40).trim() : line;
             }
         }
-        Long chosen = grandTotal != null ? grandTotal : (total != null ? total : largest);
+        Long chosen = grandTotal != null ? grandTotal : total;
+        if (chosen == null) {
+            // Guarded fallback: OCR often splits labels and prices
+            // onto separate lines, so a real receipt may have no
+            // priced total line at all. The largest price counts
+            // only with receipt structure around it - two signals,
+            // or a page dense with prices.
+            int structure = 0;
+            for (String s : STRUCTURE) if (Extract.hasPhrase(lowerAll, s)) structure++;
+            if (largest != null && (structure >= 2 || amountLines >= 4)) {
+                chosen = largest;
+            }
+        }
         if (chosen == null || chosen <= 0) return null;
         Parsed p = new Parsed();
         p.store = store != null ? store : "Store";

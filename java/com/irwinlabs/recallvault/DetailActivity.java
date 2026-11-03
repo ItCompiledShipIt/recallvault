@@ -841,7 +841,9 @@ public class DetailActivity extends Activity {
             }
             item.amounts = am.toString();
         }
-        if ("Notes".equals(item.category) && !"Notes".equals(f.category)) item.category = f.category;
+        String mappedCat = Extract.forType(f.category, item.type);
+        if (("Notes".equals(item.category) || "Images".equals(item.category))
+                && !mappedCat.equals(item.category)) item.category = mappedCat;
         db.update(item);
         Embed.embedPending(this, db);
         Toast.makeText(this, "Read " + text.length() + " chars - now searchable", Toast.LENGTH_SHORT).show();

@@ -75,6 +75,10 @@ public class MainActivity extends Activity {
     private String categoryFilter = "All";
     private String vaultQuery = "";
     private boolean vaultByMonth = false;
+    // Selective home (v0.68.0): the Vault home shows what matters -
+    // dates, appointments, prices - and keeps everything else
+    // stored quietly until it is browsed or searched for.
+    private boolean vaultBrowse = false;
     private File pendingCapture;
     private String pendingCaptureType = "SCAN";
 
@@ -608,7 +612,7 @@ public class MainActivity extends Activity {
         hsv.setLayoutParams(Ui.matchWrap(10, this));
         LinearLayout chips = new LinearLayout(this);
         chips.setOrientation(LinearLayout.HORIZONTAL);
-        String[] cats = {"All", "Bills", "Receipts", "Wallet", "People", "Meetings", "Notes"};
+        String[] cats = {"All", "Bills", "Receipts", "Wallet", "People", "Meetings", "Images", "Notes"};
         for (final String cat : cats) {
             Button ch = Ui.chip(this, cat, cat.equals(categoryFilter));
             ch.setOnClickListener(new View.OnClickListener() {
@@ -625,9 +629,24 @@ public class MainActivity extends Activity {
         content.addView(hsv);
         }
 
+        // Selective home (v0.68.0): on the quiet home, surface the
+        // facts that matter - dates, appointments, prices - and a
+        // one-line account of everything stored. The report, the
+        // look-alikes and the full list live in Browse, or appear
+        // when a search asks for them.
+        boolean homeQuiet = Ui.SANCTUARY && !vaultBrowse && vaultQuery.trim().isEmpty();
+        if (homeQuiet) {
+            if (db.count() == 0) {
+                content.addView(firstRunCard());
+            } else {
+                factsCard();
+                collectionsCard();
+            }
+        }
+
         // Monthly report card (v0.36.0): last month's report, offered
         // once when a new month starts.
-        if ("All".equals(categoryFilter) && vaultQuery.trim().isEmpty()) {
+        if (!homeQuiet && "All".equals(categoryFilter) && vaultQuery.trim().isEmpty()) {
             java.util.Calendar cal = java.util.Calendar.getInstance();
             final String curKey = cal.get(java.util.Calendar.YEAR) + "-"
                 + cal.get(java.util.Calendar.MONTH);
@@ -679,7 +698,7 @@ public class MainActivity extends Activity {
         }
 
         // On this day (v0.22.0): memories from this date in earlier years.
-        if ("All".equals(categoryFilter) && vaultQuery.trim().isEmpty()) {
+        if (!homeQuiet && "All".equals(categoryFilter) && vaultQuery.trim().isEmpty()) {
             java.util.List<Item> otd = Resurface.onThisDay(db.all(), System.currentTimeMillis());
             if (!otd.isEmpty()) {
                 LinearLayout oCard = Ui.card(this);
@@ -699,7 +718,7 @@ public class MainActivity extends Activity {
 
         // Photo look-alikes (v0.34.0): near-duplicate photos grouped
         // by their vision vectors, one tap each to review.
-        if ("All".equals(categoryFilter) && vaultQuery.trim().isEmpty()) {
+        if (!homeQuiet && "All".equals(categoryFilter) && vaultQuery.trim().isEmpty()) {
             final java.util.List<java.util.List<Item>> groups = NearDupes.groups(db.all());
             if (!groups.isEmpty()) {
                 int photos = 0;
@@ -734,20 +753,141 @@ public class MainActivity extends Activity {
             }
         }
 
-        LinearLayout listHolder = new LinearLayout(this);
-        listHolder.setOrientation(LinearLayout.VERTICAL);
-        listHolder.setTag("listHolder");
-        if (Ui.SANCTUARY && "All".equals(categoryFilter) && vaultQuery.trim().isEmpty()) {
-            LinearLayout rh = Ui.sectionHead(this, "Recent Memories", "Organized by day");
-            rh.setLayoutParams(Ui.matchWrap(14, this));
-            content.addView(rh);
+        if (!homeQuiet) {
+            if (vaultBrowse && vaultQuery.trim().isEmpty()) {
+                Button backHome = Ui.ghostButton(this, "← Back to home");
+                backHome.setLayoutParams(Ui.matchWrap(8, this));
+                backHome.setOnClickListener(new View.OnClickListener() {
+                    @Override public void onClick(View v) { vaultBrowse = false; render(); }
+                });
+                content.addView(backHome);
+            }
+            LinearLayout listHolder = new LinearLayout(this);
+            listHolder.setOrientation(LinearLayout.VERTICAL);
+            listHolder.setTag("listHolder");
+            if (Ui.SANCTUARY && "All".equals(categoryFilter) && vaultQuery.trim().isEmpty()) {
+                LinearLayout rh = Ui.sectionHead(this, "Recent Memories", "Organized by day");
+                rh.setLayoutParams(Ui.matchWrap(14, this));
+                content.addView(rh);
+            }
+            content.addView(listHolder);
+            fillList(listHolder);
+            if (Ui.SANCTUARY && "All".equals(categoryFilter) && vaultQuery.trim().isEmpty()
+                    && db.count() > 0) {
+                content.addView(safeCard());
+            }
         }
-        content.addView(listHolder);
-        fillList(listHolder);
-        if (Ui.SANCTUARY && "All".equals(categoryFilter) && vaultQuery.trim().isEmpty()
-                && db.count() > 0) {
-            content.addView(safeCard());
+    }
+
+    /**
+     * The selective home's facts card (v0.68.0): only things with
+     * a date, an appointment or a price get a line on the home
+     * screen - dated items first, soonest first, plus one quiet
+     * line for this month's receipts. Everything else is stored,
+     * not shown, until it is asked for.
+     */
+    private void factsCard() {
+        long now = System.currentTimeMillis();
+        java.util.List<Item> dated = new java.util.ArrayList<Item>();
+        long receiptCents = 0;
+        int receiptCount = 0;
+        java.util.Calendar cal = java.util.Calendar.getInstance();
+        int thisMonth = cal.get(java.util.Calendar.MONTH);
+        int thisYear = cal.get(java.util.Calendar.YEAR);
+        for (Item it : db.all()) {
+            if (it.handledAt == 0 && it.reminderAt > 0) dated.add(it);
+            if ("Receipts".equals(it.category)) {
+                java.util.Calendar ic = java.util.Calendar.getInstance();
+                ic.setTimeInMillis(it.createdAt);
+                if (ic.get(java.util.Calendar.MONTH) == thisMonth
+                        && ic.get(java.util.Calendar.YEAR) == thisYear) {
+                    receiptCount++;
+                    for (String a : Extract.findAmounts(it.amounts == null ? "" : it.amounts)) {
+                        try {
+                            receiptCents += Math.round(Double.parseDouble(
+                                a.replace("$", "").replace(",", "")) * 100);
+                        } catch (Exception e) { /* unparseable amount: skip */ }
+                    }
+                }
+            }
         }
+        if (dated.isEmpty() && receiptCount == 0) return;
+        java.util.Collections.sort(dated, new java.util.Comparator<Item>() {
+            @Override public int compare(Item a, Item b) {
+                return Long.compare(a.reminderAt, b.reminderAt);
+            }
+        });
+        LinearLayout card = Ui.card(this);
+        card.setLayoutParams(Ui.matchWrap(12, this));
+        card.addView(Ui.sectionLabel(this, "Dates & money"));
+        int shown = 0;
+        for (final Item it : dated) {
+            if (shown >= 5) break;
+            shown++;
+            String line = Privacy.displayTitle(it) + "  -  "
+                + Extract.relativeDay(it.reminderAt, now)
+                + (it.amounts == null || it.amounts.isEmpty() ? "" : "  -  " + it.amounts);
+            Button row = Ui.ghostButton(this, line);
+            row.setLayoutParams(Ui.matchWrap(4, this));
+            row.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) { openDetail(it.id); }
+            });
+            card.addView(row);
+        }
+        if (dated.size() > 5) {
+            Button more = Ui.ghostButton(this,
+                "+ " + (dated.size() - 5) + " more dated - see Reminders");
+            more.setLayoutParams(Ui.matchWrap(4, this));
+            more.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) { tab = "REMINDERS"; render(); }
+            });
+            card.addView(more);
+        }
+        if (receiptCount > 0) {
+            TextView rt = Ui.text(this,
+                "Receipts this month: " + receiptCount
+                    + (receiptCents > 0 ? " - " + Ask.formatMoney(receiptCents) : ""),
+                13, Ui.DIM, false);
+            rt.setLayoutParams(Ui.matchWrap(4, this));
+            card.addView(rt);
+        }
+        content.addView(card);
+    }
+
+    /**
+     * The selective home's storage card (v0.68.0): one quiet line
+     * accounting for everything stored, by category, and the way
+     * into the full list. Nothing here parades individual items.
+     */
+    private void collectionsCard() {
+        java.util.List<Item> all = db.all();
+        if (all.isEmpty()) return;
+        java.util.Map<String, Integer> counts = new java.util.LinkedHashMap<String, Integer>();
+        for (String c : Extract.CATEGORIES) counts.put(c, 0);
+        for (Item it : all) {
+            Integer n = counts.get(it.category);
+            counts.put(it.category, n == null ? 1 : n + 1);
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append(all.size()).append(all.size() == 1 ? " memory" : " memories").append(" stored");
+        for (java.util.Map.Entry<String, Integer> e : counts.entrySet()) {
+            if (e.getValue() > 0) {
+                sb.append("  ·  ").append(e.getKey()).append(" ").append(e.getValue());
+            }
+        }
+        LinearLayout card = Ui.card(this);
+        card.setLayoutParams(Ui.matchWrap(12, this));
+        card.addView(Ui.sectionLabel(this, "Stored quietly"));
+        TextView t = Ui.text(this, sb.toString(), 13, Ui.TEXT, false);
+        t.setLayoutParams(Ui.matchWrap(4, this));
+        card.addView(t);
+        Button browse = Ui.ghostButton(this, "Browse everything");
+        browse.setLayoutParams(Ui.matchWrap(6, this));
+        browse.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { vaultBrowse = true; render(); }
+        });
+        card.addView(browse);
+        content.addView(card);
     }
 
     /** The home screen's three quiet ways in (Sanctuary). */

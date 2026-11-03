@@ -275,6 +275,9 @@ public class EditorActivity extends Activity {
             boolean userTitled = !titleInput.getText().toString().trim().isEmpty();
             Receipts.refine(it, machineText, userTitled);
         }
+        // Images default (v0.68.0): pictures file as Images unless
+        // a real category claimed them.
+        it.category = Extract.forType(it.category, it.type);
         if (editId > 0 && it.id > 0) {
             it.embedding = ""; // text changed: re-embed next round
             db.update(it);

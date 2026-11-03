@@ -1,5 +1,23 @@
 # RecallVault
 
+## v0.68.0 - selective filing, a quieter home, Images
+
+Classification got selective. The old classifier counted raw
+substring hits, so one stray word filed screenshots as receipts -
+a game menu that says "Store", a screenshot of Clio's own home
+screen (which says "Receipts" in its own UI). Now keywords match
+on word boundaries, count once each, carry weights, and a
+category needs a real score to win; Receipts also needs receipt
+structure corroboration, and Receipts.parse no longer treats any
+largest price as a total, nor a bill's "amount due" as a receipt
+total (bills keep their due dates). A new Images category takes
+photos and scans that have no confident category - pictures file
+as pictures. The Vault home is quieter to match: it shows only
+things with a date, an appointment or a price (plus one line for
+the month's receipts) and a one-line "Stored quietly" account of
+everything else. The full list, look-alikes and reports live
+behind Browse everything, or appear when a search asks for them.
+
 ## v0.67.1
 
 Sync failures now say what actually happened: a refused sync key,
