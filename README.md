@@ -1,5 +1,23 @@
 # RecallVault
 
+## v0.71.0 - smarter
+
+Ask's keyword ranking was rebuilt from a measured eval
+(tools/run-eval.sh: a fixed 20-memory corpus, 14 questions,
+several of them paraphrases with no shared words). Keyword-only
+top-1 went 11/14 → 14/14: short words match on word boundaries
+("out" no longer scores inside "Router"), y/ies spelling
+variants count ("utility" finds "utilities"), rare words carry
+IDF weight, synonyms expand the query at half weight, and body
+text counts presence rather than repetition. The desktop
+mirror took its keyword fallback 12/14 → 13/14 (top-3 14/14)
+and holds 14/14 with embeddings. She also learns on her own
+now: FactMiner pulls durable facts (codes, passwords,
+birthdays, named phone numbers, factual "X is Y" sentences)
+out of new memories during the nightly pass and remembers
+them in ClioMind; the desktop does the same with its local
+model.
+
 ## v0.70.0 - filing you can trust
 
 Three trust fixes. (1) Phantom dates: an unhinted date in the

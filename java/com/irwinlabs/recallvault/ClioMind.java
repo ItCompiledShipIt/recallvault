@@ -212,6 +212,34 @@ public class ClioMind {
     }
 
     /**
+     * Learn from new memories (v0.71.0): mine durable facts out
+     * of everything filed since the last pass and remember
+     * them, so her memory file grows on its own. Watermarked
+     * by createdAt; the first run learns from the whole vault.
+     * Returns how many new facts were saved.
+     */
+    public static int mineFacts(Context ctx) {
+        android.content.SharedPreferences prefs =
+            ctx.getSharedPreferences(Embed.PREFS, Context.MODE_PRIVATE);
+        long wm = prefs.getLong("fact_mine_watermark", 0);
+        Db db = new Db(ctx);
+        int added = 0;
+        long maxSeen = wm;
+        for (Item it : db.all()) {
+            if (it.createdAt <= wm || it.deletedAt > 0) continue;
+            if (it.createdAt > maxSeen) maxSeen = it.createdAt;
+            String text = (it.body == null ? "" : it.body) + "\n"
+                + (it.extracted == null ? "" : it.extracted);
+            for (String fact : FactMiner.mine(it.title, text)) {
+                String r = remember(ctx, fact);
+                if (r.startsWith("Saved")) added++;
+            }
+        }
+        prefs.edit().putLong("fact_mine_watermark", maxSeen).apply();
+        return added;
+    }
+
+    /**
      * The companion files a full backup carries (v0.65.0,
      * photos added v0.66.0): the contact library, the mind
      * files, the profile photo and every contact photo -

@@ -211,6 +211,11 @@ public class ReminderWorker extends Worker {
         try {
             ClioMind.nightlyReview(ctx);
         } catch (Throwable ignored) {}
+        // She learns from new memories: durable facts mined
+        // into her memory file (v0.71.0).
+        try {
+            ClioMind.mineFacts(ctx);
+        } catch (Throwable ignored) {}
         // Daily live sync with the desktop, when paired (v0.67.0).
         try {
             if (SyncClient.configured(ctx)) SyncClient.syncNow(ctx);

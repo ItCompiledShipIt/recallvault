@@ -1,9 +1,11 @@
 package com.irwinlabs.recallvault;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -63,17 +65,106 @@ public final class Ask {
         return n;
     }
 
+    // ---------- smarter keyword matching (v0.71.0) ----------
+    // Three fixes from a measured eval (tools/run-eval.sh):
+    //  1. Short words (<=3 chars) match on word boundaries only:
+    //     "out" used to score inside "Router" and beat the trash
+    //     note for "when do the bins go out".
+    //  2. y<->ies variants: "utility" is not a substring of
+    //     "utilities", so the utility bill lost to the water bill.
+    //  3. Query-time synonym expansion at half weight, plus IDF
+    //     weights so a rare word (a name) counts more than a
+    //     common one. The desktop mirrors 2 and 3.
+
+    private static final Map<String, String[]> SYNONYMS = new HashMap<String, String[]>();
+    static {
+        String[][] groups = {
+            {"code", "pin", "passcode"},
+            {"wifi", "wireless", "network"},
+            {"password", "passcode", "login"},
+            {"gate", "door", "entry"},
+            {"trash", "bins", "garbage", "pickup"},
+            {"medicine", "medication", "prescriptions", "pharmacy", "meds"},
+            {"utility", "utilities"},
+            {"bill", "statement", "invoice"},
+            {"appointment", "visit"},
+            {"car", "truck", "vehicle"},
+            {"phone", "number", "cell"},
+        };
+        Map<String, Set<String>> acc = new HashMap<String, Set<String>>();
+        for (String[] g : groups) {
+            for (String w : g) {
+                Set<String> s = acc.get(w);
+                if (s == null) { s = new HashSet<String>(); acc.put(w, s); }
+                for (String o : g) if (!o.equals(w)) s.add(o);
+            }
+        }
+        for (Map.Entry<String, Set<String>> e : acc.entrySet()) {
+            SYNONYMS.put(e.getKey(), e.getValue().toArray(new String[0]));
+        }
+    }
+
+    static String[] synonymsOf(String kw) {
+        String[] s = SYNONYMS.get(kw);
+        return s == null ? new String[0] : s;
+    }
+
+    /** kw plus its y/ies spelling variants. */
+    private static List<String> variants(String kw) {
+        List<String> out = new ArrayList<String>();
+        out.add(kw);
+        if (kw.length() > 3 && kw.endsWith("y")) out.add(kw.substring(0, kw.length() - 1) + "ies");
+        if (kw.length() > 4 && kw.endsWith("ies")) out.add(kw.substring(0, kw.length() - 3) + "y");
+        return out;
+    }
+
+    /** Hits for one keyword in one text: best variant wins;
+     *  short words need word boundaries. */
+    private static int hitsFor(String hayLower, String kw) {
+        int best = 0;
+        for (String v : variants(kw)) {
+            int n = v.length() <= 3 ? countBoundary(hayLower, v) : countHits(hayLower, v);
+            if (n > best) best = n;
+        }
+        return best;
+    }
+
+    private static int countBoundary(String hayLower, String needle) {
+        int n = 0, idx = 0;
+        while ((idx = hayLower.indexOf(needle, idx)) >= 0) {
+            int end = idx + needle.length();
+            boolean leftOk = idx == 0 || !Character.isLetterOrDigit(hayLower.charAt(idx - 1));
+            boolean rightOk = end >= hayLower.length()
+                || !Character.isLetterOrDigit(hayLower.charAt(end));
+            if (leftOk && rightOk) n++;
+            idx++;
+        }
+        return n;
+    }
+
     public static double keywordScore(Item it, List<String> kws) {
         if (kws.isEmpty()) return 0;
+        List<Double> w = new ArrayList<Double>();
+        for (int i = 0; i < kws.size(); i++) w.add(1.0);
+        return scoreTerms(it, kws, w);
+    }
+
+    private static double scoreTerms(Item it, List<String> terms, List<Double> weights) {
         String title = it.title.toLowerCase(Locale.US);
         String cat = it.category.toLowerCase(Locale.US);
         String body = (it.body + "\n" + it.extracted).toLowerCase(Locale.US);
         double score = 0;
-        for (String kw : kws) {
-            score += 5.0 * countHits(title, kw);
-            score += 4.0 * countHits(cat, kw);
-            score += 2.0 * Math.min(3, countHits(body, kw));
-            if (!it.amounts.isEmpty() && it.amounts.contains(kw)) score += 3.0;
+        for (int i = 0; i < terms.size(); i++) {
+            String kw = terms.get(i);
+            double wgt = weights.get(i);
+            // Body counts PRESENCE, not frequency (v0.71.0): a
+            // library card that says "number" twice is not more
+            // about numbers than the landlord note that names
+            // Dana once - repetition in short memories is noise.
+            score += wgt * (5.0 * hitsFor(title, kw)
+                + 4.0 * hitsFor(cat, kw)
+                + 2.0 * (hitsFor(body, kw) > 0 ? 1 : 0));
+            if (!it.amounts.isEmpty() && it.amounts.contains(kw)) score += wgt * 3.0;
         }
         return score;
     }
@@ -110,9 +201,32 @@ public final class Ask {
         List<String> kws = keywords(query);
         boolean wantsWhen = asksWhen(query);
         boolean wantsAmount = asksAmount(query);
+        // IDF weights (rare words count more) + synonym expansion
+        // at half weight - see the v0.71.0 note at countHits.
+        List<String> terms = new ArrayList<String>(kws);
+        List<Double> weights = new ArrayList<Double>();
+        int nItems = Math.max(1, items.size());
+        for (String kw : kws) {
+            int df = 0;
+            for (Item it : items) {
+                String hay = (it.title + "\n" + it.category + "\n"
+                    + it.body + "\n" + it.extracted).toLowerCase(Locale.US);
+                if (hitsFor(hay, kw) > 0) df++;
+            }
+            weights.add(Math.min(2.2, 1.0 + Math.log((nItems + 1.0) / (df + 1.0))));
+        }
+        Set<String> seenTerms = new HashSet<String>(kws);
+        for (int i = 0; i < kws.size(); i++) {
+            for (String syn : synonymsOf(kws.get(i))) {
+                if (seenTerms.add(syn)) {
+                    terms.add(syn);
+                    weights.add(weights.get(i) * 0.5);
+                }
+            }
+        }
         List<Result> out = new ArrayList<Result>();
         for (Item it : items) {
-            double kw = keywordScore(it, kws);
+            double kw = scoreTerms(it, terms, weights);
             double sem = 0;
             boolean viaPhoto = false;
             if (queryVec != null) {

@@ -1040,6 +1040,36 @@ public class TestMain {
                 new java.util.ArrayList<Ask.Result>()).isEmpty());
         }
 
+        // ---------- v0.71.0: FactMiner learns durable facts ----------
+        {
+            java.util.List<String> gate = FactMiner.mine("Gate code for the building",
+                "The front gate code is 4419. The side door takes the same code.");
+            check("miner: gate code learned",
+                gate.contains("The front gate code is 4419."));
+            java.util.List<String> wifi = FactMiner.mine("Wifi at home",
+                "Network: IrwinHome, password: maple-street-42. Router is in the office closet.");
+            check("miner: wifi password learned",
+                wifi.contains("Password is maple-street-42."));
+            check("miner: closet prose not a fact", wifi.size() == 1);
+            java.util.List<String> landlord = FactMiner.mine("Landlord",
+                "Landlord is Dana Ruiz, phone 509-555-0184. Rent is $1600, due the 1st of the month.");
+            check("miner: named phone learned",
+                landlord.contains("Dana Ruiz's phone is 509-555-0184."));
+            java.util.List<String> mom = FactMiner.mine("Mom's birthday",
+                "Mom's birthday is March 14. She likes tulips.");
+            check("miner: birthday learned", mom.contains("Mom's birthday is March 14."));
+            java.util.List<String> plumber = FactMiner.mine("Plumber",
+                "Mike's Plumbing, 509-555-0117. Fixed the kitchen sink in October.");
+            check("miner: bare phone learned",
+                plumber.contains("The phone number for Mike's Plumbing is 509-555-0117."));
+            java.util.List<String> router = FactMiner.mine("Router admin",
+                "Router admin page is 192.168.0.1. The admin password is on a sticker under the desk.");
+            check("miner: sticker prose yields no fake password",
+                !router.toString().contains("is on."));
+            check("miner: groceries teach nothing",
+                FactMiner.mine("Grocery list", "Eggs, milk, coffee, tortillas.").isEmpty());
+        }
+
         // ---------- v0.43.0: people cards ----------
         {
             Item g1 = new Item();
