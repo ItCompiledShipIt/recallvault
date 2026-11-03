@@ -3431,7 +3431,6 @@ public class MainActivity extends Activity {
                         .show();
                 }
             });
-            prow.addView(editName);
             Button photoBtn = Ui.ghostButton(this, "Photo");
             photoBtn.setOnClickListener(new View.OnClickListener() {
                 @Override public void onClick(View v) {
@@ -3461,8 +3460,28 @@ public class MainActivity extends Activity {
                     pb.show();
                 }
             });
-            prow.addView(photoBtn);
+            // v0.78.1: the buttons get their own row. In one
+            // row with the disc, the two ghost buttons (88dp
+            // min width each) crushed the weighted name
+            // column to a few characters wide - "Chris"
+            // rendered as a vertical strip on his phone.
+            LinearLayout pbtnrow = new LinearLayout(this);
+            pbtnrow.setOrientation(LinearLayout.HORIZONTAL);
+            LinearLayout.LayoutParams pblp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+            pblp.setMargins(0, Ui.dp(this, 10), 0, 0);
+            pbtnrow.setLayoutParams(pblp);
+            editName.setLayoutParams(new LinearLayout.LayoutParams(0,
+                LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+            pbtnrow.addView(editName);
+            LinearLayout.LayoutParams phlp = new LinearLayout.LayoutParams(0,
+                LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+            phlp.setMargins(Ui.dp(this, 8), 0, 0, 0);
+            photoBtn.setLayoutParams(phlp);
+            pbtnrow.addView(photoBtn);
             pCard.addView(prow);
+            pCard.addView(pbtnrow);
             Button contactsBtn = Ui.ghostButton(this,
                 "Contacts (" + Contacts.load(this).size() + ") - the people who matter");
             contactsBtn.setLayoutParams(Ui.matchWrap(10, this));
@@ -3522,18 +3541,25 @@ public class MainActivity extends Activity {
                 13, Ui.DIM, false);
             syncStatus.setLayoutParams(Ui.matchWrap(6, this));
             syncCard.addView(syncStatus);
+            // v0.78.1: stacked full-width - side by side,
+            // "Pair with desktop" wrapped mid-label at half
+            // the card width (his screenshot, Nov 3).
             LinearLayout srow = new LinearLayout(this);
-            srow.setOrientation(LinearLayout.HORIZONTAL);
+            srow.setOrientation(LinearLayout.VERTICAL);
             Button pairBtn = Ui.ghostButton(this, SyncClient.configured(this) ? "Pairing" : "Pair with desktop");
-            pairBtn.setLayoutParams(new LinearLayout.LayoutParams(0,
-                LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+            pairBtn.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT));
             pairBtn.setOnClickListener(new View.OnClickListener() {
                 @Override public void onClick(View v) { showSyncSetup(); }
             });
             srow.addView(pairBtn);
             Button nowBtn = Ui.primaryButton(this, "Sync now");
-            nowBtn.setLayoutParams(new LinearLayout.LayoutParams(0,
-                LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+            LinearLayout.LayoutParams nblp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+            nblp.setMargins(0, Ui.dp(this, 8), 0, 0);
+            nowBtn.setLayoutParams(nblp);
             nowBtn.setOnClickListener(new View.OnClickListener() {
                 @Override public void onClick(View v) {
                     Toast.makeText(MainActivity.this, "Syncing...", Toast.LENGTH_SHORT).show();
