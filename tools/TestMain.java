@@ -1360,10 +1360,30 @@ public class TestMain {
                     && life.createdAt < new java.util.GregorianCalendar(2026, 9, 6).getTimeInMillis());
             check("switch: markdown heading becomes the title",
                 ideas != null && ideas.body.contains("porch garden"));
+            check("switch: lifelogs file as Meetings",
+                life != null && "Meetings".equals(life.category));
             SwitchParse.Out loose = SwitchParse.parse("Note.md",
                 "# Loose\n\nBody text.".getBytes(java.nio.charset.StandardCharsets.UTF_8));
             check("switch: a loose markdown file parses",
                 loose.notes.size() == 1 && "Loose".equals(loose.notes.get(0).title));
+        }
+
+        // ---------- v0.74.0: MeetingSummary ----------
+        {
+            check("meeting summary: only for meetings with an empty body",
+                MeetingSummary.shouldSummarize(true, "")
+                    && MeetingSummary.shouldSummarize(true, null)
+                    && !MeetingSummary.shouldSummarize(true, "already words")
+                    && !MeetingSummary.shouldSummarize(false, ""));
+            check("meeting summary: prompt carries the ask + clipped transcript",
+                MeetingSummary.prompt("hello").contains("Summarize this meeting")
+                    && MeetingSummary.prompt("hello").contains("hello")
+                    && MeetingSummary.prompt(new String(new char[9000]).replace('\0', 'x')).length() < 6300);
+            check("meeting summary: clean keeps prose, drops junk",
+                !MeetingSummary.clean("We met and decided to renew the lease for another year at the same rent.").isEmpty()
+                    && MeetingSummary.clean("short").isEmpty()
+                    && MeetingSummary.clean("Error: model missing").isEmpty()
+                    && MeetingSummary.clean(null).isEmpty());
         }
 
         System.out.println("RESULT: " + pass + " pass, " + fail + " fail");

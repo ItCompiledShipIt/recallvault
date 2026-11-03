@@ -471,6 +471,22 @@ public class VoiceActivity extends Activity {
                         // Commitments in the full transcript become
                         // action items (v0.29.0).
                         Actions.fileActions(d2, saved, text);
+                        // Narrative summary (v0.74.0): the brain
+                        // writes the meeting's own opening words
+                        // once, when the slot is still empty. A
+                        // failure here never touches the meeting.
+                        if (MeetingSummary.shouldSummarize(true, saved.body)
+                                && GemmaBrain.isModelPresent(getApplicationContext())) {
+                            try {
+                                String s = MeetingSummary.clean(GemmaBrain.generate(
+                                    getApplicationContext(), MeetingSummary.SYSTEM,
+                                    MeetingSummary.prompt(text)));
+                                if (!s.isEmpty()) {
+                                    saved.body = s;
+                                    d2.update(saved);
+                                }
+                            } catch (Exception ignored) {}
+                        }
                     }
                     Embed.embedPending(getApplicationContext(), d2);
                 }

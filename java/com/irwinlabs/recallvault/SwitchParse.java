@@ -39,6 +39,7 @@ public final class SwitchParse {
         public String title = "";
         public String body = "";
         public String type = "NOTE";
+        public String category = "";  // "Meetings" for lifelogs
         public String source = "";
         public long createdAt;
         public String attachName = "";
@@ -183,6 +184,7 @@ public final class SwitchParse {
             n.source = "Limitless";
             out.sources.add("Limitless");
             n.type = "MEETING";
+            n.category = "Meetings";
             if (m.matches()) {
                 Calendar c = Calendar.getInstance();
                 c.set(Integer.parseInt(m.group(1)), Integer.parseInt(m.group(2)) - 1,

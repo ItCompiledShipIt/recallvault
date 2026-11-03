@@ -1,5 +1,35 @@
 # RecallVault
 
+## v0.74.0 - meeting mode, completed
+
+The meeting machinery (recorder with live captions, the
+ledger of decisions / to-dos / key dates / money, action
+items filed as their own memories) now treats every meeting
+the same, wherever it came from:
+
+- Imported Limitless transcripts file as Meetings on phone
+  and desktop alike, so they get the ledger and the actions
+  pass like a recorded meeting (they were landing as plain
+  notes).
+- On the phone, when a meeting's full transcript lands and
+  the on-device brain is present, Clio writes a short
+  narrative summary once and stores it as the meeting's own
+  opening words - what you read first, above the ledger and
+  the transcript. It only ever fills an empty slot, and a
+  failure changes nothing.
+- The desktop grew the ledger: a Meetings item's reading
+  pane shows DECIDED / TO DO / key dates / money (a faithful
+  port of the phone's Recap + Actions rules, same cues, same
+  never-repeat-a-decision rule), and meetings transcribed on
+  the desktop now file their action items too, deduped by
+  title, deadlines attached. Desktop-captured meetings also
+  land in Meetings now (they filed as Notes).
+
+Suite 295/295. Desktop meeting engine verified against the
+classic staged landlord-meeting transcript: one decision,
+three to-dos with their dates resolved, actions filed once
+and only once.
+
 ## v0.73.0 - bring your memories with you
 
 Switcher imports, on phone and desktop alike. Settings →

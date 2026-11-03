@@ -5410,7 +5410,8 @@ public class MainActivity extends Activity {
                             (n.title == null ? "" : n.title) + "\n" + n.body);
                         it.title = (n.title == null || n.title.isEmpty())
                             ? Extract.suggestTitle(n.body, "Imported note") : n.title;
-                        it.category = Extract.forType(f.category, it.type);
+                        it.category = (n.category != null && !n.category.isEmpty())
+                            ? n.category : Extract.forType(f.category, it.type);
                         it.reminderAt = f.dueDate;
                         StringBuilder am = new StringBuilder();
                         for (int i = 0; i < f.amounts.size(); i++) {
