@@ -1992,7 +1992,8 @@ public class MainActivity extends Activity {
         // Answers that add up: for set questions ("how much do I owe
         // this month"), lead with the total across every match.
         // Pattern questions ("is this higher than usual") win first.
-        Ask.Summary sum = Patterns.answer(Privacy.visible(db.all()), q, System.currentTimeMillis());
+        Ask.Summary sum = Census.answer(Privacy.visible(db.all()), q, System.currentTimeMillis());
+        if (sum == null) sum = Patterns.answer(Privacy.visible(db.all()), q, System.currentTimeMillis());
         if (sum == null) sum = Entities.answer(Privacy.visible(db.all()), q);
         if (sum == null) sum = Report.answer(Privacy.visible(db.all()), q, System.currentTimeMillis());
         if (sum == null) sum = Forecast.answer(Privacy.visible(db.all()), q, System.currentTimeMillis());
@@ -2311,29 +2312,52 @@ public class MainActivity extends Activity {
             dCard.addView(dt);
             content.addView(dCard);
         }
-        // Patterns (v0.17.0): recurring bills and the month ahead.
-        java.util.List<Patterns.Recurring> pats =
-            Patterns.analyze(db.all(), System.currentTimeMillis());
-        if (!pats.isEmpty()) {
+        // Subscription census (v0.75.0): every recurring charge,
+        // its cadence, the monthly burn, price creep and renewals.
+        // (Supersedes the v0.17.0 Patterns card on this screen;
+        // Patterns still answers Ask questions.)
+        final Census.Report census =
+            Census.compute(db.all(), System.currentTimeMillis());
+        if (!census.rows.isEmpty()) {
             LinearLayout pCard = Ui.card(this);
-            pCard.addView(Ui.sectionLabel(this, "Patterns"));
-            for (final Patterns.Recurring r : pats) {
-                TextView pt = Ui.text(this, Patterns.line(r), 13, Ui.TEXT, false);
+            pCard.addView(Ui.sectionLabel(this, "Recurring charges"));
+            TextView burn = Ui.text(this,
+                "About " + Ask.formatMoney(census.monthlyBurnCents) + " a month across "
+                    + census.rows.size() + " recurring charges - "
+                    + Ask.formatMoney(census.monthlyBurnCents * 12) + " a year.",
+                13, Ui.ACCENT2, true);
+            burn.setLayoutParams(Ui.matchWrap(4, this));
+            pCard.addView(burn);
+            int shown = 0;
+            for (final Census.Row r : census.rows) {
+                if (shown++ >= 6) break;
+                TextView pt = Ui.text(this,
+                    Census.line(r, System.currentTimeMillis()), 13, Ui.TEXT, false);
                 pt.setLayoutParams(Ui.matchWrap(3, this));
-                pt.setClickable(true);
-                pt.setOnClickListener(new View.OnClickListener() {
-                    @Override public void onClick(View v) { showTrendDialog(r); }
-                });
                 pCard.addView(pt);
             }
-            long proj = Patterns.projectedMonthlyCents(pats);
-            if (proj > 0) {
-                TextView pp = Ui.text(this,
-                    "Recurring bills run about " + Ask.formatMoney(proj) + " a month.",
-                    13, Ui.ACCENT2, true);
-                pp.setLayoutParams(Ui.matchWrap(6, this));
-                pCard.addView(pp);
+            for (String w : census.warnings) {
+                TextView wt = Ui.text(this, w, 12, Ui.WARN, false);
+                wt.setLayoutParams(Ui.matchWrap(2, this));
+                pCard.addView(wt);
             }
+            Button fullC = Ui.ghostButton(this, "Full census (" + census.rows.size() + ")");
+            fullC.setLayoutParams(Ui.matchWrap(6, this));
+            fullC.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    StringBuilder sb = new StringBuilder();
+                    for (Census.Row r : census.rows) {
+                        if (sb.length() > 0) sb.append("\n\n");
+                        sb.append(Census.line(r, System.currentTimeMillis()));
+                    }
+                    new android.app.AlertDialog.Builder(MainActivity.this)
+                        .setTitle("Recurring charges")
+                        .setMessage(sb.toString())
+                        .setPositiveButton("Close", null)
+                        .show();
+                }
+            });
+            pCard.addView(fullC);
             content.addView(pCard);
         }
         // Bills forecast (v0.39.0): what's coming over the next three

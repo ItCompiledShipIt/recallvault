@@ -64,6 +64,13 @@ public final class Digest {
             }
         }
 
+        // Subscription census (v0.75.0): a renewal coming or a
+        // fresh price rise is worth one line.
+        Census.Report crep = Census.compute(items, nowMs);
+        if (!crep.warnings.isEmpty()) {
+            out.lines.add(crep.warnings.get(0));
+        }
+
         List<Item> otd = Resurface.onThisDay(items, nowMs);
         if (!otd.isEmpty()) {
             Item it = otd.get(0);

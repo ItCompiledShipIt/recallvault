@@ -1,5 +1,31 @@
 # RecallVault
 
+## v0.75.0 - subscription census
+
+Every recurring charge the vault knows about, treated like
+a subscription whether it is one or not. A new pure Census
+engine groups charges by biller over a 400-day window (long
+enough to see a yearly charge twice) and works out each
+one's cadence (weekly to yearly), its monthly-equivalent
+cost, the total monthly burn, price creep (the latest charge
+against the previous different amount), the next expected
+date, renewals inside two weeks, and charges that look
+finished. Projections use calendar arithmetic so a renewal
+crossing a daylight-saving change still lands on the right
+day.
+
+Surfaces: the Reminders tab's recurring card is now the
+census (burn line, per-charge lines with flags, a Full
+census dialog); the morning digest and the desktop's
+NOTICED card carry the first census warning; and Ask answers
+"what subscriptions do I have?" with the burn and the
+biggest charges. The desktop has the same census plus a
+dedicated Subscriptions view. Both engines were verified
+against the same synthetic series and agree to the cent:
+$1,620.49/month across a creep-flagged streaming charge,
+rent, a yearly renewal due in a week and a finished gym
+membership (excluded from the burn). Suite 304/304.
+
 ## v0.74.0 - meeting mode, completed
 
 The meeting machinery (recorder with live captions, the

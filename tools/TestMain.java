@@ -1386,6 +1386,69 @@ public class TestMain {
                     && MeetingSummary.clean(null).isEmpty());
         }
 
+        // ---------- v0.75.0: Census of recurring charges ----------
+        {
+            long nowC = Extract.parseIso("2026-11-03");
+            java.util.List<Item> vault = new java.util.ArrayList<Item>();
+            String[][] streamly = {{"2026-08-05", "$9.99"}, {"2026-09-05", "$9.99"}, {"2026-10-05", "$15.49"}};
+            for (String[] s : streamly) {
+                Item it = new Item(); it.title = "Streamly subscription";
+                it.amounts = s[1]; it.reminderAt = Extract.parseIso(s[0]);
+                it.createdAt = it.reminderAt; vault.add(it);
+            }
+            String[][] rent = {{"2026-08-01", "$1600"}, {"2026-09-01", "$1600"}, {"2026-10-01", "$1600"}};
+            for (String[] s : rent) {
+                Item it = new Item(); it.title = "Rent payment";
+                it.amounts = s[1]; it.reminderAt = Extract.parseIso(s[0]);
+                it.createdAt = it.reminderAt; vault.add(it);
+            }
+            String[][] domain = {{"2025-11-10", "$60.00"}, {"2026-11-10", "$60.00"}};
+            for (String[] s : domain) {
+                Item it = new Item(); it.title = "Domain renewal";
+                it.amounts = s[1]; it.reminderAt = Extract.parseIso(s[0]);
+                it.createdAt = it.reminderAt; vault.add(it);
+            }
+            String[][] gym = {{"2026-01-15", "$30.00"}, {"2026-02-15", "$30.00"}};
+            for (String[] s : gym) {
+                Item it = new Item(); it.title = "Gym membership";
+                it.amounts = s[1]; it.reminderAt = Extract.parseIso(s[0]);
+                it.createdAt = it.reminderAt; vault.add(it);
+            }
+            Census.Report rep = Census.compute(vault, nowC);
+            check("census: finds all four recurring charges", rep.rows.size() == 4);
+            Census.Row stream = null, dom = null, gymR = null;
+            for (Census.Row r : rep.rows) {
+                if (r.title.contains("Streamly")) stream = r;
+                if (r.title.contains("Domain")) dom = r;
+                if (r.title.contains("Gym")) gymR = r;
+            }
+            check("census: monthly cadence + price creep flagged",
+                stream != null && "Monthly".equals(stream.cadence) && stream.priceUp
+                    && stream.prevCents == 999 && stream.latestCents == 1549);
+            check("census: next charge projected one gap out",
+                stream != null && Extract.formatDate(stream.nextAt)
+                    .equals(Extract.formatDate(Extract.parseIso("2026-11-05"))));
+            check("census: yearly cadence + renewal warning",
+                dom != null && "Yearly".equals(dom.cadence) && dom.renewalSoon
+                    && dom.nextAt == Extract.parseIso("2026-11-10"));
+            check("census: stale charge looks finished + stays out of the burn",
+                gymR != null && gymR.ended);
+            check("census: monthly burn sums monthly equivalents",
+                Math.abs(rep.monthlyBurnCents - (1549 + 160000 + 500)) < 100);
+            boolean creepWarn = false, renewWarn = false;
+            for (String w : rep.warnings) {
+                if (w.contains("Streamly") && w.contains("went up")) creepWarn = true;
+                if (w.contains("Domain") && w.contains("renews")) renewWarn = true;
+            }
+            check("census: warnings carry creep + renewal", creepWarn && renewWarn);
+            Ask.Summary cs = Census.answer(vault, "what subscriptions do I have?", nowC);
+            check("census: Ask answers the subscription question",
+                cs != null && cs.text.contains("recurring charges")
+                    && cs.text.contains("Streamly") && cs.totalCents == rep.monthlyBurnCents);
+            check("census: Ask ignores other questions",
+                Census.answer(vault, "when is the dentist?", nowC) == null);
+        }
+
         System.out.println("RESULT: " + pass + " pass, " + fail + " fail");
         if (fail > 0) System.exit(1);
     }
