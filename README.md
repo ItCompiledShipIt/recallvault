@@ -1,5 +1,19 @@
 # RecallVault
 
+## v0.69.0 - categories go invisible
+
+Chris's call: Clio should keep her own web of categories - we
+don't need to see them; asking should be enough. So the category
+is now purely internal organization (the classifier, Ask's
+routing, the digest and sync all still use it), and every
+surface stopped wearing it: no pills on memory cards, no
+category on the detail page, no "Filed under" picker, no
+category in reminder rows or notifications, no category in the
+editor's live facts or the save toast, no category ledger on
+the home's Stored quietly card, none in Ask's source lines,
+contact-page matches, or the PDF export. Retrieval is Ask and
+search, the way it was always meant to be used.
+
 ## v0.68.0 - selective filing, a quieter home, Images
 
 Classification got selective. The old classifier counted raw

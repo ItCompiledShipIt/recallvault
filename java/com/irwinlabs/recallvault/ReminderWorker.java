@@ -56,7 +56,9 @@ public class ReminderWorker extends Worker {
                 ? "overdue - was due " + Extract.formatDate(it.reminderAt)
                 : "due " + Extract.formatDate(it.reminderAt)
                     + " (" + Extract.relativeDay(it.reminderAt, now) + ")";
-            String text = it.category + " - " + when
+            // No category in the notification (v0.69.0): the
+            // date and the amount are the news.
+            String text = when
                 + (it.amounts.isEmpty() ? "" : " - " + it.amounts.replace(",", ", "));
 
             Intent open = new Intent(ctx, DetailActivity.class);

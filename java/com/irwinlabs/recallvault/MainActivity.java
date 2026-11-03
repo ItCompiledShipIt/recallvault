@@ -862,19 +862,10 @@ public class MainActivity extends Activity {
     private void collectionsCard() {
         java.util.List<Item> all = db.all();
         if (all.isEmpty()) return;
-        java.util.Map<String, Integer> counts = new java.util.LinkedHashMap<String, Integer>();
-        for (String c : Extract.CATEGORIES) counts.put(c, 0);
-        for (Item it : all) {
-            Integer n = counts.get(it.category);
-            counts.put(it.category, n == null ? 1 : n + 1);
-        }
+        // No category ledger on the surface (v0.69.0): the web of
+        // categories is Clio's to keep, not ours to read.
         StringBuilder sb = new StringBuilder();
         sb.append(all.size()).append(all.size() == 1 ? " memory" : " memories").append(" stored");
-        for (java.util.Map.Entry<String, Integer> e : counts.entrySet()) {
-            if (e.getValue() > 0) {
-                sb.append("  ·  ").append(e.getKey()).append(" ").append(e.getValue());
-            }
-        }
         LinearLayout card = Ui.card(this);
         card.setLayoutParams(Ui.matchWrap(12, this));
         card.addView(Ui.sectionLabel(this, "Stored quietly"));
@@ -1391,9 +1382,6 @@ public class MainActivity extends Activity {
             long cents = Ask.principalCents(it);
             if (cents > 0) {
                 top.addView(Ui.tag(this, Ask.formatMoney(cents), 1, Ui.TEXT));
-            } else if (!it.category.equalsIgnoreCase(Ui.typeLabel(it.type))) {
-                top.addView(Ui.tag(this,
-                    it.category.toUpperCase(java.util.Locale.US), 2, Ui.DIM));
             }
         } else {
             top.addView(Ui.tag(this, "AES-256 • ON-DEVICE", 2, Ui.DIM));
@@ -1462,8 +1450,8 @@ public class MainActivity extends Activity {
         LinearLayout top = new LinearLayout(this);
         top.setOrientation(LinearLayout.HORIZONTAL);
         top.setGravity(Gravity.CENTER_VERTICAL);
-        int[] tint = catTint(it.category);
-        top.addView(Ui.catPill(this, it.category, tint[0], tint[1]));
+        // Categories are Clio's internal web now (v0.69.0) - the
+        // cards do not wear them. Asking is the interface.
         View tsp = new View(this);
         tsp.setLayoutParams(new LinearLayout.LayoutParams(0, 1, 1f));
         top.addView(tsp);
@@ -2152,7 +2140,7 @@ public class MainActivity extends Activity {
             srcRow.setPadding(Ui.dp(this, 10), Ui.dp(this, 7), Ui.dp(this, 10), Ui.dp(this, 7));
             srcRow.setLayoutParams(Ui.matchWrap(8, this));
             TextView src = Ui.text(this,
-                "SOURCE: " + r.item.title + "  •  " + r.item.category + "  •  " + Ui.dateLine(r.item.createdAt)
+                "SOURCE: " + r.item.title + "  •  " + Ui.dateLine(r.item.createdAt)
                     + (r.viaPhoto ? "  •  matched by what's in the photo" : ""),
                 11, Ui.ACCENT2, false);
             src.setLayoutParams(new LinearLayout.LayoutParams(0,
@@ -2819,10 +2807,6 @@ public class MainActivity extends Activity {
         LinearLayout top = new LinearLayout(this);
         top.setOrientation(LinearLayout.HORIZONTAL);
         top.setGravity(Gravity.CENTER_VERTICAL);
-        TextView cat = Ui.text(this, it.category.toUpperCase(java.util.Locale.US),
-            10, Ui.ACCENT, true);
-        cat.setLetterSpacing(0.08f);
-        top.addView(cat);
         View tsp = new View(this);
         tsp.setLayoutParams(new LinearLayout.LayoutParams(0, 1, 1f));
         top.addView(tsp);
@@ -2960,10 +2944,6 @@ public class MainActivity extends Activity {
             ? new int[]{Ui.TERRA_BG, Ui.TERRA_TEXT}
             : new int[]{Ui.PANEL_HI, Ui.DIM};
         right.addView(Ui.catPill(this, dueLabel, dt[0], dt[1]));
-        int[] ct = catTint(it.category);
-        TextView cp = Ui.catPill(this, it.category, ct[0], ct[1]);
-        cp.setLayoutParams(Ui.matchWrap(6, this));
-        right.addView(cp);
         rowL.addView(right);
         card.addView(rowL);
 

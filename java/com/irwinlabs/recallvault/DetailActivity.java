@@ -160,14 +160,8 @@ public class DetailActivity extends Activity {
             LinearLayout chipRow = new LinearLayout(this);
             chipRow.setOrientation(LinearLayout.HORIZONTAL);
             chipRow.setGravity(android.view.Gravity.CENTER_VERTICAL);
-            int[] tint = "Bills".equals(item.category) || "People".equals(item.category)
-                ? new int[]{Ui.TERRA_BG, Ui.TERRA_TEXT}
-                : "Receipts".equals(item.category) || "Wallet".equals(item.category)
-                ? new int[]{Ui.MINT, Ui.MINT_TEXT}
-                : "Meetings".equals(item.category)
-                ? new int[]{Ui.SAGE_BG, Ui.SAGE_TEXT}
-                : new int[]{Ui.PANEL_HI, Ui.DIM};
-            chipRow.addView(Ui.catPill(this, item.category, tint[0], tint[1]));
+            // No category pill (v0.69.0): the type of the thing -
+            // photo, voice, scan - still reads at a glance.
             TextView tp = Ui.catPill(this, Ui.typeLabel(item.type), Ui.PANEL_HI, Ui.DIM);
             LinearLayout.LayoutParams tplp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -186,7 +180,7 @@ public class DetailActivity extends Activity {
             title.setLayoutParams(Ui.matchWrap(4, this));
             bodyCol.addView(title);
         } else {
-            TextView meta = Ui.text(this, item.category + "  -  " + Ui.typeLabel(item.type)
+            TextView meta = Ui.text(this, Ui.typeLabel(item.type)
                 + "  -  " + Ui.dateLine(item.createdAt), 12, Ui.ACCENT, true);
             bodyCol.addView(meta);
 
@@ -457,26 +451,9 @@ public class DetailActivity extends Activity {
             bodyCol.addView(th);
         }
 
-        // Category correction chips.
-        TextView catLabel = Ui.sectionLabel(this, "Filed under");
-        catLabel.setLayoutParams(Ui.matchWrap(18, this));
-        bodyCol.addView(catLabel);
-        HorizontalScrollView hsv = new HorizontalScrollView(this);
-        LinearLayout chips = new LinearLayout(this);
-        chips.setOrientation(LinearLayout.HORIZONTAL);
-        for (final String cat : Extract.CATEGORIES) {
-            Button ch = Ui.chip(this, cat, cat.equals(item.category));
-            ch.setOnClickListener(new View.OnClickListener() {
-                @Override public void onClick(View v) {
-                    item.category = cat;
-                    db.update(item);
-                    render();
-                }
-            });
-            chips.addView(ch);
-        }
-        hsv.addView(chips);
-        bodyCol.addView(hsv);
+        // No "Filed under" picker (v0.69.0): categories are
+        // Clio's internal web. She files things herself, and
+        // asking her is how they come back.
 
         LinearLayout actions = new LinearLayout(this);
         actions.setOrientation(LinearLayout.HORIZONTAL);
@@ -1053,7 +1030,7 @@ public class DetailActivity extends Activity {
                 if (pageNo == 1) {
                     c.drawText(item.title, 48, y, titleP);
                     y += 24;
-                    c.drawText(Ui.dateLine(item.createdAt) + "  •  " + item.category, 48, y, dimP);
+                    c.drawText(Ui.dateLine(item.createdAt), 48, y, dimP);
                     y += 14;
                     if (item.reminderAt > 0) {
                         y += 18;

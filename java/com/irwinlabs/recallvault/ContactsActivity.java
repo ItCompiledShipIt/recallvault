@@ -467,12 +467,6 @@ public class ContactsActivity extends Activity {
             ttl.setMaxLines(1);
             ttl.setEllipsize(android.text.TextUtils.TruncateAt.END);
             top.addView(ttl);
-            int[] tint = "Bills".equals(it.category)
-                ? new int[]{Ui.TERRA_BG, Ui.TERRA_TEXT}
-                : "Receipts".equals(it.category)
-                    ? new int[]{Ui.SAGE_BG, Ui.SAGE_TEXT}
-                    : new int[]{Ui.MINT, Ui.MINT_TEXT};
-            top.addView(Ui.catPill(this, it.category, tint[0], tint[1]));
             card.addView(top);
             StringBuilder meta = new StringBuilder(Extract.formatDate(it.createdAt));
             if (it.amounts != null && !it.amounts.isEmpty()) {

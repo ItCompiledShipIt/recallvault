@@ -204,10 +204,10 @@ public class EditorActivity extends Activity {
             + "\n" + machineText;
         Extract.Facts f = Extract.analyze(text);
         StringBuilder sb = new StringBuilder();
-        sb.append("Will file as: ").append(f.category);
-        if (f.dueDate > 0) sb.append("  -  date: ").append(Extract.formatDate(f.dueDate));
+        // Facts only (v0.69.0): the category is Clio's business.
+        if (f.dueDate > 0) sb.append("Date: ").append(Extract.formatDate(f.dueDate));
         if (!f.amounts.isEmpty()) {
-            sb.append("  -  ");
+            if (sb.length() > 0) sb.append("  -  ");
             for (int i = 0; i < f.amounts.size(); i++) {
                 if (i > 0) sb.append(", ");
                 sb.append(f.amounts.get(i));
@@ -285,7 +285,7 @@ public class EditorActivity extends Activity {
             db.insert(it);
         }
         Embed.embedPending(this, db);
-        Toast.makeText(this, "Saved under " + it.category, Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Saved", Toast.LENGTH_SHORT).show();
         finish();
     }
 }
