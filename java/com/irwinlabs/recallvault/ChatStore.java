@@ -254,7 +254,11 @@ public final class ChatStore {
             String raw = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
                 .getString(KEY, "");
             if (raw != null && !raw.isEmpty()) {
-                return fromJson(new JSONObject(raw));
+                // Sealed at rest since v0.78.0 (VaultCrypto, the
+                // vault's own key). dec() passes legacy plaintext
+                // stores through untouched, so old threads load
+                // and re-seal on the next save.
+                return fromJson(new JSONObject(VaultCrypto.dec(raw)));
             }
         } catch (Exception e) {
             // fall through to a fresh store
@@ -267,7 +271,8 @@ public final class ChatStore {
     public void save(Context ctx) {
         try {
             ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-                .edit().putString(KEY, toJson().toString()).apply();
+                .edit().putString(KEY, VaultCrypto.enc(toJson().toString()))
+                .apply();
         } catch (Exception e) {
             // Persistence is best-effort; the thread still works.
         }

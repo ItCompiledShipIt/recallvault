@@ -12,6 +12,18 @@ plugins {
     id 'com.android.application' version '9.4.1'
 }
 
+// Release signing (v0.78.0): the real release keystore lives
+// OUTSIDE this repo in ~/Projects/recallvault-signing/ with a
+// 0600 keystore.properties (paths + passwords). When that file
+// is absent (a fresh clone), release falls back to the house
+// debug key so the project still builds - but such an APK is
+// NOT the shippable one and must never be distributed.
+def releaseProps = new Properties()
+def releasePropsFile = file("${System.getProperty('user.home')}/Projects/recallvault-signing/keystore.properties")
+if (releasePropsFile.exists()) {
+    releaseProps.load(new FileInputStream(releasePropsFile))
+}
+
 android {
     namespace 'com.irwinlabs.recallvault'
     compileSdk 36
@@ -19,9 +31,9 @@ android {
     defaultConfig {
         applicationId 'com.irwinlabs.recallvault'
         minSdk 26
-        targetSdk 34
-        versionCode 92
-        versionName '0.77.0'
+        targetSdk 35
+        versionCode 93
+        versionName '0.78.0'
         multiDexEnabled true
     }
 
@@ -32,6 +44,14 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        releaseReal {
+            if (releasePropsFile.exists()) {
+                storeFile file(releaseProps['storeFile'])
+                storePassword releaseProps['storePassword']
+                keyAlias releaseProps['keyAlias']
+                keyPassword releaseProps['keyPassword']
+            }
+        }
     }
 
     buildTypes {
@@ -40,7 +60,8 @@ android {
         }
         release {
             minifyEnabled false
-            signingConfig signingConfigs.house
+            signingConfig(releasePropsFile.exists()
+                ? signingConfigs.releaseReal : signingConfigs.house)
         }
     }
 
