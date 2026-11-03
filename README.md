@@ -1,5 +1,39 @@
 # RecallVault
 
+## v0.76.0 - Ask is a conversation
+
+Ask is a messaging-style chat now, on both apps. One Main
+chat (it cannot be deleted) plus side chats you create from
+the Chats list; a side chat titles itself from its first
+question and can be deleted. Every Ask entry point - the
+home search box, the suggestion chips, a voice question -
+opens the chat with the question already sent.
+
+While Clio works, the thread says what she is actually
+doing: "Searching your memories", "Thinking", and, on long
+threads, "Tidying the conversation", next to an animated
+typing indicator. The clues are real phases, not theatre -
+the web phase exists on desktop where answers stream in
+token by token; the phone's on-device engine generates in
+one pass, so its answers arrive whole under the same clues.
+
+Long conversations compress: once a thread's recent history
+passes a budget, the older turns fold into a digest (written
+by the on-device model, or by deterministic extraction when
+no model is present) that rides along in the prompt, the
+recent turns stay verbatim, and a divider in the thread -
+"Earlier conversation compressed" - marks where the fold
+happened. Follow-ups resolve against the same chat's last
+question. Answers keep their provenance line under the
+bubble, and a vault answer about a bill still carries its
+Done / Snooze +24H actions.
+
+The old one-shot Ask card is gone from the home; the answer
+chain itself (contacts, the deterministic vault answers,
+the brain over retrieved memories, the plain hit list) is
+unchanged and now runs inside the chat. ChatStore + suite
+317/317.
+
 ## v0.75.0 - subscription census
 
 Every recurring charge the vault knows about, treated like

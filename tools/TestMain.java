@@ -1449,6 +1449,73 @@ public class TestMain {
                 Census.answer(vault, "when is the dentist?", nowC) == null);
         }
 
+        // ---------- v0.76.0: ChatStore ----------
+        {
+            ChatStore s = new ChatStore();
+            ChatStore.Chat main = s.main();
+            check("chat: main chat exists first",
+                s.chats.size() == 1 && "main".equals(main.id));
+            ChatStore.Chat side = s.newSide(1234L);
+            check("chat: side chat created, main survives delete guard",
+                s.chats.size() == 2 && side.id.startsWith("side-"));
+            s.delete("main");
+            check("chat: main cannot be deleted", s.chats.size() == 2);
+            s.delete(side.id);
+            check("chat: side chat deleted", s.chats.size() == 1);
+
+            ChatStore.Chat mc = s.main();
+            for (int i = 0; i < 6; i++) {
+                mc.messages.add(new ChatStore.Msg("user", "q" + i, i, ""));
+                mc.messages.add(new ChatStore.Msg("clio", "a" + i, i, ""));
+            }
+            check("chat: small thread needs no compression",
+                !ChatStore.needsCompression(mc));
+            check("chat: history block carries turns",
+                ChatStore.historyBlock(mc).contains("User: q0")
+                    && ChatStore.historyBlock(mc).contains("Clio: a5"));
+            check("chat: lastUserText finds the latest question",
+                "q5".equals(mc.lastUserText()));
+
+            // Long thread: 12 exchanges of ~400 chars each.
+            ChatStore.Chat big = new ChatStore.Chat();
+            big.id = "main"; big.title = "Main chat";
+            StringBuilder pad = new StringBuilder();
+            for (int i = 0; i < 40; i++) pad.append("rent money ");
+            for (int i = 0; i < 12; i++) {
+                big.messages.add(new ChatStore.Msg(
+                    "user", "question " + i + " " + pad, i, ""));
+                big.messages.add(new ChatStore.Msg(
+                    "clio", "answer " + i + " " + pad, i, ""));
+            }
+            check("chat: long thread needs compression",
+                ChatStore.needsCompression(big));
+            check("chat: compress cut keeps the recent 8",
+                ChatStore.compressCut(big) == big.messages.size() - 8);
+
+            java.util.List<ChatStore.Msg> turns =
+                big.messages.subList(0, ChatStore.compressCut(big));
+            String dig = ChatStore.fallbackDigest(turns, "");
+            check("chat: fallback digest lists the questions",
+                dig.contains("Earlier, the user asked:")
+                    && dig.contains("question 0"));
+
+            big.digest = dig;
+            big.digestUpto = ChatStore.compressCut(big);
+            check("chat: history block leads with the digest",
+                ChatStore.historyBlock(big)
+                    .startsWith("[earlier conversation, compressed]"));
+            check("chat: compressed thread no longer needs compression",
+                !ChatStore.needsCompression(big)
+                    || ChatStore.historyChars(big) <= ChatStore.BUDGET);
+
+            org.json.JSONObject j = s.toJson();
+            ChatStore s2 = ChatStore.fromJson(j);
+            check("chat: JSON round-trip keeps chats + messages",
+                s2.chats.size() == 1
+                    && s2.main().messages.size() == 12
+                    && "q3".equals(s2.main().messages.get(6).text));
+        }
+
         System.out.println("RESULT: " + pass + " pass, " + fail + " fail");
         if (fail > 0) System.exit(1);
     }
