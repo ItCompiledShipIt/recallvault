@@ -3,6 +3,10 @@ package com.irwinlabs.recallvault;
 /** One saved memory: a note, voice memo, photo, scan, or imported file. */
 public class Item {
     public long id = -1;
+    /** Stable cross-device identity for desktop sync (v0.67.0). */
+    public String uuid = "";
+    /** Last-writer-wins clock for sync (v0.67.0). */
+    public long updatedAt = 0;
     public String title = "";
     /** TEXT, VOICE, PHOTO, SCAN, DOCUMENT */
     public String type = "TEXT";

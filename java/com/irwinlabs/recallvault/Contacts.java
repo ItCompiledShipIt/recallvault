@@ -43,6 +43,9 @@ public class Contacts {
         public boolean fav = false;
         /** Photo filename inside files/contact_photos/, or "". */
         public String photo = "";
+        /** Sync identity + last-writer-wins clock (v0.67.0). */
+        public String uuid = "";
+        public long updatedAt = 0;
 
         public String firstName() {
             String n = name.trim();
@@ -62,6 +65,7 @@ public class Contacts {
             if (!f.exists()) return out;
             String s = new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8);
             JSONArray arr = new JSONArray(s);
+            boolean healed = false;
             for (int i = 0; i < arr.length(); i++) {
                 JSONObject o = arr.getJSONObject(i);
                 Contact c = new Contact();
@@ -76,8 +80,19 @@ public class Contacts {
                 c.note = o.optString("note", "");
                 c.fav = o.optBoolean("fav", false);
                 c.photo = o.optString("photo", "");
+                c.uuid = o.optString("uuid", "");
+                c.updatedAt = o.optLong("updated_at", 0);
+                if (c.uuid.isEmpty()) {
+                    c.uuid = java.util.UUID.randomUUID().toString();
+                    healed = true;
+                }
+                if (c.updatedAt == 0) {
+                    c.updatedAt = c.id > 0 ? c.id : System.currentTimeMillis();
+                    healed = true;
+                }
                 out.add(c);
             }
+            if (healed) save(ctx, out);
         } catch (Exception e) {
             // A damaged file reads as an empty library rather
             // than crashing the page.
@@ -106,6 +121,8 @@ public class Contacts {
                 o.put("note", c.note);
                 o.put("fav", c.fav);
                 o.put("photo", c.photo);
+                o.put("uuid", c.uuid == null ? "" : c.uuid);
+                o.put("updated_at", c.updatedAt);
                 arr.put(o);
             }
             Files.write(file(ctx).toPath(), arr.toString().getBytes(StandardCharsets.UTF_8));
@@ -116,6 +133,10 @@ public class Contacts {
 
     /** Insert or update by id; a new contact gets a fresh id. */
     public static void upsert(Context ctx, Contact c) {
+        if (c.uuid == null || c.uuid.isEmpty()) {
+            c.uuid = java.util.UUID.randomUUID().toString();
+        }
+        c.updatedAt = System.currentTimeMillis();
         List<Contact> list = load(ctx);
         if (c.id == 0) {
             c.id = System.currentTimeMillis();
@@ -128,12 +149,97 @@ public class Contacts {
         save(ctx, list);
     }
 
+    /** Write a contact that arrived from sync, keeping its clock. */
+    public static void applyRemote(Context ctx, Contact c) {
+        List<Contact> list = load(ctx);
+        boolean found = false;
+        for (int i = 0; i < list.size(); i++) {
+            if (list.get(i).uuid.equals(c.uuid)) {
+                c.id = list.get(i).id;
+                list.set(i, c);
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            c.id = System.currentTimeMillis();
+            // Millisecond ids can collide under fast adds.
+            boolean clash = true;
+            while (clash) {
+                clash = false;
+                for (Contact x : list) if (x.id == c.id) { c.id++; clash = true; }
+            }
+            list.add(c);
+        }
+        save(ctx, list);
+        clearContactTombstone(ctx, c.uuid);
+    }
+
+    public static Contact byUuid(Context ctx, String uuid) {
+        if (uuid == null || uuid.isEmpty()) return null;
+        for (Contact c : load(ctx)) if (uuid.equals(c.uuid)) return c;
+        return null;
+    }
+
     public static void delete(Context ctx, long id) {
         List<Contact> list = load(ctx);
         for (int i = list.size() - 1; i >= 0; i--) {
-            if (list.get(i).id == id) list.remove(i);
+            if (list.get(i).id == id) {
+                if (!list.get(i).uuid.isEmpty()) {
+                    addContactTombstone(ctx, list.get(i).uuid, System.currentTimeMillis());
+                }
+                list.remove(i);
+            }
         }
         save(ctx, list);
+    }
+
+    // ---- contact tombstones (sync, v0.67.0) ----
+
+    private static File tombFile(Context ctx) {
+        return new File(ctx.getFilesDir(), "contact_tombstones.json");
+    }
+
+    /** [uuid, deletedAtMillis] pairs. */
+    public static List<String[]> contactTombstones(Context ctx) {
+        List<String[]> out = new ArrayList<String[]>();
+        try {
+            File f = tombFile(ctx);
+            if (!f.exists()) return out;
+            JSONArray arr = new JSONArray(new String(
+                Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8));
+            for (int i = 0; i < arr.length(); i++) {
+                JSONObject o = arr.getJSONObject(i);
+                out.add(new String[]{o.optString("uuid", ""),
+                    String.valueOf(o.optLong("deleted_at", 0))});
+            }
+        } catch (Exception ignored) {}
+        return out;
+    }
+
+    public static void addContactTombstone(Context ctx, String uuid, long deletedAt) {
+        List<String[]> cur = contactTombstones(ctx);
+        cur.removeIf(t -> t[0].equals(uuid));
+        cur.add(new String[]{uuid, String.valueOf(deletedAt)});
+        writeContactTombstones(ctx, cur);
+    }
+
+    public static void clearContactTombstone(Context ctx, String uuid) {
+        List<String[]> cur = contactTombstones(ctx);
+        if (cur.removeIf(t -> t[0].equals(uuid))) writeContactTombstones(ctx, cur);
+    }
+
+    private static void writeContactTombstones(Context ctx, List<String[]> tombs) {
+        try {
+            JSONArray arr = new JSONArray();
+            for (String[] t : tombs) {
+                JSONObject o = new JSONObject();
+                o.put("uuid", t[0]);
+                o.put("deleted_at", Long.parseLong(t[1]));
+                arr.put(o);
+            }
+            Files.write(tombFile(ctx).toPath(), arr.toString().getBytes(StandardCharsets.UTF_8));
+        } catch (Exception ignored) {}
     }
 
     // ---- Birthdays -------------------------------------------------

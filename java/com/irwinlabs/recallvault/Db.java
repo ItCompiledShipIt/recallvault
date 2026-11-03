@@ -13,7 +13,7 @@ import java.util.List;
 public class Db extends SQLiteOpenHelper {
 
     private static final String NAME = "recallvault.db";
-    private static final int VERSION = 10;
+    private static final int VERSION = 11;
 
     public Db(Context ctx) {
         super(ctx.getApplicationContext(), NAME, null, VERSION);
@@ -42,7 +42,11 @@ public class Db extends SQLiteOpenHelper {
             + "links TEXT NOT NULL DEFAULT '',"
             + "deleted_at INTEGER NOT NULL DEFAULT 0,"
             + "expiry_at INTEGER NOT NULL DEFAULT 0,"
-            + "is_private INTEGER NOT NULL DEFAULT 0)");
+            + "is_private INTEGER NOT NULL DEFAULT 0,"
+            + "uuid TEXT NOT NULL DEFAULT '',"
+            + "updated_at INTEGER NOT NULL DEFAULT 0)");
+        db.execSQL("CREATE TABLE IF NOT EXISTS tombstones ("
+            + "uuid TEXT PRIMARY KEY, deleted_at INTEGER NOT NULL)");
     }
 
     @Override
@@ -83,6 +87,24 @@ public class Db extends SQLiteOpenHelper {
             // v10: private memories - per-item display lock - v0.46.0.
             db.execSQL("ALTER TABLE items ADD COLUMN is_private INTEGER NOT NULL DEFAULT 0");
         }
+        if (oldV < 11) {
+            // v11: live sync with Clio for Desktop (v0.67.0) -
+            // a stable uuid per memory, an updated_at clock for
+            // last-writer-wins merges, and tombstones so a
+            // deletion on one side deletes on the other.
+            db.execSQL("ALTER TABLE items ADD COLUMN uuid TEXT NOT NULL DEFAULT ''");
+            db.execSQL("ALTER TABLE items ADD COLUMN updated_at INTEGER NOT NULL DEFAULT 0");
+            db.execSQL("CREATE TABLE IF NOT EXISTS tombstones ("
+                + "uuid TEXT PRIMARY KEY, deleted_at INTEGER NOT NULL)");
+            Cursor c = db.rawQuery("SELECT id, created_at FROM items WHERE uuid=''", null);
+            while (c.moveToNext()) {
+                ContentValues v = new ContentValues();
+                v.put("uuid", java.util.UUID.randomUUID().toString());
+                v.put("updated_at", c.getLong(1));
+                db.update("items", v, "id=?", new String[]{String.valueOf(c.getLong(0))});
+            }
+            c.close();
+        }
     }
 
     private ContentValues values(Item it) {
@@ -110,6 +132,11 @@ public class Db extends SQLiteOpenHelper {
         it.expiryAt = exp > 0 ? exp : 0;
         v.put("expiry_at", it.expiryAt);
         v.put("is_private", it.isPrivate);
+        if (it.uuid == null || it.uuid.isEmpty()) {
+            it.uuid = java.util.UUID.randomUUID().toString();
+        }
+        v.put("uuid", it.uuid);
+        v.put("updated_at", it.updatedAt);
         return v;
     }
 
@@ -136,11 +163,13 @@ public class Db extends SQLiteOpenHelper {
         it.deletedAt = c.getLong(18);
         it.expiryAt = c.getLong(19);
         it.isPrivate = c.getInt(20);
+        it.uuid = c.getString(21);
+        it.updatedAt = c.getLong(22);
         return it;
     }
 
     private static final String COLS =
-        "id,title,type,category,body,extracted,file_path,mime,created_at,reminder_at,amounts,embedding,embedding_local,embedding_image,handled_at,file_hash,pages,links,deleted_at,expiry_at,is_private";
+        "id,title,type,category,body,extracted,file_path,mime,created_at,reminder_at,amounts,embedding,embedding_local,embedding_image,handled_at,file_hash,pages,links,deleted_at,expiry_at,is_private,uuid,updated_at";
 
     /**
      * One-time rewrite of every row through the encrypting values()
@@ -158,6 +187,7 @@ public class Db extends SQLiteOpenHelper {
     }
 
     public long insert(Item it) {
+        it.updatedAt = System.currentTimeMillis();
         SQLiteDatabase db = getWritableDatabase();
         long id = db.insert("items", null, values(it));
         it.id = id;
@@ -165,8 +195,93 @@ public class Db extends SQLiteOpenHelper {
     }
 
     public void update(Item it) {
+        it.updatedAt = System.currentTimeMillis();
         SQLiteDatabase db = getWritableDatabase();
         db.update("items", values(it), "id=?", new String[]{String.valueOf(it.id)});
+    }
+
+    // ---- sync support (v0.67.0) ----
+
+    /** Every memory changed since a watermark, trash included. */
+    public java.util.List<Item> changedSince(long updatedAfter) {
+        java.util.List<Item> out = new java.util.ArrayList<Item>();
+        SQLiteDatabase db = getReadableDatabase();
+        Cursor c = db.rawQuery("SELECT " + COLS + " FROM items WHERE updated_at>? ORDER BY updated_at",
+            new String[]{String.valueOf(updatedAfter)});
+        while (c.moveToNext()) out.add(fromCursor(c));
+        c.close();
+        return out;
+    }
+
+    public Item byUuid(String uuid) {
+        if (uuid == null || uuid.isEmpty()) return null;
+        SQLiteDatabase db = getReadableDatabase();
+        Cursor c = db.rawQuery("SELECT " + COLS + " FROM items WHERE uuid=?",
+            new String[]{uuid});
+        Item it = null;
+        if (c.moveToFirst()) it = fromCursor(c);
+        c.close();
+        return it;
+    }
+
+    /** Write a record that arrived from sync, keeping ITS clock. */
+    public void applyRemote(Item it) {
+        SQLiteDatabase db = getWritableDatabase();
+        Item local = byUuid(it.uuid);
+        ContentValues v = values(it);
+        if (local == null) {
+            long id = db.insert("items", null, v);
+            it.id = id;
+        } else {
+            it.id = local.id;
+            db.update("items", v, "id=?", new String[]{String.valueOf(local.id)});
+        }
+        clearTombstone(it.uuid);
+    }
+
+    /** Rename a local record's uuid (first-sync adoption). */
+    public void adoptUuid(String oldUuid, String newUuid) {
+        SQLiteDatabase db = getWritableDatabase();
+        ContentValues v = new ContentValues();
+        v.put("uuid", newUuid);
+        db.update("items", v, "uuid=?", new String[]{oldUuid});
+    }
+
+    public java.util.List<String[]> tombstonesSince(long deletedAfter) {
+        java.util.List<String[]> out = new java.util.ArrayList<String[]>();
+        SQLiteDatabase db = getWritableDatabase();
+        Cursor c = db.rawQuery("SELECT uuid, deleted_at FROM tombstones WHERE deleted_at>?",
+            new String[]{String.valueOf(deletedAfter)});
+        while (c.moveToNext()) out.add(new String[]{c.getString(0), String.valueOf(c.getLong(1))});
+        c.close();
+        return out;
+    }
+
+    public void recordTombstone(String uuid, long deletedAt) {
+        if (uuid == null || uuid.isEmpty()) return;
+        SQLiteDatabase db = getWritableDatabase();
+        ContentValues v = new ContentValues();
+        v.put("uuid", uuid);
+        v.put("deleted_at", deletedAt);
+        db.insertWithOnConflict("tombstones", null, v, SQLiteDatabase.CONFLICT_REPLACE);
+    }
+
+    public void clearTombstone(String uuid) {
+        SQLiteDatabase db = getWritableDatabase();
+        db.delete("tombstones", "uuid=?", new String[]{uuid});
+    }
+
+    /** A deletion arrived from sync: honor it unless the local
+     *  copy was edited after the deletion happened. */
+    public void applyTombstone(String uuid, long deletedAt) {
+        Item local = byUuid(uuid);
+        if (local != null && local.updatedAt <= deletedAt) {
+            SQLiteDatabase db = getWritableDatabase();
+            db.delete("items", "id=?", new String[]{String.valueOf(local.id)});
+        }
+        if (local == null || local.updatedAt <= deletedAt) {
+            recordTombstone(uuid, deletedAt);
+        }
     }
 
     public void updateEmbedding(long id, String embedding) {
@@ -191,6 +306,10 @@ public class Db extends SQLiteOpenHelper {
     }
 
     public void delete(long id) {
+        Item gone = get(id);
+        if (gone != null && gone.uuid != null && !gone.uuid.isEmpty()) {
+            recordTombstone(gone.uuid, System.currentTimeMillis());
+        }
         SQLiteDatabase db = getWritableDatabase();
         db.delete("items", "id=?", new String[]{String.valueOf(id)});
         // Links are symmetric: scrub the gone id from every other item.

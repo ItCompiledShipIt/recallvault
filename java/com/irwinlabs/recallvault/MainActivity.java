@@ -147,6 +147,8 @@ public class MainActivity extends Activity {
             startActivity(new Intent(this, LockActivity.class));
         } else {
             AppLock.noteActivity();
+            // Live desktop sync rides app opens (v0.67.0).
+            SyncClient.maybeAuto(this);
             // First run (v0.60.0): the welcome tour, once,
             // after the lock has cleared.
             if (!onboardingLaunched
@@ -3510,6 +3512,54 @@ public class MainActivity extends Activity {
      *  her standing instructions, MEMORY.md what she has
      *  saved. Both are the user's files - Clio only reads
      *  and appends; every word here wins over her seed. */
+    /** Pairing dialog for desktop sync (v0.67.0): the
+     *  desktop's address and the sync key it shows. */
+    private void showSyncSetup() {
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(Ui.dp(this, 20), Ui.dp(this, 8), Ui.dp(this, 20), 0);
+        final EditText addrEd = new EditText(this);
+        addrEd.setHint("Desktop address (like 192.168.0.18:8097)");
+        addrEd.setText(SyncClient.addr(this));
+        addrEd.setTextColor(Ui.TEXT);
+        addrEd.setSingleLine(true);
+        box.addView(addrEd);
+        final EditText keyEd = new EditText(this);
+        keyEd.setHint("Sync key (shown in Clio for Desktop)");
+        keyEd.setText(SyncClient.key(this));
+        keyEd.setTextColor(Ui.TEXT);
+        keyEd.setSingleLine(true);
+        box.addView(keyEd);
+        TextView hint = Ui.text(this,
+            "Find the key in Clio for Desktop on your computer. "
+            + "Sync runs over your own network - nothing goes to any cloud.",
+            12, Ui.DIM, false);
+        hint.setLayoutParams(Ui.matchWrap(8, this));
+        box.addView(hint);
+        new AlertDialog.Builder(this)
+            .setTitle("Pair with desktop")
+            .setView(box)
+            .setPositiveButton("Save", new android.content.DialogInterface.OnClickListener() {
+                @Override public void onClick(android.content.DialogInterface d, int w) {
+                    String a = addrEd.getText().toString().trim();
+                    String k = keyEd.getText().toString().trim();
+                    android.content.SharedPreferences.Editor e =
+                        getSharedPreferences(Embed.PREFS, MODE_PRIVATE).edit();
+                    if (!a.isEmpty()) e.putString(SyncClient.PREF_ADDR, a);
+                    e.putString(SyncClient.PREF_KEY_ENC, k.isEmpty() ? "" : VaultCrypto.enc(k));
+                    // A new pairing re-syncs from scratch.
+                    e.putLong(SyncClient.PREF_SEQ, 0);
+                    e.putLong(SyncClient.PREF_PUSHED, 0);
+                    e.putLong(SyncClient.PREF_C_PUSHED, 0);
+                    e.apply();
+                    Toast.makeText(MainActivity.this, "Pairing saved", Toast.LENGTH_SHORT).show();
+                    refreshSettings();
+                }
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+
     private void showMindEditor(final boolean agents) {
         final EditText ed = new EditText(this);
         ed.setText(agents ? ClioMind.readAgents(this) : ClioMind.readMemory(this));
@@ -3710,6 +3760,70 @@ public class MainActivity extends Activity {
             });
             mindCard.addView(memBtn);
             box.addView(mindCard);
+        }
+
+        // Desktop sync (v0.67.0): live, two-way, with Clio
+        // for Desktop over the home network (or NetBird).
+        {
+            LinearLayout syncCard = Ui.card(this);
+            syncCard.addView(Ui.sectionLabel(this, "Desktop sync"));
+            final android.content.SharedPreferences sp =
+                getSharedPreferences(Embed.PREFS, MODE_PRIVATE);
+            String lastResult = sp.getString(SyncClient.PREF_LAST_RESULT, "");
+            TextView syncStatus = Ui.text(this,
+                SyncClient.configured(this)
+                    ? "Paired with the desktop at " + SyncClient.addr(this) + "."
+                        + (lastResult.isEmpty() ? "" : " " + lastResult)
+                    : "Not paired yet. Open Clio on your computer, copy its sync key, "
+                        + "and paste it here - from then on the phone and the desktop "
+                        + "keep one shared vault, live.",
+                13, Ui.DIM, false);
+            syncStatus.setLayoutParams(Ui.matchWrap(6, this));
+            syncCard.addView(syncStatus);
+            LinearLayout srow = new LinearLayout(this);
+            srow.setOrientation(LinearLayout.HORIZONTAL);
+            Button pairBtn = Ui.ghostButton(this, SyncClient.configured(this) ? "Pairing" : "Pair with desktop");
+            pairBtn.setLayoutParams(new LinearLayout.LayoutParams(0,
+                LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+            pairBtn.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) { showSyncSetup(); }
+            });
+            srow.addView(pairBtn);
+            Button nowBtn = Ui.primaryButton(this, "Sync now");
+            nowBtn.setLayoutParams(new LinearLayout.LayoutParams(0,
+                LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+            nowBtn.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    Toast.makeText(MainActivity.this, "Syncing...", Toast.LENGTH_SHORT).show();
+                    new Thread(new Runnable() {
+                        @Override public void run() {
+                            final String res = SyncClient.syncNow(MainActivity.this);
+                            runOnUiThread(new Runnable() {
+                                @Override public void run() {
+                                    Toast.makeText(MainActivity.this, res, Toast.LENGTH_LONG).show();
+                                    refreshSettings();
+                                    render();
+                                }
+                            });
+                        }
+                    }).start();
+                }
+            });
+            srow.addView(nowBtn);
+            syncCard.addView(srow);
+            android.widget.Switch autoSw = new android.widget.Switch(this);
+            autoSw.setText("Sync on its own (when the app opens, and daily)");
+            autoSw.setTextColor(Ui.TEXT);
+            autoSw.setTextSize(14);
+            autoSw.setChecked(sp.getBoolean(SyncClient.PREF_AUTO, true));
+            autoSw.setLayoutParams(Ui.matchWrap(8, this));
+            autoSw.setOnCheckedChangeListener(new android.widget.CompoundButton.OnCheckedChangeListener() {
+                @Override public void onCheckedChanged(android.widget.CompoundButton b, boolean on) {
+                    sp.edit().putBoolean(SyncClient.PREF_AUTO, on).apply();
+                }
+            });
+            syncCard.addView(autoSw);
+            box.addView(syncCard);
         }
 
         // Appearance: Sanctuary is the only theme (v0.63.0);

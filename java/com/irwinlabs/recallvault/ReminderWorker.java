@@ -209,6 +209,10 @@ public class ReminderWorker extends Worker {
         try {
             ClioMind.nightlyReview(ctx);
         } catch (Throwable ignored) {}
+        // Daily live sync with the desktop, when paired (v0.67.0).
+        try {
+            if (SyncClient.configured(ctx)) SyncClient.syncNow(ctx);
+        } catch (Throwable ignored) {}
         // Weekly self-maintaining backup rides the daily pass (v0.12.0).
         AutoBackup.runIfDue(ctx);
         // Morning digest, once a day (v0.28.0).

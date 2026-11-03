@@ -1,5 +1,13 @@
 # RecallVault
 
+## v0.67.1
+
+Sync failures now say what actually happened: a refused sync key,
+a desktop error (with its code), or an unreachable desktop (with the
+reason) - instead of one catch-all message.
+
+# RecallVault
+
 A local-first personal memory vault for Android — the MemX idea, on your own hardware.
 
 Save anything in one tap — a note, a voice memo, a photo, a scan, a document,
@@ -1212,3 +1220,22 @@ and show memories, people and mind together.
   now also carry the profile photo and contact photos;
   restores bring them back, and Clio for Desktop shows
   them as discs.
+
+## v0.67.0 - live sync with Clio for Desktop (Nov 2, 2026)
+
+The phone and the desktop app now keep ONE vault, live.
+Pair once (Settings -> Desktop sync: the desktop's
+address + the sync key it shows) and they exchange both
+ways - on app open, daily, or on demand: memories,
+contacts, deletions, contact photos, attachment files,
+her memory facts (unioned - neither side can lose one)
+and her instructions (newest wins). Records carry a
+uuid + updated_at; merges are last-writer-wins per
+record, deletions travel as tombstones, and a first
+sync adopts records the desktop already holds from a
+backup import (matched by title + created_at) so
+nothing doubles. Transport is HTTP on the user's own
+network with the sync key as the credential - over
+NetBird the same path is WireGuard-encrypted. There is
+no cloud anywhere in it. Multi-page scan extras and
+on-device embeddings stay local to the phone.

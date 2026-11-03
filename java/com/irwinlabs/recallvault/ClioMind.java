@@ -148,6 +148,9 @@ public class ClioMind {
     public static boolean writeAgents(Context ctx, String text) {
         try {
             write(agentsFile(ctx), text);
+            // A local edit stamps the sync clock (v0.67.0).
+            ctx.getSharedPreferences(Embed.PREFS, Context.MODE_PRIVATE).edit()
+                .putLong(PREF_AGENTS_TS, System.currentTimeMillis()).apply();
             return true;
         } catch (Exception e) {
             return false;
@@ -227,6 +230,51 @@ public class ClioMind {
             }
         }
         return extras;
+    }
+
+    // ---- sync support (v0.67.0) ----
+
+    public static final String PREF_AGENTS_TS = "mind_agents_ts";
+
+    public static long agentsUpdatedAt(Context ctx) {
+        return ctx.getSharedPreferences(Embed.PREFS, Context.MODE_PRIVATE)
+            .getLong(PREF_AGENTS_TS, 0);
+    }
+
+    public static void writeAgents(Context ctx, String text, long updatedAt) {
+        ensureSeeded(ctx);
+        try {
+            write(agentsFile(ctx), text);
+        } catch (Exception ignored) {}
+        android.content.SharedPreferences.Editor e =
+            ctx.getSharedPreferences(Embed.PREFS, Context.MODE_PRIVATE).edit();
+        e.putLong(PREF_AGENTS_TS, updatedAt).apply();
+    }
+
+    /** The fact lines of MEMORY.md - the part sync unions. */
+    public static java.util.List<String> factLines(Context ctx) {
+        java.util.List<String> out = new java.util.ArrayList<String>();
+        for (String ln : readMemory(ctx).split("\n")) {
+            if (ln.startsWith("- (")) out.add(ln.trim());
+        }
+        return out;
+    }
+
+    /** Replace MEMORY.md's facts with a unioned set, keeping
+     *  this device's header and any non-fact lines. */
+    public static void applyFactUnion(Context ctx, java.util.List<String> facts) {
+        String cur = readMemory(ctx);
+        StringBuilder head = new StringBuilder();
+        for (String ln : cur.split("\n", -1)) {
+            if (!ln.startsWith("- (")) head.append(ln).append("\n");
+        }
+        String h = head.toString().replaceAll("\n+$", "\n");
+        StringBuilder out = new StringBuilder(h);
+        if (!h.endsWith("\n")) out.append("\n");
+        for (String f : facts) out.append(f).append("\n");
+        try {
+            write(memoryFile(ctx), out.toString());
+        } catch (Exception ignored) {}
     }
 
     public static final String PREF_REVIEW_DAY = "mind_review_day";
