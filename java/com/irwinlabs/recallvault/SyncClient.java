@@ -80,6 +80,46 @@ public class SyncClient {
         return (a == null) ? "" : a.trim();
     }
 
+    /** QR pairing (v0.79.0): the desktop shows a code that
+     *  carries everything pairing needs, so nobody types an
+     *  address or a key. Payload:
+     *  clio://pair?v=1&addr=<host:port>&key=<sync key>.
+     *  Returns {addr, key} or null for anything else - pure,
+     *  so the suite can hold it to account. */
+    public static String[] parsePairUri(String raw) {
+        if (raw == null) return null;
+        String s = raw.trim();
+        if (!s.startsWith("clio://pair")) return null;
+        int q = s.indexOf('?');
+        if (q < 0) return null;
+        String addr = "", key = "";
+        for (String part : s.substring(q + 1).split("&")) {
+            int eq = part.indexOf('=');
+            if (eq < 0) continue;
+            String name = part.substring(0, eq);
+            String val = part.substring(eq + 1);
+            try {
+                val = java.net.URLDecoder.decode(val, "UTF-8");
+            } catch (Exception e) { /* keep the raw value */ }
+            if ("addr".equals(name)) addr = val.trim();
+            else if ("key".equals(name)) key = val.trim();
+        }
+        if (addr.isEmpty() || key.isEmpty()) return null;
+        if (!addr.contains(":")) return null;
+        return new String[]{addr, key};
+    }
+
+    /** Save a pairing (typed or scanned) exactly as the
+     *  Settings dialog has always written it. */
+    public static void savePairing(Context ctx, String addr, String key) {
+        prefs(ctx).edit()
+            .putString(PREF_ADDR, addr == null ? "" : addr.trim())
+            .putString(PREF_KEY_ENC, (key == null || key.trim().isEmpty())
+                ? "" : VaultCrypto.enc(key.trim()))
+            .putBoolean(PREF_AUTO, true)
+            .apply();
+    }
+
     /** Fire-and-forget auto sync (throttled), for app open
      *  and the daily worker. */
     public static void maybeAuto(final Context ctx) {

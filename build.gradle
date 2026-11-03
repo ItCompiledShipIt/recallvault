@@ -32,8 +32,8 @@ android {
         applicationId 'com.irwinlabs.recallvault'
         minSdk 26
         targetSdk 35
-        versionCode 95
-        versionName '0.78.2'
+        versionCode 96
+        versionName '0.79.0'
         multiDexEnabled true
     }
 
@@ -109,6 +109,16 @@ dependencies {
     implementation 'com.sun.mail:android-mail:1.6.7'
     implementation 'com.sun.mail:android-activation:1.6.7'
     implementation 'com.google.mlkit:text-recognition:16.0.1'
+    // QR pairing (v0.79.0): ML Kit barcode scanning (17.3.0 =
+    // <latest> in Google Maven metadata, Nov 3, 2026) over a
+    // CameraX preview. CameraX pinned at 1.5.3, the stable
+    // line verified against this project's compileSdk 36 /
+    // androidx.core 1.17 pins (1.6.x wants newer core).
+    implementation 'com.google.mlkit:barcode-scanning:17.3.0'
+    implementation 'androidx.camera:camera-core:1.5.3'
+    implementation 'androidx.camera:camera-camera2:1.5.3'
+    implementation 'androidx.camera:camera-lifecycle:1.5.3'
+    implementation 'androidx.camera:camera-view:1.5.3'
     implementation 'com.tom-roush:pdfbox-android:2.0.27.0'
     // v0.3.0 additions, pinned from live Google Maven metadata (Oct 31, 2026):
     implementation 'androidx.work:work-runtime:2.12.0'

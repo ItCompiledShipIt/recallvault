@@ -22,7 +22,7 @@ $JAVAC -cp "$AJ:tools/json-test.jar" -d /tmp/rvtest \
   java/com/irwinlabs/recallvault/WebSearch.java \
   java/com/irwinlabs/recallvault/MailFilter.java \
   java/com/irwinlabs/recallvault/Privacy.java java/com/irwinlabs/recallvault/DayGroup.java java/com/irwinlabs/recallvault/Skills.java java/com/irwinlabs/recallvault/SmsFilter.java java/com/irwinlabs/recallvault/NotifyFilter.java java/com/irwinlabs/recallvault/FactMiner.java java/com/irwinlabs/recallvault/SwitchParse.java java/com/irwinlabs/recallvault/MeetingSummary.java java/com/irwinlabs/recallvault/Census.java java/com/irwinlabs/recallvault/ChatStore.java java/com/irwinlabs/recallvault/AiProvider.java \
-  java/com/irwinlabs/recallvault/Embed.java \
+  java/com/irwinlabs/recallvault/Embed.java java/com/irwinlabs/recallvault/SyncClient.java java/com/irwinlabs/recallvault/Contacts.java java/com/irwinlabs/recallvault/ClioMind.java java/com/irwinlabs/recallvault/ContactPhotos.java \
   java/com/irwinlabs/recallvault/Db.java java/com/irwinlabs/recallvault/Hashes.java \
   java/com/irwinlabs/recallvault/VaultCrypto.java \
   java/com/irwinlabs/recallvault/AudioDecode.java java/com/irwinlabs/recallvault/Backup.java \

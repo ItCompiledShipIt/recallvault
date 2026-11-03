@@ -1,5 +1,38 @@
 # RecallVault
 
+## v0.79.0 - QR pairing + a guided first run that finishes
+
+The product law (his words, Nov 3): "easy as fuck for
+noobs but powerful at the same time." First moves under
+it. PAIRING: the desktop's Preferences render a QR code
+(qrcode-generator 1.4.4 vendored inline - pairing works
+fully offline on the LAN) carrying a clio://pair URI
+(addr + sync key, built from live state). The phone
+scans it - new ScanActivity (CameraX preview + ML Kit
+barcode; plain Activity with a manual LifecycleRegistry
+so no AppCompat) - and SyncClient.parsePairUri (pure,
+7 suite checks: web URLs, missing key/port, junk all
+rejected) gates what a scan may save; savePairing writes
+exactly what the typed dialog writes, then a first sync
+runs. "Scan to pair" leads the Settings sync card; the
+typed form stays as the fallback. Proof: the vendored
+encoder's output for the REAL desktop payload (live
+addr + key, decoded on bigpc, key never printed) round-
+trips through ZXing to the exact URI. FIRST RUN: the
+tour is six steps that always finish - welcome, name,
+pair-or-skip, permissions, a first REAL capture (saved
+through Extract like any note), and a Done screen that
+reports the state it leaves behind (greeting name,
+paired or phone-only, first memory filed, the lock
+offer as one quiet card). Skip advances a step instead
+of abandoning the tour. Existing installs (name set,
+paired, or memories present) are auto-marked onboarded
+- an update never ambushes a current user with the
+tour. Also carries v0.78.2's when-vs-deadline ingest.
+Suite 337/337; installed over v0.78.1, data preserved.
+Still his: point the phone at the desktop's code once
+to prove the camera path in the wild.
+
 ## v0.78.2 - when vs deadline
 
 Ingest sharpening (his words: event emails "arent due

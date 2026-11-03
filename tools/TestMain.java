@@ -986,6 +986,26 @@ public class TestMain {
             check("phantom: hinted past date keeps its due date",
                 Extract.analyze("This bill was due January 15, 2020").dueDate
                     == Extract.parseIso("2020-01-15"));
+            // QR pairing payload (v0.79.0): the scanner's
+            // gate - only a well-formed clio://pair URI with
+            // an address AND a key gets through; a random QR
+            // on a poster is ignored.
+            {
+                String[] p = SyncClient.parsePairUri(
+                    "clio://pair?v=1&addr=192.168.1.10%3A8097&key=abc123");
+                check("pair: full payload parses", p != null
+                    && "192.168.1.10:8097".equals(p[0]) && "abc123".equals(p[1]));
+                check("pair: plain payload parses", SyncClient.parsePairUri(
+                    "clio://pair?addr=10.0.0.4:8097&key=k") != null);
+                check("pair: web URL rejected", SyncClient.parsePairUri(
+                    "https://example.com/?addr=1.2.3.4:8097&key=k") == null);
+                check("pair: missing key rejected", SyncClient.parsePairUri(
+                    "clio://pair?addr=192.168.1.10:8097") == null);
+                check("pair: missing port rejected", SyncClient.parsePairUri(
+                    "clio://pair?addr=192.168.1.10&key=k") == null);
+                check("pair: null rejected", SyncClient.parsePairUri(null) == null);
+                check("pair: junk rejected", SyncClient.parsePairUri("hello") == null);
+            }
             // When vs deadline (v0.78.2): a date that merely
             // reports an event is a "when", never a due date -
             // in every ingest stream. Only obligations earn

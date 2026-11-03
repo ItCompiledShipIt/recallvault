@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
@@ -155,12 +156,23 @@ public class MainActivity extends Activity {
             // Live desktop sync rides app opens (v0.67.0).
             SyncClient.maybeAuto(this);
             // First run (v0.60.0): the welcome tour, once,
-            // after the lock has cleared.
+            // after the lock has cleared. v0.79.0: an install
+            // that already has a name, a pairing, or memories
+            // is not a first run - never ambush an existing
+            // user with the tour after an update/reinstall.
             if (!onboardingLaunched
                     && !getSharedPreferences(Embed.PREFS, MODE_PRIVATE)
                         .getBoolean("onboarded_v1", false)) {
-                onboardingLaunched = true;
-                startActivity(new Intent(this, OnboardingActivity.class));
+                SharedPreferences op = getSharedPreferences(Embed.PREFS, MODE_PRIVATE);
+                boolean existing = !op.getString("user_name", "").trim().isEmpty()
+                    || SyncClient.configured(this)
+                    || (db != null && db.count() > 0);
+                if (existing) {
+                    op.edit().putBoolean("onboarded_v1", true).apply();
+                } else {
+                    onboardingLaunched = true;
+                    startActivity(new Intent(this, OnboardingActivity.class));
+                }
             }
             // Quick capture (v0.35.0): the recorder opens only once
             // the lock has cleared - the tile never bypasses it.
@@ -2892,6 +2904,15 @@ public class MainActivity extends Activity {
     @Override
     protected void onActivityResult(int req, int result, Intent data) {
         super.onActivityResult(req, result, data);
+        if (req == 941) { // scan-to-pair (v0.79.0)
+            if (result == RESULT_OK) {
+                Toast.makeText(this, "Paired - your vaults are syncing",
+                    Toast.LENGTH_SHORT).show();
+                refreshSettings();
+                render();
+            }
+            return;
+        }
         if (req == 777) { // profile photo pick (v0.63.0)
             if (result == RESULT_OK && data != null && data.getData() != null) {
                 if (ContactPhotos.saveProfile(this, data.getData())) {
@@ -3546,10 +3567,26 @@ public class MainActivity extends Activity {
             // the card width (his screenshot, Nov 3).
             LinearLayout srow = new LinearLayout(this);
             srow.setOrientation(LinearLayout.VERTICAL);
-            Button pairBtn = Ui.ghostButton(this, SyncClient.configured(this) ? "Pairing" : "Pair with desktop");
-            pairBtn.setLayoutParams(new LinearLayout.LayoutParams(
+            // v0.79.0: scan-to-pair leads - the typed form is
+            // the fallback for the one case a scan can't
+            // reach, not the front door.
+            Button scanBtn = Ui.primaryButton(this, "Scan to pair");
+            scanBtn.setLayoutParams(new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT));
+            scanBtn.setOnClickListener(new View.OnClickListener() {
+                @Override public void onClick(View v) {
+                    startActivityForResult(
+                        new Intent(MainActivity.this, ScanActivity.class), 941);
+                }
+            });
+            srow.addView(scanBtn);
+            Button pairBtn = Ui.ghostButton(this, SyncClient.configured(this) ? "Pairing" : "Pair with desktop");
+            LinearLayout.LayoutParams pblp2 = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+            pblp2.setMargins(0, Ui.dp(this, 8), 0, 0);
+            pairBtn.setLayoutParams(pblp2);
             pairBtn.setOnClickListener(new View.OnClickListener() {
                 @Override public void onClick(View v) { showSyncSetup(); }
             });
