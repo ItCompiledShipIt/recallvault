@@ -1,5 +1,21 @@
 # RecallVault
 
+## v0.70.0 - filing you can trust
+
+Three trust fixes. (1) Phantom dates: an unhinted date in the
+past no longer becomes a due date - only future dates can earn
+a reminder on their own, and hinted dates (due, expires,
+deadline) behave as before. (2) Notifications join the ingest
+family: a notification listener files bills, deliveries,
+appointments and money movement under the same selective
+judgment as texts and mail (NotifyFilter); chatter, reactions
+and one-time codes never file. Needs the in-app switch plus
+Android's notification-access grant. (3) Answers show their
+freshness: Ask results carry a "From N memories · newest ..."
+provenance line, and when a newer near-duplicate makes an
+older memory look stale, the older one sinks and is marked
+"a newer version exists" instead of answering first.
+
 ## v0.69.0 - categories go invisible
 
 Chris's call: Clio should keep her own web of categories - we

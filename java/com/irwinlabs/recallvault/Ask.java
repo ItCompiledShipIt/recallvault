@@ -32,6 +32,8 @@ public final class Ask {
         public double semanticScore; // 0 when no vector was used
         /** True when the winning semantic match came from the photo itself. */
         public boolean viaPhoto;
+        /** True when a newer near-duplicate makes this one look stale. */
+        public boolean superseded;
         public String answer;
     }
 
@@ -143,9 +145,59 @@ public final class Ask {
             r.answer = composeAnswer(it, query, wantsWhen, wantsAmount);
             out.add(r);
         }
+        applySuperseded(out);
         out.sort((a, b) -> Double.compare(b.score, a.score));
         if (out.size() > 5) return new ArrayList<Result>(out.subList(0, 5));
         return out;
+    }
+
+    /**
+     * Superseded answers sink (v0.70.0): when two matched
+     * memories are plainly the same fact re-filed - near-identical
+     * titles, different amounts or dates - the older one is
+     * probably stale (an old gate code, last month's bill). It
+     * stays in the results, marked, at roughly half score, so a
+     * fresher version answers first. Nothing is hidden or deleted;
+     * the web just leans toward what's current.
+     */
+    private static void applySuperseded(List<Result> out) {
+        for (Result r : out) {
+            Set<String> rt = new HashSet<String>(keywords(r.item.title));
+            if (rt.isEmpty()) continue;
+            for (Result o : out) {
+                if (o == r) continue;
+                if (o.item.createdAt <= r.item.createdAt + 24L * 3600 * 1000) continue;
+                Set<String> ot = new HashSet<String>(keywords(o.item.title));
+                if (ot.isEmpty()) continue;
+                Set<String> both = new HashSet<String>(rt);
+                both.retainAll(ot);
+                Set<String> either = new HashSet<String>(rt);
+                either.addAll(ot);
+                double jaccard = either.isEmpty() ? 0
+                    : (double) both.size() / (double) either.size();
+                boolean factsDiffer = !String.valueOf(r.item.amounts)
+                        .equals(String.valueOf(o.item.amounts))
+                    || r.item.reminderAt != o.item.reminderAt;
+                if (jaccard >= 0.6 && factsDiffer) {
+                    r.score *= 0.45;
+                    r.superseded = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    /**
+     * One honest line about where an answer came from (v0.70.0):
+     * how many memories matched, and how fresh the freshest is.
+     */
+    public static String provenance(List<Result> results) {
+        if (results == null || results.isEmpty()) return "";
+        long newest = 0;
+        for (Result r : results) newest = Math.max(newest, r.item.createdAt);
+        return "From " + results.size()
+            + (results.size() == 1 ? " memory" : " memories")
+            + " · newest " + Extract.formatDate(newest);
     }
 
     // ---------- aggregation: answers that add up (v0.9.0) ----------

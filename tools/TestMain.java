@@ -975,6 +975,36 @@ public class TestMain {
                     "I stored the totals from the tournament in a spreadsheet").category));
             check("selective: a note about keeping a receipt stays a note",
                 "Notes".equals(Extract.analyze("Keep the receipt for the TV in the drawer").category));
+            // Phantom dates (v0.70.0): an unhinted past date is
+            // history, not a deadline - the Clio home-screen
+            // screenshot filed itself a reminder this way.
+            check("phantom: past date alone earns no due date",
+                Extract.analyze("Photo taken January 15, 2020 at the lake").dueDate == -1);
+            check("phantom: future date alone still earns one",
+                Extract.analyze("Concert tickets for June 15, 2031, section B").dueDate
+                    == Extract.parseIso("2031-06-15"));
+            check("phantom: hinted past date keeps its due date",
+                Extract.analyze("This bill was due January 15, 2020").dueDate
+                    == Extract.parseIso("2020-01-15"));
+            // Notification judge (v0.70.0): facts file, noise does not.
+            check("notify: bank spend alert kept",
+                NotifyFilter.judge("Chase", "You spent $42.10 at SHELL OIL.").keep);
+            check("notify: delivery event kept",
+                NotifyFilter.judge("Amazon", "Your package was delivered.").keep);
+            check("notify: appointment with date kept",
+                NotifyFilter.judge("CHAS", "Appointment confirmed for December 5, 2026 at 9:00 AM.").keep);
+            check("notify: amount due kept",
+                NotifyFilter.judge("City Utilities", "Your bill is ready. Amount due $105.67.").keep);
+            check("notify: bare code skipped",
+                !NotifyFilter.judge("Google", "Your verification code is 481516.").keep);
+            check("notify: social chatter skipped",
+                !NotifyFilter.judge("Instagram", "john liked your post.").keep);
+            check("notify: follower noise skipped",
+                !NotifyFilter.judge("Threads", "You have 3 new followers this week.").keep);
+            check("notify: empty skipped",
+                !NotifyFilter.judge("", "").keep);
+            check("notify: vague reminder skipped",
+                !NotifyFilter.judge("Clock", "Reminder: drink some water.").keep);
             // A plain photo with no signal files as Images; a
             // plain typed note stays Notes.
             check("selective: silent photo files as Images",
@@ -983,6 +1013,31 @@ public class TestMain {
             check("selective: typed note stays Notes",
                 "Notes".equals(Extract.forType(
                     Extract.analyze("A quiet afternoon at the lake").category, "NOTE")));
+        }
+
+        // ---------- v0.70.0: superseded facts sink, answers cite freshness ----------
+        {
+            Item oldGate = new Item();
+            oldGate.title = "Gate code for the building";
+            oldGate.body = "The gate code is 1234.";
+            oldGate.amounts = "";
+            oldGate.createdAt = 1760000000000L;
+            Item newGate = new Item();
+            newGate.title = "Gate code for the building";
+            newGate.body = "The gate code is 4419 now.";
+            newGate.amounts = "$5";
+            newGate.createdAt = 1760000000000L + 10L * 86400000;
+            java.util.List<Ask.Result> gr = Ask.search(
+                java.util.Arrays.asList(oldGate, newGate), "gate code building", null);
+            check("superseded: both versions still found", gr.size() == 2);
+            check("superseded: newer answers first",
+                gr.size() == 2 && gr.get(0).item == newGate);
+            check("superseded: older is marked",
+                gr.size() == 2 && gr.get(1).superseded && !gr.get(0).superseded);
+            check("provenance: names count and newest date",
+                Ask.provenance(gr).startsWith("From 2 memories · newest "));
+            check("provenance: empty is quiet", Ask.provenance(
+                new java.util.ArrayList<Ask.Result>()).isEmpty());
         }
 
         // ---------- v0.43.0: people cards ----------

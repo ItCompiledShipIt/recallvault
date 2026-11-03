@@ -2118,6 +2118,11 @@ public class MainActivity extends Activity {
             }
             return;
         }
+        if (!results.isEmpty()) {
+            TextView prov = Ui.text(this, Ask.provenance(results), 11, Ui.DIM, false);
+            prov.setLayoutParams(Ui.matchWrap(6, this));
+            askResults.addView(prov);
+        }
         boolean first = true;
         for (final Ask.Result r : results) {
             LinearLayout card = Ui.pressCard(this);
@@ -2141,7 +2146,8 @@ public class MainActivity extends Activity {
             srcRow.setLayoutParams(Ui.matchWrap(8, this));
             TextView src = Ui.text(this,
                 "SOURCE: " + r.item.title + "  •  " + Ui.dateLine(r.item.createdAt)
-                    + (r.viaPhoto ? "  •  matched by what's in the photo" : ""),
+                    + (r.viaPhoto ? "  •  matched by what's in the photo" : "")
+                    + (r.superseded ? "  •  a newer version exists" : ""),
                 11, Ui.ACCENT2, false);
             src.setLayoutParams(new LinearLayout.LayoutParams(0,
                 LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
@@ -4638,6 +4644,29 @@ public class MainActivity extends Activity {
             }
         });
         iCard.addView(smsSwitch);
+        final android.widget.Switch notifySwitch = new android.widget.Switch(this);
+        notifySwitch.setText("File meaningful notifications (bills, deliveries, appointments)");
+        notifySwitch.setTextColor(Ui.TEXT);
+        notifySwitch.setChecked(NotifySupport.enabled(this));
+        notifySwitch.setOnCheckedChangeListener(new android.widget.CompoundButton.OnCheckedChangeListener() {
+            @Override public void onCheckedChanged(android.widget.CompoundButton b, boolean on) {
+                NotifySupport.setEnabled(MainActivity.this, on);
+                if (on && !NotifySupport.accessGranted(MainActivity.this)) {
+                    Toast.makeText(MainActivity.this,
+                        "One more step: allow Clio under Notification access",
+                        Toast.LENGTH_LONG).show();
+                    try {
+                        startActivity(new Intent(
+                            "android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS"));
+                    } catch (Exception e) { /* settings page varies by OEM */ }
+                } else {
+                    Toast.makeText(MainActivity.this, on
+                        ? "Notifications on - only the meaningful ones file"
+                        : "Notifications off", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+        iCard.addView(notifySwitch);
         TextView iStatus = Ui.text(this, FileIngest.statusText(this), 12, Ui.DIM, false);
         iStatus.setLayoutParams(Ui.matchWrap(4, this));
         iCard.addView(iStatus);

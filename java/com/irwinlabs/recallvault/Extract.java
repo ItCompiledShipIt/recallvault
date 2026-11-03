@@ -321,9 +321,19 @@ public final class Extract {
             if (P_DUE_HINT.matcher(before).find()) { f.dueDate = h.epoch; break; }
         }
         if (f.dueDate < 0 && !hits.isEmpty()) {
-            // Otherwise the latest date is the best deadline guess.
+            // Unhinted fallback (tightened v0.70.0): only a FUTURE
+            // date may become a deadline on its own. The old rule -
+            // latest date, period - manufactured reminders out of
+            // any dated text: a screenshot of Clio's own home
+            // screen, which merely displays other items' dates,
+            // filed itself with a due date (Nov 2, 2026). Past and
+            // same-day dates are history, not deadlines, unless a
+            // due/expires hint says otherwise (handled above).
+            long todayStart = startOfDay(System.currentTimeMillis());
             long max = -1;
-            for (Hit h : hits) if (h.epoch > max) max = h.epoch;
+            for (Hit h : hits) {
+                if (h.epoch > todayStart && h.epoch > max) max = h.epoch;
+            }
             f.dueDate = max;
         }
         f.amounts = findAmounts(text);
