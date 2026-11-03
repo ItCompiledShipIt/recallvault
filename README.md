@@ -1,5 +1,34 @@
 # RecallVault
 
+## v0.77.0 - smarter answers, if you want them
+
+Optional external AI, off by default, on both apps. A new
+Settings card (phone) / Preferences card (desktop),
+"Smarter answers (optional)", carries the plain-words trade
+before anything can be turned on: by default Clio thinks
+with the model on the device and nothing leaves it; if you
+enable this, Ask answers are written by an external AI
+service you choose, using your own API key with them, and
+your question plus the memories Clio matched are sent to
+that service.
+
+Any OpenAI-compatible endpoint works (address + model +
+key; OpenAI and OpenRouter presets fill the address in).
+The key is stored sealed on the phone (VaultCrypto) and as
+a 0600 file on the desktop, and goes only to the service
+named. When the service answers, the bubble's source line
+says so - "Answered by api.openai.com" - before the usual
+memory provenance. If the service does not respond, the
+on-device model answers instead and the source line says
+that too. Finding memories, the deterministic answers,
+nightly learning and chat compression always stay local;
+the setting changes only who writes Ask answers. The
+desktop streams the service's tokens like it streams the
+local model's. AiProvider + suite 322/322; the desktop path
+was verified end-to-end against a local mock provider
+(plain + streaming + fallback), and the test configuration
+was removed afterwards.
+
 ## v0.76.0 - Ask is a conversation
 
 Ask is a messaging-style chat now, on both apps. One Main

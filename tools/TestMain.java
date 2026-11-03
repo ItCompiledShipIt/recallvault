@@ -1516,6 +1516,44 @@ public class TestMain {
                     && "q3".equals(s2.main().messages.get(6).text));
         }
 
+        // ---------- v0.77.0: AiProvider ----------
+        {
+            check("ai: host parses the service address",
+                "api.openai.com".equals(
+                    AiProvider.host("https://api.openai.com/v1"))
+                && "openrouter.ai".equals(
+                    AiProvider.host("https://openrouter.ai/api/v1")));
+            try {
+                String body = AiProvider.buildBody("m1", "SYS", "USER");
+                org.json.JSONObject bj = new org.json.JSONObject(body);
+                check("ai: request body carries model + both messages",
+                    "m1".equals(bj.getString("model"))
+                        && bj.getJSONArray("messages").length() == 2
+                        && "SYS".equals(bj.getJSONArray("messages")
+                            .getJSONObject(0).getString("content")));
+                String ok = AiProvider.parseAnswer(
+                    "{\"choices\":[{\"message\":{\"content\":\" hello \"}}]}");
+                check("ai: answer parsed + trimmed", "hello".equals(ok));
+                boolean threw = false;
+                try {
+                    AiProvider.parseAnswer(
+                        "{\"error\":{\"message\":\"bad key\"}}");
+                } catch (Exception e) {
+                    threw = e.getMessage().contains("bad key");
+                }
+                check("ai: provider error surfaces its message", threw);
+                threw = false;
+                try {
+                    AiProvider.parseAnswer("{\"choices\":[]}");
+                } catch (Exception e) {
+                    threw = true;
+                }
+                check("ai: empty choices is an error, not a blank answer", threw);
+            } catch (Exception e) {
+                check("ai: body/parse block (" + e.getMessage() + ")", false);
+            }
+        }
+
         System.out.println("RESULT: " + pass + " pass, " + fail + " fail");
         if (fail > 0) System.exit(1);
     }

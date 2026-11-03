@@ -443,32 +443,52 @@ public class ChatActivity extends Activity {
                 List<Ask.Result> results = Ask.search(items, q, vec, true);
                 List<Item> hitItems = new ArrayList<Item>();
                 for (Ask.Result r : results) hitItems.add(r.item);
-                if (GemmaBrain.isModelPresent(this)) {
+                String[] ai = AiProvider.config(this);
+                boolean aiFailed = false;
+                if (ai != null || GemmaBrain.isModelPresent(this)) {
                     setStatus("Thinking");
-                    try {
-                        List<Skills.Skill> all = Skills.loadAll(this);
-                        List<Skills.Skill> on = Skills.enabled(this, all);
-                        String system = "You are Clio, the muse who keeps this person's private memory vault - everything you know lives on this phone, in these memories. "
-                            + "Answer using ONLY the memories provided and what your tools return. "
-                            + "Say plainly when the vault does not hold the answer. Be direct and brief. "
-                            + "Never invent dates, amounts or names. "
-                            + "When a question needs facts that are not in the vault, you may use search_web; say clearly when an answer comes from the web instead of the memories."
-                            + ClioMind.promptBlock(this)
-                            + "\n\n" + Skills.catalogBlock(on);
-                        String hist = historyExcludingCurrent();
-                        String prompt = "Question: " + q
-                            + (hist.isEmpty() ? ""
-                               : "\n\nConversation so far:\n" + hist)
-                            + "\n\nMemories already found:\n"
-                            + GemmaBrain.groundingBlock(hitItems, 900)
-                            + "\n\nWrite the answer in full sentences. Cite the memory number like [1] where you use it.";
-                        List<com.google.ai.edge.litertlm.ToolProvider> tools =
-                            new ArrayList<com.google.ai.edge.litertlm.ToolProvider>();
-                        tools.add(BrainTools.provider(this, db));
-                        answerText = GemmaBrain.generate(this, system, prompt, tools);
-                        prov = Ask.provenance(results);
-                    } catch (Exception e) {
-                        answerText = null;
+                    List<Skills.Skill> all = Skills.loadAll(this);
+                    List<Skills.Skill> on = Skills.enabled(this, all);
+                    String sysA = "You are Clio, the muse who keeps this person's private memory vault - everything you know lives on this phone, in these memories. "
+                        + "Answer using ONLY the memories provided. "
+                        + "Say plainly when the vault does not hold the answer. Be direct and brief. "
+                        + "Never invent dates, amounts or names. ";
+                    String systemBase = sysA
+                        + ClioMind.promptBlock(this)
+                        + "\n\n" + Skills.catalogBlock(on);
+                    String hist = historyExcludingCurrent();
+                    String prompt = "Question: " + q
+                        + (hist.isEmpty() ? ""
+                           : "\n\nConversation so far:\n" + hist)
+                        + "\n\nMemories already found:\n"
+                        + GemmaBrain.groundingBlock(hitItems, 900)
+                        + "\n\nWrite the answer in full sentences. Cite the memory number like [1] where you use it.";
+                    if (ai != null) {
+                        try {
+                            answerText = AiProvider.chat(this, systemBase, prompt);
+                            prov = "Answered by " + AiProvider.host(ai[0])
+                                + " \u00B7 " + Ask.provenance(results);
+                        } catch (Exception e) {
+                            answerText = null;
+                            aiFailed = true;
+                        }
+                    }
+                    if (answerText == null && GemmaBrain.isModelPresent(this)) {
+                        try {
+                            String system = sysA
+                                + "When a question needs facts that are not in the vault, you may use search_web; say clearly when an answer comes from the web instead of the memories."
+                                + ClioMind.promptBlock(this)
+                                + "\n\n" + Skills.catalogBlock(on);
+                            List<com.google.ai.edge.litertlm.ToolProvider> tools =
+                                new ArrayList<com.google.ai.edge.litertlm.ToolProvider>();
+                            tools.add(BrainTools.provider(this, db));
+                            answerText = GemmaBrain.generate(this, system, prompt, tools);
+                            prov = (aiFailed
+                                ? "Answered locally - the external provider did not respond \u00B7 "
+                                : "") + Ask.provenance(results);
+                        } catch (Exception e) {
+                            answerText = null;
+                        }
                     }
                 }
                 if (answerText == null) {

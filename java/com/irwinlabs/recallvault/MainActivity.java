@@ -4430,6 +4430,95 @@ public class MainActivity extends Activity {
             mCard2.addView(forgetMail);
         }
         box.addView(mCard2);
+
+        // Smarter answers (v0.77.0): optional external AI with
+        // the user's own key. Off by default; the disclosure is
+        // on the card itself, before anything can be enabled.
+        LinearLayout aiCard = Ui.card(this);
+        aiCard.addView(Ui.sectionLabel(this, "Smarter answers (optional)"));
+        TextView aiBlurb = Ui.text(this,
+            "By default Clio thinks with the model on this phone and nothing leaves it. "
+            + "If you turn this on, Ask answers are written by an external AI service you choose, "
+            + "using your own API key with them. Your question and the memories Clio matches "
+            + "will be sent to that service - that is the trade for smarter answers. "
+            + "Finding memories, learning and chat tidying always stay on this phone, "
+            + "and every answer the service writes says so in its source line.",
+            12, Ui.DIM, false);
+        aiBlurb.setLayoutParams(Ui.matchWrap(4, this));
+        aiCard.addView(aiBlurb);
+        final android.widget.EditText aiBase = new android.widget.EditText(this);
+        aiBase.setHint("Service address, e.g. https://api.openai.com/v1");
+        aiBase.setTextColor(Ui.TEXT);
+        aiBase.setHintTextColor(Ui.DIM);
+        aiBase.setSingleLine(true);
+        aiBase.setText(AiProvider.base(this));
+        aiBase.setLayoutParams(Ui.matchWrap(4, this));
+        aiCard.addView(aiBase);
+        final android.widget.EditText aiModel = new android.widget.EditText(this);
+        aiModel.setHint("Model name, e.g. gpt-4o-mini");
+        aiModel.setTextColor(Ui.TEXT);
+        aiModel.setHintTextColor(Ui.DIM);
+        aiModel.setSingleLine(true);
+        aiModel.setText(AiProvider.model(this));
+        aiModel.setLayoutParams(Ui.matchWrap(4, this));
+        aiCard.addView(aiModel);
+        final android.widget.EditText aiKey = new android.widget.EditText(this);
+        aiKey.setHint(AiProvider.configured(this)
+            ? "API key saved on this phone (blank keeps it)" : "Your API key for the service");
+        aiKey.setTextColor(Ui.TEXT);
+        aiKey.setHintTextColor(Ui.DIM);
+        aiKey.setSingleLine(true);
+        aiKey.setInputType(android.text.InputType.TYPE_CLASS_TEXT
+            | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        aiKey.setLayoutParams(Ui.matchWrap(4, this));
+        aiCard.addView(aiKey);
+        LinearLayout aiPresets = new LinearLayout(this);
+        aiPresets.setOrientation(LinearLayout.HORIZONTAL);
+        Button preOai = Ui.ghostButton(this, "OpenAI");
+        preOai.setLayoutParams(Ui.weight1(0, this));
+        preOai.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                aiBase.setText("https://api.openai.com/v1");
+                if (aiModel.getText().toString().trim().isEmpty()) {
+                    aiModel.setText("gpt-4o-mini");
+                }
+            }
+        });
+        aiPresets.addView(preOai);
+        Button preOr = Ui.ghostButton(this, "OpenRouter");
+        preOr.setLayoutParams(Ui.weight1(8, this));
+        preOr.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                aiBase.setText("https://openrouter.ai/api/v1");
+                if (aiModel.getText().toString().trim().isEmpty()) {
+                    aiModel.setText("openai/gpt-4o-mini");
+                }
+            }
+        });
+        aiPresets.addView(preOr);
+        aiCard.addView(aiPresets);
+        final android.widget.Switch aiSwitch = new android.widget.Switch(this);
+        aiSwitch.setText("Use the external service for Ask answers");
+        aiSwitch.setTextColor(Ui.TEXT);
+        aiSwitch.setChecked(AiProvider.enabled(this));
+        aiCard.addView(aiSwitch);
+        Button aiSave = Ui.button(this, "Save answer settings", Ui.ACCENT, Ui.ACCENT_DARK_TEXT);
+        aiSave.setLayoutParams(Ui.matchWrap(6, this));
+        aiSave.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                AiProvider.save(MainActivity.this,
+                    aiBase.getText().toString(), aiModel.getText().toString(),
+                    aiKey.getText().toString(), aiSwitch.isChecked());
+                Toast.makeText(MainActivity.this,
+                    aiSwitch.isChecked()
+                        ? "External answers on - Ask will say when the service answers"
+                        : "Answer settings saved",
+                    Toast.LENGTH_SHORT).show();
+                refreshSettings();
+            }
+        });
+        aiCard.addView(aiSave);
+        box.addView(aiCard);
         return box;
     }
 
