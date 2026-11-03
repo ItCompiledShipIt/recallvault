@@ -1,5 +1,21 @@
 # RecallVault
 
+## v0.73.0 - bring your memories with you
+
+Switcher imports, on phone and desktop alike. Settings →
+"Import from another app" (desktop: Preferences → "Bring
+your memories with you") takes the export file from Google
+Keep (a Takeout zip of per-note JSON - titles, text,
+checklists, labels, original dates, attachments carried
+over, their trash skipped), Limitless (the lifelogs zip -
+dated Markdown transcripts file as meetings with their real
+dates) and Mem / Markdown collections. Imported notes are
+classified like anything captured here, bills hiding in old
+notes keep their amounts and due dates, and imports dedupe
+on title + date + body, so re-running an export adds
+nothing. Pure parser (SwitchParse) with suite coverage;
+suite 291/291.
+
 ## v0.72.1 - no personal details in the app
 
 Chris's standing rule, applied everywhere: nothing about

@@ -55,6 +55,7 @@ public class MainActivity extends Activity {
     private static final int REQ_EXPORT_EXPENSES = 907;
     private static final int REQ_CHECK_BACKUP = 905;
     private static final int REQ_IMPORT_FOLDER = 906;
+    private static final int REQ_IMPORT_SWITCH = 910;
     private static final int REQ_TREE_INGEST = 907;
     private static final int REQ_PERM_MEDIA = 204;
     private static final int REQ_PERM_SMS = 205;
@@ -3278,6 +3279,12 @@ public class MainActivity extends Activity {
             }
             return;
         }
+        if (req == REQ_IMPORT_SWITCH) {
+            if (result == RESULT_OK && data != null && data.getData() != null) {
+                readSwitchBytes(data.getData());
+            }
+            return;
+        }
         if (req == REQ_CHECK_BACKUP) {
             if (result == RESULT_OK && data != null && data.getData() != null) {
                 checkBackup(data.getData());
@@ -4269,6 +4276,26 @@ public class MainActivity extends Activity {
         });
         brow.addView(imp);
         bCard.addView(brow);
+
+        // Switcher import (v0.73.0): bring memories from another
+        // app - Google Keep (Takeout zip), Limitless (export
+        // zip), Mem / Markdown collections.
+        Button swImp = Ui.ghostButton(this, "Import from another app");
+        swImp.setLayoutParams(Ui.matchWrap(8, this));
+        swImp.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                i.addCategory(Intent.CATEGORY_OPENABLE);
+                i.setType("*/*");
+                i.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{
+                    "application/zip", "application/json", "text/plain", "text/markdown"});
+                startActivityForResult(i, REQ_IMPORT_SWITCH);
+            }
+        });
+        bCard.addView(swImp);
+        bCard.addView(Ui.text(this,
+            "Coming from Google Keep, Limitless or Mem? Export there, import the file here - nothing is overwritten, duplicates are skipped.",
+            12, Ui.DIM, false));
 
         // Plain readable export (v0.21.0): one Markdown file a person
         // can open anywhere - a reading copy, not a restore format.
@@ -5327,6 +5354,95 @@ public class MainActivity extends Activity {
                         @Override public void run() {
                             Toast.makeText(MainActivity.this, "Export failed: " + e.getMessage(),
                                 Toast.LENGTH_LONG).show();
+                        }
+                    });
+                }
+            }
+        }).start();
+    }
+
+    /** Switcher import (v0.73.0): parse another app's export
+     *  (SwitchParse) and file the notes like anything captured
+     *  here - classified, dated, deduped on title+date+body. */
+    private void readSwitchBytes(final Uri uri) {
+        new Thread(new Runnable() {
+            @Override public void run() {
+                try {
+                    java.io.InputStream in = getContentResolver().openInputStream(uri);
+                    if (in == null) throw new Exception("Could not read that file");
+                    byte[] blob = Backup.readAll(in);
+                    String hint = uri.getLastPathSegment();
+                    SwitchParse.Out parsed = SwitchParse.parse(
+                        hint == null ? "upload" : hint, blob);
+                    Db idb = new Db(getApplicationContext());
+                    java.util.Set<String> seen = new java.util.HashSet<String>();
+                    for (Item e : idb.all()) {
+                        seen.add(e.title + "\n" + e.createdAt + "\n" + e.body);
+                    }
+                    int added = 0, dupes = 0;
+                    for (SwitchParse.Note n : parsed.notes) {
+                        long created = n.createdAt > 0 ? n.createdAt
+                            : System.currentTimeMillis();
+                        String key = (n.title == null ? "" : n.title) + "\n"
+                            + created + "\n" + n.body;
+                        if (seen.contains(key)) { dupes++; continue; }
+                        Item it = new Item();
+                        it.type = "MEETING".equals(n.type) ? "MEETING" : "TEXT";
+                        it.body = n.body;
+                        it.createdAt = created;
+                        if (n.attachBytes != null) {
+                            try {
+                                java.io.File dir = new java.io.File(getFilesDir(), "imports");
+                                dir.mkdirs();
+                                String safe = n.attachName.replaceAll("[^a-zA-Z0-9._-]", "_");
+                                java.io.File dest = new java.io.File(dir,
+                                    System.currentTimeMillis() + "_" + safe);
+                                java.io.FileOutputStream fos = new java.io.FileOutputStream(dest);
+                                fos.write(n.attachBytes);
+                                fos.close();
+                                it.filePath = dest.getAbsolutePath();
+                                it.mime = n.attachMime == null ? "" : n.attachMime;
+                                try { it.fileHash = Hashes.sha256(dest); }
+                                catch (Exception ignored) { it.fileHash = ""; }
+                            } catch (Exception ignored) {}
+                        }
+                        Extract.Facts f = Extract.analyze(
+                            (n.title == null ? "" : n.title) + "\n" + n.body);
+                        it.title = (n.title == null || n.title.isEmpty())
+                            ? Extract.suggestTitle(n.body, "Imported note") : n.title;
+                        it.category = Extract.forType(f.category, it.type);
+                        it.reminderAt = f.dueDate;
+                        StringBuilder am = new StringBuilder();
+                        for (int i = 0; i < f.amounts.size(); i++) {
+                            if (i > 0) am.append(',');
+                            am.append(f.amounts.get(i));
+                        }
+                        it.amounts = am.toString();
+                        idb.insert(it);
+                        seen.add(key);
+                        added++;
+                    }
+                    final int fAdded = added, fDupes = dupes;
+                    final int fSkipped = parsed.skipped;
+                    final String fSources = parsed.sources.isEmpty() ? ""
+                        : android.text.TextUtils.join(", ", parsed.sources);
+                    ui.post(new Runnable() {
+                        @Override public void run() {
+                            String msg = fAdded == 0 && fDupes == 0
+                                ? "Nothing importable in that file"
+                                : "Imported " + fAdded + " memories"
+                                    + (fSources.isEmpty() ? "" : " from " + fSources)
+                                    + (fDupes > 0 ? " · " + fDupes + " already here" : "")
+                                    + (fSkipped > 0 ? " · " + fSkipped + " in their trash, skipped" : "");
+                            Toast.makeText(MainActivity.this, msg, Toast.LENGTH_LONG).show();
+                            render();
+                        }
+                    });
+                } catch (final Exception e) {
+                    ui.post(new Runnable() {
+                        @Override public void run() {
+                            Toast.makeText(MainActivity.this,
+                                "Import failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
                         }
                     });
                 }

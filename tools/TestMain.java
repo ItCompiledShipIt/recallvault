@@ -1274,13 +1274,96 @@ public class TestMain {
                 MailFilter.judge("Saturday",
                     "Dont forget to bring the chairs on Saturday, we eat at 6.", false).keep);
             check("mail compose: valid passes",
-                MailFilter.composeError("gina@example.com", "Hi", "Body text").isEmpty());
+                MailFilter.composeError("sam@example.com", "Hi", "Body text").isEmpty());
             check("mail compose: bad address blocked",
                 !MailFilter.composeError("not-an-address", "Hi", "Body").isEmpty());
             check("mail compose: empty subject blocked",
                 !MailFilter.composeError("a@b.com", "  ", "Body").isEmpty());
             check("mail compose: empty body blocked",
                 !MailFilter.composeError("a@b.com", "Hi", "").isEmpty());
+        }
+
+        // ---------- v0.73.0: SwitchParse reads other apps' exports ----------
+        {
+            byte[] zip = null;
+            try {
+                java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
+                java.util.zip.ZipOutputStream zos = new java.util.zip.ZipOutputStream(bos);
+                java.util.zip.ZipEntry e1 = new java.util.zip.ZipEntry("Takeout/Keep/Groceries.json");
+                e1.setTime(1735689600000L);
+                zos.putNextEntry(e1);
+                zos.write(("{\"title\":\"Groceries\",\"textContent\":\"Eggs and coffee\","
+                    + "\"createdTimestampUsec\":1735689600000000,"
+                    + "\"labels\":[{\"name\":\"home\"}]}").getBytes("UTF-8"));
+                zos.closeEntry();
+                zos.putNextEntry(new java.util.zip.ZipEntry("Takeout/Keep/Tasks.json"));
+                zos.write(("{\"title\":\"\",\"listContent\":[{\"text\":\"Call the dentist\",\"isChecked\":false},"
+                    + "{\"text\":\"Buy filters\",\"isChecked\":true}],\"createdTimestampUsec\":1735776000000000}")
+                    .getBytes("UTF-8"));
+                zos.closeEntry();
+                zos.putNextEntry(new java.util.zip.ZipEntry("Takeout/Keep/Old.json"));
+                zos.write("{\"title\":\"Trash\",\"textContent\":\"gone\",\"isTrashed\":true,\"createdTimestampUsec\":1733000000000000}".getBytes("UTF-8"));
+                zos.closeEntry();
+                zos.putNextEntry(new java.util.zip.ZipEntry("Takeout/Keep/Photo.json"));
+                zos.write(("{\"title\":\"Whiteboard\",\"textContent\":\"Sketch\","
+                    + "\"createdTimestampUsec\":1739217600000000,"
+                    + "\"attachments\":[{\"filePath\":\"wb.jpg\",\"mimetype\":\"image/jpeg\"}]}").getBytes("UTF-8"));
+                zos.closeEntry();
+                zos.putNextEntry(new java.util.zip.ZipEntry("Takeout/Keep/wb.jpg"));
+                zos.write(new byte[]{(byte) 0xFF, (byte) 0xD8, 1, 2});
+                zos.closeEntry();
+                zos.putNextEntry(new java.util.zip.ZipEntry("Takeout/Keep/random.json"));
+                zos.write("{\"foo\":1}".getBytes("UTF-8"));
+                zos.closeEntry();
+                zos.putNextEntry(new java.util.zip.ZipEntry(
+                    "lifelogs/2026/10/05/2026-10-05_09h30m00s_Studio-session.md"));
+                zos.write("Speaker 1: We ship Friday.".getBytes("UTF-8"));
+                zos.closeEntry();
+                zos.putNextEntry(new java.util.zip.ZipEntry("Ideas.md"));
+                zos.write("# Ideas\n\nA porch garden.".getBytes("UTF-8"));
+                zos.closeEntry();
+                zos.close();
+                zip = bos.toByteArray();
+            } catch (Exception e) {
+                check("switch: fixture builds", false);
+            }
+            SwitchParse.Out o = SwitchParse.parse("takeout.zip", zip);
+            check("switch: parses 5 notes", o.notes.size() == 5);
+            check("switch: trashed skipped + counted", o.skipped == 1);
+            check("switch: all three sources named",
+                o.sources.contains("Google Keep") && o.sources.contains("Limitless")
+                    && o.sources.contains("Markdown"));
+            SwitchParse.Note g = null, tasks = null, life = null, photo = null, ideas = null;
+            for (SwitchParse.Note n : o.notes) {
+                if ("Groceries".equals(n.title)) g = n;
+                if (n.body.contains("Call the dentist")) tasks = n;
+                if ("MEETING".equals(n.type)) life = n;
+                if ("Whiteboard".equals(n.title)) photo = n;
+                if ("Ideas".equals(n.title)) ideas = n;
+            }
+            check("switch: keep note keeps title, body, labels",
+                g != null && g.body.contains("Eggs and coffee") && g.body.contains("Labels: home"));
+            check("switch: keep created from usec",
+                g != null && g.createdAt == 1735689600000L);
+            check("switch: checklist renders ticks",
+                tasks != null && tasks.body.contains("- [ ] Call the dentist")
+                    && tasks.body.contains("- [x] Buy filters"));
+            check("switch: attachment carried",
+                photo != null && photo.attachBytes != null && photo.attachBytes.length == 4
+                    && "image/jpeg".equals(photo.attachMime));
+            check("switch: lifelog is a meeting with a readable title",
+                life != null && "Studio session".equals(life.title)
+                    && "Limitless".equals(life.source));
+            check("switch: lifelog date parsed",
+                life != null && new java.util.GregorianCalendar(2026, 9, 5).getTimeInMillis()
+                    <= life.createdAt
+                    && life.createdAt < new java.util.GregorianCalendar(2026, 9, 6).getTimeInMillis());
+            check("switch: markdown heading becomes the title",
+                ideas != null && ideas.body.contains("porch garden"));
+            SwitchParse.Out loose = SwitchParse.parse("Note.md",
+                "# Loose\n\nBody text.".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            check("switch: a loose markdown file parses",
+                loose.notes.size() == 1 && "Loose".equals(loose.notes.get(0).title));
         }
 
         System.out.println("RESULT: " + pass + " pass, " + fail + " fail");
