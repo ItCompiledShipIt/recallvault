@@ -49,7 +49,12 @@ public class SyncClient {
     public static final String PREF_C_PUSHED = "sync_contacts_pushed_at";
     public static final String PREF_LAST_AT = "sync_last_at";
     public static final String PREF_LAST_RESULT = "sync_last_result";
-    public static final String DEFAULT_ADDR = "192.168.0.18:8097";
+    // No shipped default address: the desktop shows its own
+    // address during pairing, and the user types what it says.
+    // (A hardcoded LAN address was a personal detail baked
+    // into the app - removed Nov 3, 2026 at chris's direction:
+    // no personal details hardcoded anywhere in the app.)
+    public static final String DEFAULT_ADDR = "";
 
     public static SharedPreferences prefs(Context ctx) {
         return ctx.getSharedPreferences(Embed.PREFS, Context.MODE_PRIVATE);
@@ -72,7 +77,7 @@ public class SyncClient {
 
     public static String addr(Context ctx) {
         String a = prefs(ctx).getString(PREF_ADDR, DEFAULT_ADDR);
-        return (a == null || a.trim().isEmpty()) ? DEFAULT_ADDR : a.trim();
+        return (a == null) ? "" : a.trim();
     }
 
     /** Fire-and-forget auto sync (throttled), for app open

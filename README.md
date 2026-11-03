@@ -1,5 +1,20 @@
 # RecallVault
 
+## v0.72.1 - no personal details in the app
+
+Chris's standing rule, applied everywhere: nothing about
+any real person is hardcoded in the app - no family names in
+example questions, no home-network address as a shipped
+default. The desktop Ask placeholder and suggestion chips
+are generic now ("When is the dentist?", "What do I know
+about my landlord?"), the phone's default sync address is
+empty (pairing shows the desktop's address; your saved
+address is untouched), the pairing hint uses a made-up
+example address, and the two code comments that used a real
+name as an example were rewritten. Names the app shows come
+only from the user's own vault and settings - which is
+where they belong.
+
 ## v0.72.0 - ask-first
 
 The home screen stops listing the vault. Following chris's

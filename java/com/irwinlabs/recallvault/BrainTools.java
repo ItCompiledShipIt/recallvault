@@ -225,7 +225,7 @@ public final class BrainTools {
 
     /** The contact library (v0.63.0): birthdays, phone
      *  numbers, addresses and notes about the people who
-     *  matter - the brain answers "when is Gina's
+     *  matter - the brain answers "when is mom's
      *  birthday" or "what's the landlord's number" from
      *  here. Read-only, like every brain tool. */
     private static final class LookupContact implements InternalJsonTool {

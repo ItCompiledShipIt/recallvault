@@ -209,8 +209,9 @@ public final class Entities {
     public static Ask.Summary answer(List<Item> items, String query) {
         String q = query.trim();
         String low = q.toLowerCase(Locale.US);
-        // Contact questions ("Gina's phone number", "CHAS address")
-        // get the card, not the memory list (v0.43.0).
+        // Contact questions ("a contact's phone number", "the
+        // dentist's address") get the card, not the memory
+        // list (v0.43.0).
         if (low.contains("phone") || low.contains("number") || low.contains("address")
             || low.contains("email") || low.contains("contact")) {
             for (Entity e : top(items, 40)) {

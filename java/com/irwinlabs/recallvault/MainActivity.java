@@ -3599,7 +3599,7 @@ public class MainActivity extends Activity {
         box.setOrientation(LinearLayout.VERTICAL);
         box.setPadding(Ui.dp(this, 20), Ui.dp(this, 8), Ui.dp(this, 20), 0);
         final EditText addrEd = new EditText(this);
-        addrEd.setHint("Desktop address (like 192.168.0.18:8097)");
+        addrEd.setHint("Desktop address (like 192.168.1.10:8097)");
         addrEd.setText(SyncClient.addr(this));
         addrEd.setTextColor(Ui.TEXT);
         addrEd.setSingleLine(true);
