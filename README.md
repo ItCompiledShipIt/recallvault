@@ -1,5 +1,42 @@
 # RecallVault
 
+## v0.80.0 - judgment eval, hardened
+
+The corpus grows from 42 to 70 labeled cases, the new
+28 being edge cases chosen to break the engines:
+relative dates, ranges versus moves, cancellations,
+zero balances, yearless dates, shouted OCR text. Five
+real bugs fell out and are fixed in Extract:
+
+- "Due tomorrow" and "dentist on Friday" contained no
+  date the engine could see. findDates now resolves
+  tomorrow and weekday names (next occurrence), with a
+  guard so a weekday naming a full date written after
+  it ("Friday, November 7, 2026") is not a second date.
+  Deliberately no "today" hit: the word timestamps the
+  present, and as a date it manufactured substance (a
+  balance "as of today" ping filed as amount+date;
+  lunch chit-chat earned a recap).
+- A cancelled appointment kept its date as a deadline;
+  cancellations and completed renewals ("renewed on")
+  are event reports now - their dates are whens.
+- A $0.00 statement minted a payment reminder. When
+  every amount in a text is zero, there is no due date.
+- A hotel range ("stay December 20 to 27") reminded on
+  check-out day. Spans anchor on their first day;
+  "from A to B" is a move (reschedule) and keeps the
+  new day.
+- Documented limits, labeled as such in the corpus:
+  no day is fabricated for month-only expiries or
+  "the 1st of each month", and short card expiries
+  (08/27) are not parsed.
+
+Final score 70/70; full suite 407/407. The desktop
+mail_facts port matches: relative + yearless dates
+(it had neither), the same vetoes, range rule and $0
+rule - desktop suite 19/19 including mail_judge
+verdicts for real bills with unsubscribe footers.
+
 ## v0.79.2 - the judgment eval
 
 Filing judgment is now measured, not vibes. TestMain

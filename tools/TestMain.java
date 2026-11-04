@@ -39,6 +39,37 @@ public class TestMain {
         evVerdict(id, miss.isEmpty(), miss.toString());
     }
 
+    static String isoInDays(int n) {
+        java.util.Calendar c = java.util.Calendar.getInstance();
+        c.add(java.util.Calendar.DAY_OF_YEAR, n);
+        return new java.text.SimpleDateFormat("yyyy-MM-dd",
+            java.util.Locale.US).format(c.getTime());
+    }
+
+    static String isoNextWeekday(int dow) {
+        java.util.Calendar c = java.util.Calendar.getInstance();
+        int delta = (dow - c.get(java.util.Calendar.DAY_OF_WEEK) + 7) % 7;
+        c.add(java.util.Calendar.DAY_OF_YEAR, delta);
+        return new java.text.SimpleDateFormat("yyyy-MM-dd",
+            java.util.Locale.US).format(c.getTime());
+    }
+
+    static String isoNextMonthDay(int month1, int day) {
+        java.util.Calendar c = java.util.Calendar.getInstance();
+        int y = c.get(java.util.Calendar.YEAR);
+        java.util.Calendar t = java.util.Calendar.getInstance();
+        t.clear();
+        t.set(y, month1 - 1, day);
+        java.util.Calendar today = java.util.Calendar.getInstance();
+        today.set(java.util.Calendar.HOUR_OF_DAY, 0);
+        today.set(java.util.Calendar.MINUTE, 0);
+        today.set(java.util.Calendar.SECOND, 0);
+        today.set(java.util.Calendar.MILLISECOND, 0);
+        if (t.before(today)) t.set(java.util.Calendar.YEAR, y + 1);
+        return new java.text.SimpleDateFormat("yyyy-MM-dd",
+            java.util.Locale.US).format(t.getTime());
+    }
+
     static void evalMail(String id, String subj, String body,
                          boolean unsub, boolean keep) {
         MailFilter.Verdict v = MailFilter.judge(subj, body, unsub);
@@ -1213,6 +1244,80 @@ public class TestMain {
                 "Sam sent you a photo.", false);
             evalNotify("N5-news", "News",
                 "Breaking: storm makes landfall on the coast.", false);
+            // --- Edge cases (v0.80.0 hardening): relative
+            // dates, ranges vs moves, cancellations, zero
+            // balances, yearless dates, shouted OCR text,
+            // and the documented no-fabrication limits.
+            evalExtract("X01-relative-tomorrow",
+                "Reminder: your electric bill is due tomorrow. Amount: $88.20.",
+                isoInDays(1), "$88.20", "Bills");
+            evalExtract("X02-weekday-appointment",
+                "Your dentist appointment is on Friday at 2:30 PM.",
+                isoNextWeekday(java.util.Calendar.FRIDAY), null, null);
+            evalExtract("X03-weekday-names-full-date",
+                "Your flight lands Friday, November 6, 2026 at 9 PM.",
+                "2026-11-06", null, null);
+            evalExtract("X04-yearless-bill",
+                "Your internet bill is due Nov 16. Amount due: $64.99.",
+                isoNextMonthDay(11, 16), "$64.99", "Bills");
+            evalExtract("X05-yearless-sale",
+                "Offer ends Nov 17. Up to 40% off.", "NONE", null, null);
+            evalExtract("X06-zero-due",
+                "Your statement is ready. Amount due: $0.00. Payment due November 30, 2026.",
+                "NONE", "$0.00", null);
+            evalExtract("X07-cancelled-appointment",
+                "Your appointment on December 4, 2026 has been cancelled.",
+                "NONE", null, null);
+            evalExtract("X08-rescheduled-moves",
+                "Your appointment was rescheduled from December 4, 2026 to December 11, 2026.",
+                "2026-12-11", null, null);
+            evalExtract("X09-hotel-range",
+                "Booking confirmed: hotel stay December 20, 2026 to December 27, 2026.",
+                "2026-12-20", null, null);
+            evalExtract("X10-cabin-dash-range",
+                "Booking confirmed: cabin December 20, 2026 - December 23, 2026.",
+                "2026-12-20", null, null);
+            evalExtract("X11-two-bills-first-wins",
+                "Electric bill due November 16, 2026. Water bill due November 20, 2026.",
+                "2026-11-16", null, "Bills");
+            evalExtract("X12-shouted-ocr",
+                "PAYMENT DUE NOVEMBER 16, 2026. AMOUNT $105.67.",
+                "2026-11-16", "$105.67", "Bills");
+            evalExtract("X13-foreign-currency-bill",
+                "Your bill of 50.00 is due November 16, 2026.",
+                "2026-11-16", null, null);
+            evalExtract("X14-two-payments",
+                "Two payments of $25.00 are scheduled: due November 10, 2026 and December 10, 2026.",
+                "2026-11-10", "$25.00", null);
+            evalExtract("X15-renewed-past",
+                "Your subscription renewed on October 20, 2026 for $15.49.",
+                "NONE", "$15.49", null);
+            evalExtract("X16-month-only-expiry",
+                "Your membership expires November 2026.", "NONE", null, null);
+            evalExtract("X17-recurring-no-date",
+                "Reminder: rent is due on the 1st of each month.", "NONE", null, null);
+            evalExtract("X18-due-without-a-date",
+                "Your payment is due. Log in to see the amount.", "NONE", null, null);
+            evalExtract("X19-short-card-expiry",
+                "Your card expires 08/27.", "NONE", null, null);
+            evalExtract("X20-balance-as-of-today",
+                "Your account balance is $2,341.00 as of today.", "NONE", "$2,341.00", null);
+            evalMail("XM1-real-bill-with-unsub",
+                "Your bill is ready", "Amount due $88.20 by November 21, 2026.", true, true);
+            evalMail("XM2-personal-plan",
+                "Saturday", "Dinner at ours on December 5, 2026? Bring the pie.", false, true);
+            evalMail("XM3-stuffed-newsletter",
+                "November bill of tips", "Our bill of tips: pay less on every invoice. Unsubscribe anytime.", true, false);
+            evalSms("XS1-bill-word-no-date",
+                "Your card payment of $200.00 is due. Pay now.", true);
+            evalSms("XS2-relative-reminder",
+                "Reminder: your bill is due tomorrow.", true);
+            evalSms("XS3-weekday-appointment",
+                "Reminder: dentist Friday 2:30 PM. See you then.", true);
+            evalNotify("XN1-code-with-balance",
+                "Bank", "Your code is 123456. New balance: $500.00.", true);
+            evalNotify("XN2-weekday-appointment",
+                "Reminder", "Dentist appointment Friday at 2:30 PM", true);
             System.out.println("EVAL judgment score: " + evPass + "/" + evTotal);
             // A plain photo with no signal files as Images; a
             // plain typed note stays Notes.

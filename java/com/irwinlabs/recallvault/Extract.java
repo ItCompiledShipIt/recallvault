@@ -88,7 +88,12 @@ public final class Extract {
             + "|statement is (ready|available)|password (was )?(changed|reset)"
             + "|offer ends|sale ends|promotion ends"
             + "|was (paid|sent|processed|completed|posted|deducted|withdrawn|received)"
-            + "|receipt|transaction|purchase|offer|sale|promo|discount|coupon)",
+            + "|receipt|transaction|purchase|offer|sale|promo|discount|coupon"
+            // Eval hardening (v0.80.0): a cancellation or a
+            // completed renewal is also an event report - the
+            // date of a cancelled appointment is when it WAS,
+            // not a deadline to keep.
+            + "|cancelled|canceled|renewed on|was renewed)",
             Pattern.CASE_INSENSITIVE);
 
     private static final Pattern P_STRONG_OBLIGATION =
@@ -210,6 +215,41 @@ public final class Extract {
         return t;
     }
 
+    // Relative dates (v0.80.0, judgment-eval hardening):
+    // bills and reminders speak relatively at least as
+    // often as absolutely ("due tomorrow", "dentist on
+    // Friday"), and before this the engine saw no date at
+    // all in them. A relative word that merely NAMES the
+    // weekday of a full date written right after it
+    // ("Friday, November 7, 2026") is a modifier, not a
+    // second date - the guard skips those.
+    private static final Pattern P_TOMORROW =
+        Pattern.compile("\\btomorrow\\b", Pattern.CASE_INSENSITIVE);
+    private static final Pattern P_WEEKDAY =
+        Pattern.compile("\\b(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\\b",
+            Pattern.CASE_INSENSITIVE);
+    private static final Pattern P_DATE_FOLLOWS =
+        Pattern.compile("^\\s*,?\\s*(\\d{1,2}(?:st|nd|rd|th)?\\s+"
+            + "(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)"
+            + "|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\\s+\\d"
+            + "|\\d{1,2}/\\d{1,2}/)", Pattern.CASE_INSENSITIVE);
+
+    private static boolean dateFollows(String text, int end) {
+        return P_DATE_FOLLOWS.matcher(
+            text.substring(end, Math.min(text.length(), end + 24))).find();
+    }
+
+    private static int weekdayConst(String name) {
+        String n = name.toLowerCase(Locale.US);
+        if (n.startsWith("mon")) return Calendar.MONDAY;
+        if (n.startsWith("tue")) return Calendar.TUESDAY;
+        if (n.startsWith("wed")) return Calendar.WEDNESDAY;
+        if (n.startsWith("thu")) return Calendar.THURSDAY;
+        if (n.startsWith("fri")) return Calendar.FRIDAY;
+        if (n.startsWith("sat")) return Calendar.SATURDAY;
+        return Calendar.SUNDAY;
+    }
+
     private static List<Hit> findDates(String rawText) {
         String text = normalizeDateConfusions(rawText);
         List<Hit> hits = new ArrayList<Hit>();
@@ -248,6 +288,36 @@ public final class Extract {
         while (m.find()) {
             long e = inferYearEpoch(monthOf(m.group(2)), Integer.parseInt(m.group(1)));
             if (e > 0) hits.add(new Hit(e, m.start()));
+        }
+        // Relative dates, resolved against today.
+        long today0 = startOfDay(System.currentTimeMillis());
+        final long DAY_MS = 24L * 3600 * 1000;
+        m = P_TOMORROW.matcher(text);
+        while (m.find()) {
+            if (!dateFollows(text, m.end())) {
+                hits.add(new Hit(today0 + DAY_MS, m.start()));
+            }
+        }
+        // Deliberately NO "today"/"tonight" hits: the word
+        // timestamps the present rather than naming a day
+        // to act by, and as a date hit it manufactured
+        // substance - a balance "as of today" ping filed
+        // as amount+date, chit-chat about lunch "today"
+        // earned a recap. "Due today" texts still file on
+        // their other facts (amounts, bill words); they
+        // just don't mint a date from the word itself.
+        m = P_WEEKDAY.matcher(text);
+        while (m.find()) {
+            if (dateFollows(text, m.end())) continue;
+            int target = weekdayConst(m.group(1));
+            int todayDow = Calendar.getInstance().get(Calendar.DAY_OF_WEEK);
+            int delta = (target - todayDow + 7) % 7;
+            // "next Friday" said ON a Friday means the one
+            // after; plain "Friday" said on a Friday is today.
+            String before = text.substring(Math.max(0, m.start() - 6), m.start())
+                .toLowerCase(Locale.US);
+            if (delta == 0 && before.contains("next")) delta = 7;
+            hits.add(new Hit(today0 + delta * DAY_MS, m.start()));
         }
         // Sort by position so output follows reading order; drop exact dupes.
         hits.sort((a, b) -> Integer.compare(a.pos, b.pos));
@@ -411,14 +481,58 @@ public final class Extract {
             // were only "whens".
             long todayStart = startOfDay(System.currentTimeMillis());
             long max = -1;
+            Hit first = null, last = null;
             for (Hit h : hits) {
-                if (h.epoch > todayStart && h.epoch > max && !eventFramed(text, h)) {
-                    max = h.epoch;
+                if (h.epoch > todayStart && !eventFramed(text, h)) {
+                    if (h.epoch > max) { max = h.epoch; last = h; }
+                    if (first == null || h.epoch < first.epoch) first = h;
                 }
             }
             f.dueDate = max;
+            // Range anchor (v0.80.0, eval hardening): when
+            // two future dates in one sentence form a range
+            // ("stay December 20 to December 27"), the
+            // commitment starts on the FIRST day - a
+            // check-in reminder on check-out day is useless.
+            // Statement periods are unaffected: their early
+            // dates are in the past, so they never become
+            // candidates here.
+            if (first != null && last != null && first != last) {
+                int a = Math.min(first.pos, last.pos);
+                int b = Math.max(first.pos, last.pos);
+                String between = text.substring(a, b);
+                // "from A to B" is a MOVE (a reschedule), not
+                // a span - the new day is the anchor there, so
+                // the range rule stands down.
+                String lead = text.substring(Math.max(0, a - 12), a)
+                    .toLowerCase(Locale.US);
+                if (!between.contains(".") && !between.contains(";")
+                        && !between.contains("\n")
+                        && !lead.contains("from ")
+                        && (between.contains(" to ") || between.contains(" - ")
+                            || between.contains(" through "))) {
+                    f.dueDate = first.epoch;
+                }
+            }
         }
         f.amounts = findAmounts(text);
+        // Nothing owed, nothing due (v0.80.0, eval
+        // hardening): a statement whose only amounts are
+        // $0.00 announces no obligation, so its "payment
+        // due" date is a when. Any real amount restores it.
+        if (f.dueDate > 0 && !f.amounts.isEmpty()) {
+            boolean allZero = true;
+            for (String a : f.amounts) {
+                try {
+                    if (Double.parseDouble(
+                            a.replace("$", "").replace(",", "").trim()) != 0.0) {
+                        allZero = false;
+                        break;
+                    }
+                } catch (Exception e) { allZero = false; break; }
+            }
+            if (allZero) f.dueDate = -1;
+        }
         f.category = classify(text.toLowerCase(Locale.US), !f.amounts.isEmpty());
         return f;
     }
