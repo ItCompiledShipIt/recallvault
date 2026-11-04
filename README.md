@@ -1,5 +1,28 @@
 # RecallVault
 
+## v0.81.0 - one-tap backup
+
+Being protected no longer waits on inventing a password.
+A third backup format joins RVBK1 (password) and RVBK2
+(device-key automatic): RVBK3, the recovery-code backup.
+The device generates 20 random bytes once; the AES-256
+key is their SHA-256, and the recovery code is their
+base32 - 32 characters in groups of four, shown any time
+in Settings ("Show my recovery code"). Export offers the
+code as the default protection (a password stays as the
+alternative); import and check-a-backup open an RVBK3
+file with this phone's code silently, and ask for the
+code when the backup was made elsewhere. The desktop
+speaks the identical format and now arms its nightly
+backups by default - with the saved password when one
+exists, otherwise with its own recovery-code key kept
+beside the vault key; its Preferences show the desktop's
+code. One shared test vector (entropy bytes 0..19, one
+fixed desktop-sealed blob) pins both implementations to
+the same bytes in both suites: phone 413/413, desktop
+23/23. First live proof: the desktop wrote its first
+nightly backup the day this shipped.
+
 ## v0.80.0 - judgment eval, hardened
 
 The corpus grows from 42 to 70 labeled cases, the new

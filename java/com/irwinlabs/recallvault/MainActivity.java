@@ -2931,10 +2931,12 @@ public class MainActivity extends Activity {
             return;
         }
         if (req == REQ_EXPORT_DOC) {
-            if (result == RESULT_OK && data != null && data.getData() != null && pendingExportPassword != null) {
+            if (result == RESULT_OK && data != null && data.getData() != null
+                    && (pendingExportPassword != null || pendingExportUseCode)) {
                 writeExport(data.getData(), pendingExportPassword);
             }
             pendingExportPassword = null;
+            pendingExportUseCode = false;
             return;
         }
         if (req == REQ_EXPORT_PLAIN) {
@@ -4124,6 +4126,26 @@ public class MainActivity extends Activity {
         });
         bCard.addView(checkBtn);
 
+        // Recovery code (v0.81.0): the write-it-down secret
+        // behind one-tap backups, viewable any time here.
+        Button codeBtn = Ui.ghostButton(this, "Show my recovery code");
+        codeBtn.setLayoutParams(Ui.matchWrap(8, this));
+        codeBtn.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                new AlertDialog.Builder(MainActivity.this)
+                    .setTitle("Your recovery code")
+                    .setMessage(KeyBackup.codeFromEntropy(backupEntropy())
+                        + "\n\nBackups made with the recovery code can be restored "
+                        + "on any phone or computer with this code - there is no "
+                        + "password to remember. Write it down and keep it "
+                        + "somewhere private: anyone who has it can open a "
+                        + "recovery-code backup.")
+                    .setPositiveButton("Done", null)
+                    .show();
+            }
+        });
+        bCard.addView(codeBtn);
+
         Button folderBtn = Ui.ghostButton(this, "Import a folder");
         folderBtn.setLayoutParams(Ui.matchWrap(8, this));
         folderBtn.setOnClickListener(new View.OnClickListener() {
@@ -4649,6 +4671,18 @@ public class MainActivity extends Activity {
                     final byte[] blob = buf.toByteArray();
                     if (AutoBackup.isAutoBackup(blob)) {
                         verifyBackupZip(AutoBackup.decrypt(blob), "Automatic backup");
+                    } else if (KeyBackup.isKeyBackup(blob)) {
+                        // Recovery-code backup (v0.81.0): this
+                        // phone's code opens it silently; a
+                        // foreign code gets asked for.
+                        try {
+                            verifyBackupZip(KeyBackup.decrypt(blob, backupEntropy()),
+                                "Recovery-code backup");
+                        } catch (Exception e) {
+                            ui.post(new Runnable() {
+                                @Override public void run() { promptBackupCode(blob); }
+                            });
+                        }
                     } else if (blob.length > 5 && blob[0] == 'R' && blob[1] == 'V' && blob[2] == 'B' && blob[3] == 'K') {
                         ui.post(new Runnable() {
                             @Override public void run() { promptBackupPassword(blob); }
@@ -4694,6 +4728,40 @@ public class MainActivity extends Activity {
                             }
                         }
                     }, "check-backup-pw").start();
+                }
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+
+    private void promptBackupCode(final byte[] blob) {
+        final EditText cf = new EditText(this);
+        cf.setHint("Recovery code");
+        cf.setInputType(android.text.InputType.TYPE_CLASS_TEXT
+            | android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+        new AlertDialog.Builder(this)
+            .setTitle("Recovery-code backup - enter its code to check it")
+            .setView(cf)
+            .setPositiveButton("Check", new android.content.DialogInterface.OnClickListener() {
+                @Override public void onClick(android.content.DialogInterface d, int w) {
+                    final byte[] entropy = KeyBackup.entropyFromCode(cf.getText().toString());
+                    if (entropy == null) {
+                        Toast.makeText(MainActivity.this, "That is not a complete recovery code", Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                    new Thread(new Runnable() {
+                        @Override public void run() {
+                            try {
+                                verifyBackupZip(KeyBackup.decrypt(blob, entropy), "Recovery-code backup");
+                            } catch (final Exception e) {
+                                ui.post(new Runnable() {
+                                    @Override public void run() {
+                                        Toast.makeText(MainActivity.this, "Check failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                                    }
+                                });
+                            }
+                        }
+                    }, "check-backup-code").start();
                 }
             })
             .setNegativeButton("Cancel", null)
@@ -4821,6 +4889,26 @@ public class MainActivity extends Activity {
     // ---------- backup & restore ----------
 
     private char[] pendingExportPassword;
+    private boolean pendingExportUseCode;
+
+    /** This phone's recovery-code entropy (v0.81.0): generated
+     *  once, kept sealed in prefs. The code a user writes down
+     *  is these bytes in base32 (KeyBackup.codeFromEntropy). */
+    private byte[] backupEntropy() {
+        android.content.SharedPreferences p =
+            getSharedPreferences(Embed.PREFS, MODE_PRIVATE);
+        String s = VaultCrypto.dec(p.getString("backup_key_enc", ""));
+        if (s != null && !s.isEmpty()) {
+            try {
+                byte[] e = java.util.Base64.getDecoder().decode(s);
+                if (e.length == KeyBackup.ENTROPY_LEN) return e;
+            } catch (Exception ignored) {}
+        }
+        byte[] e = KeyBackup.newEntropy();
+        p.edit().putString("backup_key_enc", VaultCrypto.enc(
+            java.util.Base64.getEncoder().encodeToString(e))).apply();
+        return e;
+    }
     /** Export scope (v0.52.0): 0 = everything, 1 = last 30 days. */
     private int pendingExportScope = 0;
     private byte[] pendingImportBytes;
@@ -4838,12 +4926,37 @@ public class MainActivity extends Activity {
         box.setOrientation(LinearLayout.VERTICAL);
         box.setPadding(Ui.dp(this, 20), Ui.dp(this, 8), Ui.dp(this, 20), Ui.dp(this, 4));
         box.addView(Ui.text(this,
-            "Set the backup password. You will need it to restore - it is not saved anywhere.",
+            "How should this backup be protected?",
             12, Ui.DIM, false));
+        // Protection choice (v0.81.0): the recovery code is
+        // the one-tap default - nothing to invent or remember
+        // beyond the code in Settings. A password stays for
+        // anyone who would rather use their own.
+        final android.widget.RadioGroup protectGroup = new android.widget.RadioGroup(this);
+        protectGroup.setOrientation(LinearLayout.VERTICAL);
+        protectGroup.setLayoutParams(Ui.matchWrap(8, this));
+        android.widget.RadioButton protectCode = new android.widget.RadioButton(this);
+        protectCode.setText("Recovery code (no password to remember)");
+        protectCode.setTextColor(Ui.TEXT);
+        protectCode.setTextSize(13);
+        protectCode.setId(1);
+        android.widget.RadioButton protectPass = new android.widget.RadioButton(this);
+        protectPass.setText("A password I choose");
+        protectPass.setTextColor(Ui.TEXT);
+        protectPass.setTextSize(13);
+        protectPass.setId(2);
+        protectGroup.addView(protectCode);
+        protectGroup.addView(protectPass);
+        protectGroup.check(1);
+        box.addView(protectGroup);
         final EditText p1 = passwordField("Backup password (6+ characters)");
         final EditText p2 = passwordField("Type it again");
         box.addView(p1);
         box.addView(p2);
+        box.addView(Ui.text(this,
+            "A password is not saved anywhere - you will need it to restore. "
+                + "A recovery-code backup restores with the code shown in Settings, on any device.",
+            12, Ui.DIM, false));
         // Scope (v0.52.0): everything, or only the last 30 days.
         final android.widget.RadioGroup scopeGroup = new android.widget.RadioGroup(this);
         scopeGroup.setOrientation(LinearLayout.VERTICAL);
@@ -4868,17 +4981,21 @@ public class MainActivity extends Activity {
             .setNegativeButton("Cancel", null)
             .setPositiveButton("Choose where to save", new android.content.DialogInterface.OnClickListener() {
                 @Override public void onClick(android.content.DialogInterface d, int w) {
-                    String a = p1.getText().toString();
-                    String b = p2.getText().toString();
-                    if (a.length() < 6) {
-                        Toast.makeText(MainActivity.this, "Password needs at least 6 characters", Toast.LENGTH_LONG).show();
-                        return;
+                    boolean useCode = protectGroup.getCheckedRadioButtonId() != 2;
+                    if (!useCode) {
+                        String a = p1.getText().toString();
+                        String b = p2.getText().toString();
+                        if (a.length() < 6) {
+                            Toast.makeText(MainActivity.this, "Password needs at least 6 characters", Toast.LENGTH_LONG).show();
+                            return;
+                        }
+                        if (!a.equals(b)) {
+                            Toast.makeText(MainActivity.this, "Passwords did not match", Toast.LENGTH_LONG).show();
+                            return;
+                        }
+                        pendingExportPassword = a.toCharArray();
                     }
-                    if (!a.equals(b)) {
-                        Toast.makeText(MainActivity.this, "Passwords did not match", Toast.LENGTH_LONG).show();
-                        return;
-                    }
-                    pendingExportPassword = a.toCharArray();
+                    pendingExportUseCode = useCode;
                     pendingExportScope = scopeGroup.getCheckedRadioButtonId() == 2 ? 1 : 0;
                     Intent i = new Intent(Intent.ACTION_CREATE_DOCUMENT);
                     i.addCategory(Intent.CATEGORY_OPENABLE);
@@ -5135,7 +5252,11 @@ public class MainActivity extends Activity {
                         extras = ClioMind.backupExtras(MainActivity.this);
                     }
                     byte[] zip = Backup.buildZip(all, extras);
-                    final byte[] enc = Backup.encrypt(zip, password);
+                    // A null password is the one-tap path
+                    // (v0.81.0): sealed with the recovery code.
+                    final byte[] enc = password != null
+                        ? Backup.encrypt(zip, password)
+                        : KeyBackup.encrypt(zip, backupEntropy());
                     java.io.OutputStream out = getContentResolver().openOutputStream(uri);
                     if (out == null) throw new Exception("Could not open the destination");
                     out.write(enc);
@@ -5284,6 +5405,26 @@ public class MainActivity extends Activity {
                                     .show();
                             }
                         });
+                    } else if (KeyBackup.isKeyBackup(pendingImportBytes)) {
+                        // Recovery-code backup (v0.81.0): opens
+                        // with this phone's code when it was made
+                        // here; otherwise ask for the code.
+                        ui.post(new Runnable() {
+                            @Override public void run() {
+                                new AlertDialog.Builder(MainActivity.this)
+                                    .setTitle("Restore recovery-code backup")
+                                    .setMessage("This backup is protected with a recovery code, "
+                                        + "not a password. Restore its memories here? "
+                                        + "Ones already in the vault are skipped.")
+                                    .setNegativeButton("Cancel", null)
+                                    .setPositiveButton("Restore", new android.content.DialogInterface.OnClickListener() {
+                                        @Override public void onClick(android.content.DialogInterface d, int w) {
+                                            doImportKeyBackup();
+                                        }
+                                    })
+                                    .show();
+                            }
+                        });
                     } else {
                         ui.post(new Runnable() {
                             @Override public void run() { askImportPassword(); }
@@ -5353,6 +5494,80 @@ public class MainActivity extends Activity {
             @Override public void run() {
                 try {
                     Backup.Restored r = Backup.parseZip(AutoBackup.decrypt(blob));
+                    applyImport(r);
+                } catch (final Exception e) {
+                    ui.post(new Runnable() {
+                        @Override public void run() {
+                            Toast.makeText(MainActivity.this, "Import failed: " + e.getMessage(),
+                                Toast.LENGTH_LONG).show();
+                        }
+                    });
+                }
+            }
+        }).start();
+    }
+
+    /** Recovery-code backup import (v0.81.0): try this phone's
+     *  own code first; a backup made elsewhere asks for its code. */
+    private void doImportKeyBackup() {
+        final byte[] blob = pendingImportBytes;
+        if (blob == null) return;
+        Toast.makeText(this, "Restoring...", Toast.LENGTH_SHORT).show();
+        new Thread(new Runnable() {
+            @Override public void run() {
+                try {
+                    Backup.Restored r = Backup.parseZip(
+                        KeyBackup.decrypt(blob, backupEntropy()));
+                    pendingImportBytes = null;
+                    applyImport(r);
+                } catch (final Exception e) {
+                    ui.post(new Runnable() {
+                        @Override public void run() { askImportCode(); }
+                    });
+                }
+            }
+        }).start();
+    }
+
+    private void askImportCode() {
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(Ui.dp(this, 20), Ui.dp(this, 8), Ui.dp(this, 20), Ui.dp(this, 4));
+        box.addView(Ui.text(this,
+            "This backup was made with a different recovery code. Enter the code it was made with - the one written down when it was created.",
+            12, Ui.DIM, false));
+        final EditText c1 = new EditText(this);
+        c1.setHint("Recovery code");
+        c1.setInputType(android.text.InputType.TYPE_CLASS_TEXT
+            | android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+        box.addView(c1);
+        new AlertDialog.Builder(this)
+            .setTitle("Import backup")
+            .setView(box)
+            .setNegativeButton("Cancel", null)
+            .setPositiveButton("Restore", new android.content.DialogInterface.OnClickListener() {
+                @Override public void onClick(android.content.DialogInterface d, int w) {
+                    doImportWithCode(c1.getText().toString());
+                }
+            })
+            .show();
+    }
+
+    private void doImportWithCode(final String code) {
+        final byte[] blob = pendingImportBytes;
+        pendingImportBytes = null;
+        if (blob == null) return;
+        final byte[] entropy = KeyBackup.entropyFromCode(code);
+        if (entropy == null) {
+            Toast.makeText(this, "That is not a complete recovery code", Toast.LENGTH_LONG).show();
+            return;
+        }
+        Toast.makeText(this, "Restoring...", Toast.LENGTH_SHORT).show();
+        new Thread(new Runnable() {
+            @Override public void run() {
+                try {
+                    Backup.Restored r = Backup.parseZip(
+                        KeyBackup.decrypt(blob, entropy));
                     applyImport(r);
                 } catch (final Exception e) {
                     ui.post(new Runnable() {

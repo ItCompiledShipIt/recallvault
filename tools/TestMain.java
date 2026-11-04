@@ -230,6 +230,39 @@ public class TestMain {
             catch (Exception e) { wrongFailed = e.getMessage() != null && e.getMessage().contains("Wrong password"); }
             check("backup wrong password rejected", wrongFailed);
 
+            // Recovery-code backups (v0.81.0): the shared
+            // vector pins phone and desktop to one format -
+            // entropy bytes 0..19 must give this exact code,
+            // and a blob sealed by the DESKTOP implementation
+            // (fixed IV 0..11, plaintext "clio") must open.
+            byte[] vecEntropy = new byte[20];
+            for (int i = 0; i < 20; i++) vecEntropy[i] = (byte) i;
+            check("keybackup: shared code vector",
+                KeyBackup.codeFromEntropy(vecEntropy)
+                    .equals("AAAQ-EAYE-AUDA-OCAJ-BIFQ-YDIO-B4IB-CEQT"));
+            check("keybackup: code round trip, tolerant decode",
+                java.util.Arrays.equals(vecEntropy, KeyBackup.entropyFromCode(
+                    "aaaq eaye auda ocaj bifq ydio b4ib ceqt")));
+            check("keybackup: junk code rejected",
+                KeyBackup.entropyFromCode("too short") == null
+                    && KeyBackup.entropyFromCode("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA!")
+                        == null);
+            byte[] kbEnc = KeyBackup.encrypt(payload, vecEntropy);
+            check("keybackup: magic + round trip",
+                KeyBackup.isKeyBackup(kbEnc)
+                    && java.util.Arrays.equals(payload,
+                        KeyBackup.decrypt(kbEnc, vecEntropy)));
+            boolean kbWrong = false;
+            try {
+                KeyBackup.decrypt(kbEnc, KeyBackup.newEntropy());
+            } catch (Exception e) { kbWrong = true; }
+            check("keybackup: wrong code rejected", kbWrong);
+            byte[] desktopBlob = java.util.Base64.getDecoder().decode(
+                "UlZCSzMAAQIDBAUGBwgJCgtxhVehIz6QPv6CB5D77RvCATyglg==");
+            check("keybackup: desktop-sealed blob opens",
+                "clio".equals(new String(
+                    KeyBackup.decrypt(desktopBlob, vecEntropy), "UTF-8")));
+
             java.io.File tmpF = java.io.File.createTempFile("rvtest", ".m4a");
             java.io.FileOutputStream fos = new java.io.FileOutputStream(tmpF);
             fos.write(new byte[]{9, 8, 7, 6, 5});
