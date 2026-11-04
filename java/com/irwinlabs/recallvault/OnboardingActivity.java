@@ -62,6 +62,7 @@ public class OnboardingActivity extends Activity {
         scroll.addView(body);
         root.addView(scroll);
         setContentView(root);
+        Ui.installInsets(this);
         showStep();
     }
 

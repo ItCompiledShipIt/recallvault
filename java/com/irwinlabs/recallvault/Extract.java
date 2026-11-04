@@ -129,7 +129,15 @@ public final class Extract {
         // a commitment ("I'll send the signed lease by Nov
         // 28") is obligation-shaped even without bill words -
         // without these, v0.78.2's gate undated real to-dos.
-        "send", "submit", "schedule"
+        "send", "submit", "schedule",
+        // Scheduled debits (v0.79.2, caught by the judgment
+        // eval): "will be charged $96 on Nov 18 for your
+        // annual plan" carries no bill/subscription word,
+        // but a charge announced ahead of time is an
+        // obligation to have the money there - the future
+        // tense is what separates it from a "was charged"
+        // event record, which stays a when.
+        "will be charged", "will be billed", "will be debited"
     };
 
     private static boolean obligationFramed(String lower) {

@@ -111,6 +111,7 @@ public class ScanActivity extends Activity
         });
         root.addView(cancel);
         setContentView(root);
+        Ui.installInsets(this);
 
         scanner = BarcodeScanning.getClient(new BarcodeScannerOptions.Builder()
             .setBarcodeFormats(Barcode.FORMAT_QR_CODE).build());

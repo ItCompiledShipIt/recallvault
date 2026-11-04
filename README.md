@@ -1,5 +1,42 @@
 # RecallVault
 
+## v0.79.2 - the judgment eval
+
+Filing judgment is now measured, not vibes. TestMain
+carries a labeled corpus of 42 realistic ingest cases -
+bills, receipts, sign-ins, deliveries, sale mail,
+appointments, flights, commitments, OTPs, chatter -
+scored against Extract, MailFilter, SmsFilter and
+NotifyFilter (filed-or-not, category, amounts, and
+due-vs-when on every date). First true score: 41/42.
+The miss was real: "will be charged $96 on Nov 18 for
+your annual plan" earned no date because the obligation
+gate knew "subscription" but not scheduled debits -
+OBLIGATION_DOC now includes will be charged / billed /
+debited (future tense only; a charge that already
+happened stays a when). 42/42, full suite 379/379.
+The desktop twin scored the shared mail subset against
+mail_facts and caught worse drift: the desktop had NO
+unhinted fallback at all, so appointment and scheduled-
+charge mail filed there dateless while the phone set a
+reminder. The fallback + gate are ported; desktop suite
+17/17. The corpus is the contract now - an ingest
+change that moves the number the wrong way fails CI-
+style in both suites.
+
+## v0.79.1 - system bars stop covering the app
+
+targetSdk 35 (v0.78.0) made Android draw every window
+behind the status and navigation bars, and the app had
+no inset handling: bottom-anchored UI - the chat
+composer first - slid under the nav buttons. One
+listener in Ui pads each window's content frame by the
+system-bar insets (and the keyboard inset while it is
+up, so composers ride above it): installed via
+applyChrome for seven activities and directly in
+Contacts, Onboarding and Scan - all ten covered.
+(Installed directly; released folded into v0.79.2.)
+
 ## v0.79.0 - QR pairing + a guided first run that finishes
 
 The product law (his words, Nov 3): "easy as fuck for

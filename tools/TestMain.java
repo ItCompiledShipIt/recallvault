@@ -7,6 +7,56 @@ public class TestMain {
         if (cond) { pass++; System.out.println("PASS " + name); }
         else { fail++; System.out.println("FAIL " + name); }
     }
+
+    // ---- Judgment eval (v0.79.2) ----
+    // A labeled corpus of realistic ingest, scored as ONE
+    // number. Labels encode intent only where it is
+    // unambiguous: his when-vs-deadline principle, the
+    // filters' own stated rules, and plain common sense.
+    // A miss prints expected-vs-actual so the number can
+    // be argued with, case by case.
+    static int evTotal = 0, evPass = 0;
+
+    static void evVerdict(String id, boolean ok, String detail) {
+        evTotal++;
+        if (ok) { evPass++; pass++; System.out.println("PASS eval " + id); }
+        else { fail++; System.out.println("FAIL eval " + id + " -> " + detail); }
+    }
+
+    static void evalExtract(String id, String text, String dueIso,
+                            String amount, String category) throws Exception {
+        Extract.Facts f = Extract.analyze(text);
+        List<String> miss = new ArrayList<String>();
+        if (dueIso != null) {
+            long want = "NONE".equals(dueIso) ? -1 : Extract.parseIso(dueIso);
+            if (f.dueDate != want) miss.add("due want " + dueIso
+                + " got " + (f.dueDate <= 0 ? "NONE" : String.valueOf(f.dueDate)));
+        }
+        if (amount != null && !f.amounts.contains(amount))
+            miss.add("amount want " + amount + " got " + f.amounts);
+        if (category != null && !category.equals(f.category))
+            miss.add("category want " + category + " got " + f.category);
+        evVerdict(id, miss.isEmpty(), miss.toString());
+    }
+
+    static void evalMail(String id, String subj, String body,
+                         boolean unsub, boolean keep) {
+        MailFilter.Verdict v = MailFilter.judge(subj, body, unsub);
+        evVerdict(id, v.keep == keep,
+            "keep want " + keep + " got " + v.keep + " (" + v.why + ")");
+    }
+
+    static void evalSms(String id, String body, boolean keep) {
+        SmsFilter.Verdict v = SmsFilter.judge(body);
+        evVerdict(id, v.keep == keep,
+            "keep want " + keep + " got " + v.keep + " (" + v.why + ")");
+    }
+
+    static void evalNotify(String id, String title, String text, boolean keep) {
+        NotifyFilter.Verdict v = NotifyFilter.judge(title, text);
+        evVerdict(id, v.keep == keep,
+            "keep want " + keep + " got " + v.keep + " (" + v.why + ")");
+    }
     public static void main(String[] args) throws Exception {
         // 1. Bill with month-name due date + amount
         Extract.Facts f1 = Extract.analyze("Electricity bill from Avista, $84.12, due November 14, 2026");
@@ -1048,6 +1098,122 @@ public class TestMain {
                 !NotifyFilter.judge("", "").keep);
             check("notify: vague reminder skipped",
                 !NotifyFilter.judge("Clock", "Reminder: drink some water.").keep);
+            // ---- Judgment eval corpus (v0.79.2) ----
+            // Extract: what dates, money and category SHOULD
+            // come out of realistic ingest.
+            evalExtract("E01-bill",
+                "Your City Utilities bill is ready. Amount due is $105.67 by November 16, 2026. Pay online to avoid a late fee.",
+                "2026-11-16", "$105.67", "Bills");
+            evalExtract("E02-bill-after-payment",
+                "We received your payment of $60.00 on November 2, 2026. Your remaining balance of $45.67 is due November 16, 2026.",
+                "2026-11-16", "$45.67", null);
+            evalExtract("E03-signin",
+                "New sign-in to your account on November 20, 2026 at 3:12 PM. If this was not you, reset your password.",
+                "NONE", null, null);
+            evalExtract("E04-password-changed",
+                "Your password was changed on November 3, 2026. If you did not do this, contact support.",
+                "NONE", null, null);
+            evalExtract("E05-shipped",
+                "Good news - your order has shipped! Arriving by Friday, November 7, 2026.",
+                "NONE", null, null);
+            evalExtract("E06-delivered",
+                "Your package was delivered on November 1, 2026. Thanks for shopping with us.",
+                "NONE", null, null);
+            evalExtract("E07-sale-ends",
+                "Fall sale! Offer ends November 17, 2026. Up to 40% off everything.",
+                "NONE", null, null);
+            evalExtract("E08-statement-with-due",
+                "Your statement is ready. Payment due November 30, 2026. Amount due: $212.00.",
+                "2026-11-30", "$212.00", null);
+            evalExtract("E09-appointment",
+                "Appointment confirmed: dental cleaning on December 4, 2026 at 2:30 PM. Please arrive 15 minutes early.",
+                "2026-12-04", null, null);
+            evalExtract("E10-flight",
+                "Your flight UA482 departs on December 12, 2026 at 8:05 AM. Booking confirmed.",
+                "2026-12-12", null, null);
+            evalExtract("E11-rent",
+                "Rent of $1,600.00 is due December 1, 2026. Please pay through the portal.",
+                "2026-12-01", "$1,600.00", null);
+            evalExtract("E12-renewal",
+                "Your music plan renews on November 20, 2026. You will be charged $15.49.",
+                "2026-11-20", "$15.49", null);
+            evalExtract("E13-future-charge",
+                "Your card will be charged $96.00 on November 18, 2026 for your annual plan.",
+                "2026-11-18", "$96.00", null);
+            evalExtract("E14-commitment",
+                "I'll send the signed lease to the landlord by November 28, 2026.",
+                "2026-11-28", null, null);
+            evalExtract("E15-store-receipt",
+                "GROCERY OUTLET\n11/02/2026\nMILK 3.49\nEGGS 4.29\nTOTAL $84.12\nVISA ****4419\nTHANK YOU",
+                "NONE", "$84.12", null);
+            evalExtract("E16-email-receipt",
+                "Receipt for your payment to CloudHost. Amount paid: $25.00. Date: November 2, 2026.",
+                "NONE", "$25.00", null);
+            evalExtract("E17-due-to-trap",
+                "Due to a system issue, your sign-in on November 20, 2026 was delayed. No action is needed.",
+                "NONE", null, null);
+            evalExtract("E18-refund",
+                "A refund of $19.99 was issued to your card on November 2, 2026.",
+                "NONE", "$19.99", null);
+            evalExtract("E19-deposit",
+                "Direct deposit received: $2,340.00 on November 3, 2026.",
+                "NONE", "$2,340.00", null);
+            evalExtract("E20-newsletter",
+                "This week in tech: a look back at our November 10, 2026 community event, plus what is next.",
+                "NONE", null, null);
+            evalExtract("E21-storm",
+                "Winter storm warning in effect until November 5, 2026. Expect heavy snow.",
+                "NONE", null, null);
+            evalExtract("E22-bill-no-amount",
+                "Your internet bill is due November 25, 2026. The amount will be emailed separately.",
+                "2026-11-25", null, null);
+            evalExtract("E23-statement-period",
+                "Statement period: October 1, 2026 to October 31, 2026. Amount due: $88.20. Due date: November 21, 2026.",
+                "2026-11-21", "$88.20", null);
+            evalExtract("E24-past-due",
+                "Your account is past due. $54.30 was due October 15, 2026. Pay now to avoid interruption.",
+                "2026-10-15", "$54.30", null);
+            evalExtract("E25-order-no-date",
+                "Order confirmed. Your items are on the way.",
+                "NONE", null, null);
+            // MailFilter: what gets filed at all.
+            evalMail("M1-bill", "Your bill is ready",
+                "Amount due is $105.67 by November 16, 2026.", false, true);
+            evalMail("M2-newsletter", "Weekly Tech Digest",
+                "This week: gadgets, apps and more. Read the full issue online.", true, false);
+            evalMail("M3-shipped", "Your order has shipped",
+                "Track your package here: https://example.com/track?id=8", false, true);
+            evalMail("M4-promo", "50% off everything today",
+                "Sale ends soon. Shop now at www.example.com", true, false);
+            evalMail("M5-appointment", "Appointment confirmed",
+                "Your dental cleaning is on December 4, 2026 at 2:30 PM.", false, true);
+            evalMail("M6-gate-code", "Saturday",
+                "The gate code is 4419 - punch it in when you get here.", false, true);
+            evalMail("M7-personal", "Thinking of you",
+                "Hi! Hope you and the family are doing well. Let's catch up soon.", false, false);
+            // SmsFilter: same question for texts.
+            evalSms("S1-otp",
+                "Your verification code is 441902. Do not share it.", false);
+            evalSms("S2-bank-charge",
+                "Chase alert: a charge of $212.45 was made at HARDWARE STORE on November 3, 2026.", true);
+            evalSms("S3-appointment",
+                "Reminder: your dental appointment is on December 4, 2026 at 2:30 PM. Reply C to confirm.", true);
+            evalSms("S4-chatter",
+                "hey are we still on for lunch lol", false);
+            evalSms("S5-bare-amount",
+                "ALERT: $45.00 charge at COFFEE CARTEL.", false);
+            // NotifyFilter: same question for notifications.
+            evalNotify("N1-delivered", "Amazon",
+                "Your package was delivered at 3:12 PM.", true);
+            evalNotify("N2-amount-due", "City Utilities",
+                "Amount due: $105.67. Pay by November 16, 2026.", true);
+            evalNotify("N3-code", "Google",
+                "Your verification code is 778899.", false);
+            evalNotify("N4-photo", "Messages",
+                "Sam sent you a photo.", false);
+            evalNotify("N5-news", "News",
+                "Breaking: storm makes landfall on the coast.", false);
+            System.out.println("EVAL judgment score: " + evPass + "/" + evTotal);
             // A plain photo with no signal files as Images; a
             // plain typed note stays Notes.
             check("selective: silent photo files as Images",

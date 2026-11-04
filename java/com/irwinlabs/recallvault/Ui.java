@@ -193,6 +193,47 @@ public final class Ui {
         int light = android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
             | android.view.View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
         decor.setSystemUiVisibility(LIGHT_BARS ? (flags | light) : (flags & ~light));
+        installInsets(a);
+    }
+
+    /** Edge-to-edge insets (v0.79.1): targetSdk 35 made
+     *  Android draw every window behind the system bars,
+     *  so bottom-anchored bars (the chat composer first)
+     *  slid under the navigation buttons. The fix is one
+     *  listener on the window's content frame that pads it
+     *  by the system-bar insets - and by the keyboard's
+     *  inset while it is up, so composers ride above it
+     *  too. Every activity routes through here: applyChrome
+     *  calls it, and the applyTheme-only activities call it
+     *  directly after setContentView. The listener lives on
+     *  the content frame, so it survives setContentView
+     *  swaps and needs installing only once per window. */
+    public static void installInsets(final Activity a) {
+        final android.view.View content = a.findViewById(android.R.id.content);
+        if (content == null) return;
+        content.setOnApplyWindowInsetsListener(new android.view.View.OnApplyWindowInsetsListener() {
+            @Override
+            public android.view.WindowInsets onApplyWindowInsets(
+                    android.view.View v, android.view.WindowInsets insets) {
+                int l, t, r, b;
+                if (android.os.Build.VERSION.SDK_INT >= 30) {
+                    android.graphics.Insets bars =
+                        insets.getInsets(android.view.WindowInsets.Type.systemBars());
+                    android.graphics.Insets ime =
+                        insets.getInsets(android.view.WindowInsets.Type.ime());
+                    l = bars.left; t = bars.top; r = bars.right;
+                    b = Math.max(bars.bottom, ime.bottom);
+                } else {
+                    l = insets.getSystemWindowInsetLeft();
+                    t = insets.getSystemWindowInsetTop();
+                    r = insets.getSystemWindowInsetRight();
+                    b = insets.getSystemWindowInsetBottom();
+                }
+                v.setPadding(l, t, r, b);
+                return insets;
+            }
+        });
+        content.requestApplyInsets();
     }
 
     public static GradientDrawable panelBg(int color, int border, int radiusDp, Activity a) {

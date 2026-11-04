@@ -244,6 +244,7 @@ public class ContactsActivity extends Activity {
         });
         root.addView(back);
         setContentView(root);
+        Ui.installInsets(this);
     }
 
     // ---- Detail ------------------------------------------------------
